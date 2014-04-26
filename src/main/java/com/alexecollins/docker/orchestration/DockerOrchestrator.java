@@ -26,10 +26,15 @@ import static org.apache.commons.io.IOUtils.copyLarge;
  * Orchestrates multiple Docker containers based on
  */
 public class DockerOrchestrator {
+	public static final String DEFAULT_HOST = "http://127.0.0.1:4243";
 	private static final Logger LOGGER = LoggerFactory.getLogger(DockerOrchestrator.class);
 	private final DockerClient docker;
 	private final Repo repo;
 	private final File workDir;
+
+	public DockerOrchestrator(File src, File workDir, String prefix) {
+		this(new DockerClient(DEFAULT_HOST), src, workDir, prefix);
+	}
 
 	public DockerOrchestrator(DockerClient docker, File src, File workDir, String prefix) {
 		if (docker == null) {
@@ -271,5 +276,9 @@ public class DockerOrchestrator {
 		for (Id id : repo.ids(true)) {
 			stop(id);
 		}
+	}
+
+	public List<Id> ids() {
+		return repo.ids(false);
 	}
 }
