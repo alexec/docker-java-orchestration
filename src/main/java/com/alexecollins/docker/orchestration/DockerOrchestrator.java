@@ -70,7 +70,7 @@ public class DockerOrchestrator {
 		}
 	}
 
-	void clean(final Id id) {
+	private void clean(final Id id) {
 		if (id == null) {
 			throw new IllegalArgumentException("id is null");
 		}
@@ -101,7 +101,7 @@ public class DockerOrchestrator {
 		}
 	}
 
-	void build(final Id id) {
+	private void build(final Id id) {
 		if (id == null) {
 			throw new IllegalArgumentException("id is null");
 		}
@@ -169,7 +169,7 @@ public class DockerOrchestrator {
 		// return substringBetween(log, "Successfully built ", "\\n\"}").trim();
 	}
 
-	void start(final Id id) {
+	private void start(final Id id) {
 		if (id == null) {
 			throw new IllegalArgumentException("id is null");
 		}
@@ -180,7 +180,7 @@ public class DockerOrchestrator {
 				LOGGER.info("creating " + id);
 				final ContainerConfig config = new ContainerConfig();
 				config.setImage(repo.findImage(id).getId());
-		    /*
+			/*
             config.setVolumesFrom(volumesFrom(id).toString().replaceAll("[ \\[\\]]", ""));
 
             LOGGER.info(" - volumes from " + volumesFrom(id));
@@ -244,7 +244,7 @@ public class DockerOrchestrator {
 		return out;
 	}
 
-	void stop(final Id id) {
+	private void stop(final Id id) {
 		if (id == null) {
 			throw new IllegalArgumentException("id is null");
 		}
@@ -259,13 +259,13 @@ public class DockerOrchestrator {
 	}
 
 	public void build() {
-		for (Id id : repo.ids(false)) {
+		for (Id id : ids()) {
 			build(id);
 		}
 	}
 
 	public void start() {
-		for (Id id : repo.ids(false)) {
+		for (Id id : ids()) {
 			try {
 				if (repo.findImage(id) == null) {
 					build(id);
