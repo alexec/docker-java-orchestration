@@ -1,6 +1,7 @@
 package com.alexecollins.docker.orchestration;
 
 
+import com.alexecollins.docker.orchestration.model.Credentials;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.kpelykh.docker.client.DockerClient;
 import com.kpelykh.docker.client.DockerException;
@@ -32,11 +33,11 @@ public class DockerOrchestrator {
 	private final Repo repo;
 	private final File workDir;
 
-	public DockerOrchestrator(File src, File workDir, String prefix) {
-		this(new DockerClient(DEFAULT_HOST), src, workDir, prefix);
+	public DockerOrchestrator(File src, File workDir, String prefix, Credentials credentials) {
+		this(new DockerClient(DEFAULT_HOST), src, workDir, prefix, credentials);
 	}
 
-	public DockerOrchestrator(DockerClient docker, File src, File workDir, String prefix) {
+	public DockerOrchestrator(DockerClient docker, File src, File workDir, String prefix, Credentials credentials) {
 		if (docker == null) {
 			throw new IllegalArgumentException("docker is null");
 		}
@@ -56,6 +57,10 @@ public class DockerOrchestrator {
 			throw new OrchestrationException(e);
 		}
 		this.workDir = workDir;
+
+		if (credentials != null) {
+			docker.setCredentials(credentials.username, credentials.password, credentials.email);
+		}
 	}
 
 	public void clean() {
@@ -175,7 +180,7 @@ public class DockerOrchestrator {
 				LOGGER.info("creating " + id);
 				final ContainerConfig config = new ContainerConfig();
 				config.setImage(repo.findImage(id).getId());
-	        /*
+		    /*
             config.setVolumesFrom(volumesFrom(id).toString().replaceAll("[ \\[\\]]", ""));
 
             LOGGER.info(" - volumes from " + volumesFrom(id));
@@ -280,5 +285,19 @@ public class DockerOrchestrator {
 
 	public List<Id> ids() {
 		return repo.ids(false);
+	}
+
+	public void push() {
+		for (Id id : ids()) {
+			push(id);
+		}
+	}
+
+	private void push(Id id) {
+		try {
+			docker.push(repo.imageName(id));
+		} catch (DockerException e) {
+			throw new OrchestrationException(e);
+		}
 	}
 }

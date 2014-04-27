@@ -1,5 +1,6 @@
 package com.alexecollins.docker.orchestration;
 
+import com.alexecollins.docker.orchestration.model.Credentials;
 import org.junit.After;
 import org.junit.Test;
 
@@ -11,7 +12,7 @@ import static org.junit.Assert.assertEquals;
 public class DockerOrchestratorIT {
 	File src = new File("src/test/docker");
 	File workDir = new File("target/docker");
-	DockerOrchestrator orchestrator = new DockerOrchestrator(src, workDir, "docker-java-orchestrator");
+	DockerOrchestrator orchestrator = new DockerOrchestrator(src, workDir, "docker-java-orchestrator", new Credentials("alexec", System.getProperty("password"), "alex.e.c@gmail.com"));
 
 	@After
 	public void tearDown() throws Exception {
@@ -41,5 +42,10 @@ public class DockerOrchestratorIT {
 	@Test
 	public void testStop() throws Exception {
 		orchestrator.stop();
+	}
+
+	@Test
+	public void testPush() throws Exception {
+		orchestrator.push();
 	}
 }
