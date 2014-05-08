@@ -1,1 +1,3 @@
 FROM busybox
+
+CMD ["cat"]

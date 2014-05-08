@@ -21,7 +21,7 @@ public class DockerOrchestratorIT {
 
 	@Test
 	public void testList() throws Exception {
-		assertEquals(1, orchestrator.ids().size());
+		assertEquals(3, orchestrator.ids().size());
 	}
 
 	@Test
