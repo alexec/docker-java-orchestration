@@ -9,7 +9,7 @@
 
     <groupId>com.alexecollins.docker</groupId>
     <artifactId>docker-java-orchestration</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
 
     <name>Docker Java Orchestration</name>
 
