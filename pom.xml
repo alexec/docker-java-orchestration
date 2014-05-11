@@ -11,7 +11,7 @@
     <artifactId>docker-java-orchestration</artifactId>
     <version>1.0.0</version>
 
-    <name>Docker Maven Orchestration</name>
+    <name>Docker Java Orchestration</name>
 
     <description>A library for orchestrating Docker containers.</description>
 
