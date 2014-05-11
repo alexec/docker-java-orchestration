@@ -12,6 +12,7 @@
     <version>1.0.1-SNAPSHOT</version>
 
     <name>Docker Java Orchestration</name>
+<!-- -->
 
     <description>A library for orchestrating Docker containers.</description>
 
