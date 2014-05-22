@@ -34,7 +34,15 @@ public class DockerOrchestrator {
 	private final File workDir;
 
 	public DockerOrchestrator(File src, File workDir, String prefix, Credentials credentials) {
-		this(new DockerClient(DEFAULT_HOST), src, workDir, prefix, credentials);
+		this(defaultDockerClient(), src, workDir, prefix, credentials);
+	}
+
+	private static DockerClient defaultDockerClient() {
+		try {
+			return new DockerClient(DEFAULT_HOST);
+		} catch (DockerException e) {
+			throw new OrchestrationException(e);
+		}
 	}
 
 	public DockerOrchestrator(DockerClient docker, File src, File workDir, String prefix, Credentials credentials) {
