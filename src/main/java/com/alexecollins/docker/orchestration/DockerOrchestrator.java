@@ -3,6 +3,7 @@ package com.alexecollins.docker.orchestration;
 
 import com.alexecollins.docker.orchestration.model.Credentials;
 import com.alexecollins.docker.orchestration.model.Id;
+import com.alexecollins.docker.orchestration.util.Filters;
 import com.kpelykh.docker.client.DockerClient;
 import com.kpelykh.docker.client.DockerException;
 import com.kpelykh.docker.client.model.*;
@@ -10,14 +11,9 @@ import com.sun.jersey.api.client.ClientResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
+import java.io.*;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static org.apache.commons.io.FileUtils.*;
 import static org.apache.commons.io.IOUtils.closeQuietly;
@@ -32,20 +28,25 @@ public class DockerOrchestrator {
 	private final DockerClient docker;
 	private final Repo repo;
 	private final File workDir;
+	/**
+	 * files to do property filtering on
+	 */
+	private final FileFilter filter;
+	/**
+	 * properties to filter
+	 */
+	private final Properties properties;
 
 	public DockerOrchestrator(File src, File workDir, String prefix, Credentials credentials) {
-		this(defaultDockerClient(), src, workDir, prefix, credentials);
+		this(defaultDockerClient(), src, workDir, prefix, credentials, new FileFilter() {
+			@Override
+			public boolean accept(File pathname) {
+				return false;
+			}
+		}, new Properties());
 	}
 
-	private static DockerClient defaultDockerClient() {
-		try {
-			return new DockerClient(DEFAULT_HOST);
-		} catch (DockerException e) {
-			throw new OrchestrationException(e);
-		}
-	}
-
-	public DockerOrchestrator(DockerClient docker, File src, File workDir, String prefix, Credentials credentials) {
+	public DockerOrchestrator(DockerClient docker, File src, File workDir, String prefix, Credentials credentials, FileFilter filter, Properties properties) {
 		if (docker == null) {
 			throw new IllegalArgumentException("docker is null");
 		}
@@ -58,6 +59,12 @@ public class DockerOrchestrator {
 		if (prefix == null) {
 			throw new IllegalArgumentException("prefix is null");
 		}
+		if (filter == null) {
+			throw new IllegalArgumentException("filter is null");
+		}
+		if (properties == null) {
+			throw new IllegalArgumentException("properties is null");
+		}
 		this.docker = docker;
 		try {
 			this.repo = new Repo(docker, prefix, src);
@@ -68,6 +75,16 @@ public class DockerOrchestrator {
 
 		if (credentials != null) {
 			docker.setCredentials(credentials.username, credentials.password, credentials.email);
+		}
+		this.filter = filter;
+		this.properties = properties;
+	}
+
+	private static DockerClient defaultDockerClient() {
+		try {
+			return new DockerClient(DEFAULT_HOST);
+		} catch (DockerException e) {
+			throw new OrchestrationException(e);
 		}
 	}
 
@@ -127,23 +144,34 @@ public class DockerOrchestrator {
 		}
 		final File dockerFolder = repo.src(id);
 		final File destDir = new File(workDir, dockerFolder.getName());
+
 		// copy template
 		copyDirectory(dockerFolder, destDir);
+
+		Filters.filter(destDir, filter, properties);
+
 		// copy files
 		for (String file : repo.conf(id).packaging.add) {
-			File fileEntry = new File(file);
+			File fileEntry = new File(filter(file));
 			copyFileEntry(destDir, fileEntry);
+			Filters.filter(fileEntry, filter, properties);
 		}
 
 		return destDir;
 	}
 
+	private String filter(String file) {
+		for (Map.Entry<Object, Object> e : properties.entrySet()) {
+			file = file.replace("${" + e.getKey() + "}", e.getValue().toString());
+		}
+		return file;
+	}
+
 	private void copyFileEntry(final File destDir, File fileEntry) throws IOException {
+		LOGGER.info(" - add " + fileEntry);
 		if (fileEntry.isDirectory()) {
-			LOGGER.info(" - add (dir) " + fileEntry.getAbsolutePath());
 			copyDirectoryToDirectory(fileEntry, destDir);
 		} else {
-			LOGGER.info(" - add (file) " + fileEntry.getAbsolutePath());
 			copyFileToDirectory(fileEntry, destDir);
 		}
 	}
@@ -189,7 +217,7 @@ public class DockerOrchestrator {
 				final ContainerConfig config = new ContainerConfig();
 				config.setImage(repo.findImage(id).getId());
 			/*
-            config.setVolumesFrom(volumesFrom(id).toString().replaceAll("[ \\[\\]]", ""));
+			config.setVolumesFrom(volumesFrom(id).toString().replaceAll("[ \\[\\]]", ""));
 
             LOGGER.info(" - volumes from " + volumesFrom(id));
              */

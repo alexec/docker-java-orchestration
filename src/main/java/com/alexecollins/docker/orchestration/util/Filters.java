@@ -11,15 +11,6 @@ public final class Filters {
 	private Filters() {
 	}
 
-	public static void filter(File file, Properties properties) throws IOException {
-		filter(file, new FileFilter() {
-			@Override
-			public boolean accept(File pathname) {
-				return true;
-			}
-		}, properties);
-	}
-
 	public static void filter(File file, FileFilter fileFilter, Properties properties) throws IOException {
 
 		if (file == null) {

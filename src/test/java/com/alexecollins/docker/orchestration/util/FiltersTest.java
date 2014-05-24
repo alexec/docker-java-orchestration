@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.util.Properties;
 import java.util.Scanner;
@@ -20,7 +21,7 @@ public class FiltersTest {
 	@Before
 	public void setUp() throws Exception {
 		dir = new File("target/test/filters");
-		assert dir.mkdirs();
+		assert dir.isDirectory() || dir.mkdirs();
 
 		file = new File(dir, "test.txt");
 		new FileOutputStream(file).write("test ${project.version}\n".getBytes());
@@ -31,7 +32,12 @@ public class FiltersTest {
 		final Properties properties = new Properties();
 		properties.setProperty("project.version", "1.0.0");
 
-		Filters.filter(dir, properties);
+		Filters.filter(dir, new FileFilter() {
+			@Override
+			public boolean accept(File pathname) {
+				return true;
+			}
+		}, properties);
 
 		assertThat(new Scanner(file).useDelimiter("\\A").next(), equalTo("test 1.0.0\n"));
 	}
