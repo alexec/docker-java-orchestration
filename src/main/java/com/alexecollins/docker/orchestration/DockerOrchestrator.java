@@ -3,7 +3,9 @@ package com.alexecollins.docker.orchestration;
 
 import com.alexecollins.docker.orchestration.model.Credentials;
 import com.alexecollins.docker.orchestration.model.Id;
+import com.alexecollins.docker.orchestration.model.Ping;
 import com.alexecollins.docker.orchestration.util.Filters;
+import com.alexecollins.docker.orchestration.util.Pinger;
 import com.kpelykh.docker.client.DockerClient;
 import com.kpelykh.docker.client.DockerException;
 import com.kpelykh.docker.client.model.*;
@@ -24,7 +26,17 @@ import static org.apache.commons.io.IOUtils.copyLarge;
  */
 public class DockerOrchestrator {
 	public static final String DEFAULT_HOST = "http://127.0.0.1:4243";
+	public static final FileFilter DEFAULT_FILTER = new FileFilter() {
+		@Override
+		public boolean accept(File pathname) {
+			return false;
+		}
+	};
+	public static final Properties DEFAULT_PROPERTIES = new Properties();
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(DockerOrchestrator.class);
+	private static final int snooze = 3000;
+
 	private final DockerClient docker;
 	private final Repo repo;
 	private final File workDir;
@@ -37,13 +49,12 @@ public class DockerOrchestrator {
 	 */
 	private final Properties properties;
 
+	/**
+	 * @deprecated Does not support API version.
+	 */
+	@Deprecated
 	public DockerOrchestrator(File src, File workDir, String prefix, Credentials credentials) {
-		this(defaultDockerClient(), src, workDir, prefix, credentials, new FileFilter() {
-			@Override
-			public boolean accept(File pathname) {
-				return false;
-			}
-		}, new Properties());
+		this(defaultDockerClient(), src, workDir, prefix, credentials, DEFAULT_FILTER, DEFAULT_PROPERTIES);
 	}
 
 	public DockerOrchestrator(DockerClient docker, File src, File workDir, String prefix, Credentials credentials, FileFilter filter, Properties properties) {
@@ -82,7 +93,7 @@ public class DockerOrchestrator {
 
 	private static DockerClient defaultDockerClient() {
 		try {
-			return new DockerClient(DEFAULT_HOST);
+			return new DockerClient();
 		} catch (DockerException e) {
 			throw new OrchestrationException(e);
 		}
@@ -124,6 +135,7 @@ public class DockerOrchestrator {
 				LOGGER.warn(" - " + e.getMessage());
 			}
 		}
+		snooze();
 	}
 
 	private void build(final Id id) {
@@ -134,6 +146,17 @@ public class DockerOrchestrator {
 		try {
 			build(prepare(id), id);
 		} catch (IOException e) {
+			throw new OrchestrationException(e);
+		}
+
+		snooze();
+	}
+
+	private void snooze() {
+		LOGGER.info("snoozing for " + snooze + "ms");
+		try {
+			Thread.sleep(snooze);
+		} catch (InterruptedException e) {
 			throw new OrchestrationException(e);
 		}
 	}
@@ -203,6 +226,8 @@ public class DockerOrchestrator {
 
 		// imageId
 		// return substringBetween(log, "Successfully built ", "\\n\"}").trim();
+
+		snooze();
 	}
 
 	private void start(final Id id) {
@@ -216,19 +241,45 @@ public class DockerOrchestrator {
 				LOGGER.info("creating " + id);
 				final ContainerConfig config = new ContainerConfig();
 				config.setImage(repo.findImage(id).getId());
-			/*
-			config.setVolumesFrom(volumesFrom(id).toString().replaceAll("[ \\[\\]]", ""));
+				/*
+				config.setVolumesFrom(volumesFrom(id).toString().replaceAll("[ \\[\\]]", ""));
 
-            LOGGER.info(" - volumes from " + volumesFrom(id));
-             */
+	            LOGGER.info(" - volumes from " + volumesFrom(id));
+	             */
 
 				docker.createContainer(config, repo.containerName(id));
+				snooze();
 			}
 
-			LOGGER.info("starting " + id);
-			docker.startContainer(repo.findContainer(id).getId(), newHostConfig(id));
+			if (!isRunning(id)) {
+				LOGGER.info("starting " + id);
+				docker.startContainer(repo.findContainer(id).getId(), newHostConfig(id));
+			} else {
+				LOGGER.info(id + " already running");
+			}
 		} catch (DockerException e) {
 			throw new OrchestrationException(e);
+		}
+
+		snooze();
+		healthCheck(id);
+	}
+
+	private boolean isRunning(Id id) {
+		if (id == null) {throw new IllegalArgumentException("id is null");}
+		boolean running = false;
+		for (Container container : docker.listContainers(false)) {
+			running |= repo.findContainer(id).getId().equals(container.getId());
+		}
+		return running;
+	}
+
+	private void healthCheck(Id id) {
+		for (Ping ping : repo.conf(id).healthChecks.pings) {
+			LOGGER.info("pinging " + ping.url);
+			if (!Pinger.ping(ping.url, ping.timeout)) {
+				throw new OrchestrationException("timeout waiting for " + ping.url + " for " + ping.timeout);
+			}
 		}
 	}
 
@@ -291,6 +342,7 @@ public class DockerOrchestrator {
 			} catch (DockerException e) {
 				throw new OrchestrationException(e);
 			}
+			snooze();
 		}
 	}
 
@@ -335,5 +387,15 @@ public class DockerOrchestrator {
 		} catch (DockerException e) {
 			throw new OrchestrationException(e);
 		}
+		snooze();
+	}
+
+	public boolean isRunning() {
+		for (Id id : ids()) {
+			if (!isRunning(id)) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

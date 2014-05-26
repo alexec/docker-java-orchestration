@@ -17,4 +17,6 @@ public class Conf {
     public List<String> ports = emptyList();
     @JsonProperty(required = false)
     public List<Id> volumesFrom = emptyList();
+	@JsonProperty(required = false)
+	public HealthChecks healthChecks = new HealthChecks();
 }

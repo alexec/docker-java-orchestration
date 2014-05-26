@@ -15,6 +15,6 @@ public class TextFileFilter implements FileFilter {
 
 	@Override
 	public boolean accept(File pathname) {
-		return pathname.isFile() && pathname.getName().matches("Dockerfile|.*\\.(cfg|conf|json|properties|sh|txt|xml|yml)");
+		return pathname.isFile() && pathname.getName().matches("Dockerfile|.*\\.(cfg|conf|json|properties|sh|txt|xml|yaml|yml)");
 	}
 }
