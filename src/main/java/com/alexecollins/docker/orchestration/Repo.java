@@ -25,7 +25,7 @@ class Repo {
 	private final Map<Id, Conf> confs = new HashMap<Id, Conf>();
 
 	@SuppressWarnings("ConstantConditions")
-	Repo(DockerClient docker, String prefix, File src) throws IOException {
+	Repo(DockerClient docker, String prefix, File src){
 		if (docker == null) {throw new IllegalArgumentException("docker is null");}
 		if (prefix == null) {throw new IllegalArgumentException("prefix is null");}
 		if (src == null) {throw new IllegalArgumentException("src is null");}
@@ -38,8 +38,12 @@ class Repo {
 		if (src.isDirectory()) {
 			for (File file : src.listFiles()) {
 				final File confFile = new File(file, "conf.yml");
-				confs.put(new Id(file.getName()), confFile.length() > 0 ? MAPPER.readValue(confFile, Conf.class) : new Conf());
-			}
+                try {
+                    confs.put(new Id(file.getName()), confFile.length() > 0 ? MAPPER.readValue(confFile, Conf.class) : new Conf());
+                } catch (IOException e) {
+                   throw new OrchestrationException(e);
+                }
+            }
 		}
 	}
 

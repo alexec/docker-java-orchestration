@@ -19,4 +19,12 @@ public class Conf {
     public List<Id> volumesFrom = emptyList();
 	@JsonProperty(required = false)
 	public HealthChecks healthChecks = new HealthChecks();
+
+    public List<Id> getLinks() {
+        return links;
+    }
+
+    public List<String> getPorts() {
+        return ports;
+    }
 }
