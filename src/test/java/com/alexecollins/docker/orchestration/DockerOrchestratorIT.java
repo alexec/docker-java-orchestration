@@ -59,4 +59,9 @@ public class DockerOrchestratorIT {
 	public void testPush() throws Exception {
 		orchestrator.push();
 	}
+
+	@Test
+	public void testIsRunning() throws Exception {
+		orchestrator.isRunning();
+	}
 }

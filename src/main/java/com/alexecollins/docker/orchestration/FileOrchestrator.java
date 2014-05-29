@@ -69,11 +69,10 @@ public class FileOrchestrator {
 	}
 
     private void copyFileEntry(final File destDir, File fileEntry) throws IOException {
+	    LOGGER.info(" - add " + fileEntry);
         if (fileEntry.isDirectory()) {
-            LOGGER.info(" - add (dir) " + fileEntry.getAbsolutePath());
             copyDirectoryToDirectory(fileEntry, destDir);
         } else {
-            LOGGER.info(" - add (file) " + fileEntry.getAbsolutePath());
             copyFileToDirectory(fileEntry, destDir);
         }
     }

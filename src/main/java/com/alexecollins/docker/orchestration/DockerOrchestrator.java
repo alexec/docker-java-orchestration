@@ -36,7 +36,7 @@ public class DockerOrchestrator {
 	public static final Properties DEFAULT_PROPERTIES = new Properties();
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DockerOrchestrator.class);
-	private static final int snooze = 3000;
+	private static final int snooze = 1000;
 
 	private final DockerClient docker;
 	private final Repo repo;
@@ -204,7 +204,7 @@ public class DockerOrchestrator {
                 startContainer(containerId, id);
 
             } else if (!isImageIdFromContainerMatchingProvidedImageId(existingContainer.getId(), id)) {
-                LOGGER.info("image ids dont match, removing container and creating new one from image");
+                LOGGER.info("Image ids don-t match, removing container and creating new one from image");
                 docker.removeContainer(existingContainer.getId());
                 startContainer(createNewContainer(id), id);
 
@@ -219,6 +219,7 @@ public class DockerOrchestrator {
         } catch (DockerException e) {
             throw new OrchestrationException(e);
         }
+	    snooze();
 	    healthCheck(id);
     }
 
