@@ -2,10 +2,8 @@ package com.alexecollins.docker.orchestration;
 
 
 import com.alexecollins.docker.orchestration.model.Credentials;
-import com.alexecollins.docker.orchestration.FileOrchestrator;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.model.Ping;
-import com.alexecollins.docker.orchestration.util.Filters;
 import com.alexecollins.docker.orchestration.util.Pinger;
 import com.kpelykh.docker.client.DockerClient;
 import com.kpelykh.docker.client.DockerException;
@@ -16,9 +14,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
 
-import static org.apache.commons.io.FileUtils.*;
 import static org.apache.commons.io.IOUtils.closeQuietly;
 import static org.apache.commons.io.IOUtils.copyLarge;
 
@@ -219,6 +219,7 @@ public class DockerOrchestrator {
         } catch (DockerException e) {
             throw new OrchestrationException(e);
         }
+	    healthCheck(id);
     }
 
     private boolean isImageIdFromContainerMatchingProvidedImageId(String containerId, final Id id) {
@@ -251,7 +252,6 @@ public class DockerOrchestrator {
             LOGGER.error("Unable to start container " + idOfContainerToStart, e);
             throw new OrchestrationException(e);
         }
-
     }
 
 
