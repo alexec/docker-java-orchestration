@@ -10,15 +10,15 @@ import static java.util.Collections.emptyList;
 @SuppressWarnings("CanBeFinal")
 public class Conf {
     @JsonProperty(required = false)
-    public List<Id> links = emptyList();
+    private List<Id> links = emptyList();
     @JsonProperty(required = false)
-    public Packaging packaging = new Packaging();
+    private Packaging packaging = new Packaging();
     @JsonProperty(required = false)
-    public List<String> ports = emptyList();
+    private List<String> ports = emptyList();
     @JsonProperty(required = false)
-    public List<Id> volumesFrom = emptyList();
+    private List<Id> volumesFrom = emptyList();
 	@JsonProperty(required = false)
-	public HealthChecks healthChecks = new HealthChecks();
+	private HealthChecks healthChecks = new HealthChecks();
 
     public List<Id> getLinks() {
         return links;
@@ -27,4 +27,16 @@ public class Conf {
     public List<String> getPorts() {
         return ports;
     }
+
+	public HealthChecks getHealthChecks() {
+		return healthChecks;
+	}
+
+	public List<Id> getVolumesFrom() {
+		return volumesFrom;
+	}
+
+	public Packaging getPackaging() {
+		return packaging;
+	}
 }

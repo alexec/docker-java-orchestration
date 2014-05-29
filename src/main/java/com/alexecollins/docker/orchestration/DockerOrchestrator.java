@@ -277,7 +277,7 @@ public class DockerOrchestrator {
 	}
 
 	private void healthCheck(Id id) {
-		for (Ping ping : repo.conf(id).healthChecks.pings) {
+		for (Ping ping : repo.conf(id).getHealthChecks().getPings()) {
 			LOGGER.info("pinging " + ping.url);
 			if (!Pinger.ping(ping.url, ping.timeout)) {
 				throw new OrchestrationException("timeout waiting for " + ping.url + " for " + ping.timeout);
@@ -287,7 +287,7 @@ public class DockerOrchestrator {
 
     private List<Id> volumesFrom(Id id) {
 		final List<Id> ids = new ArrayList<Id>();
-		for (Id from : repo.conf(id).volumesFrom) {
+		for (Id from : repo.conf(id).getVolumesFrom()) {
 			ids.add(new Id(repo.findContainer(from).getId()));
 		}
 

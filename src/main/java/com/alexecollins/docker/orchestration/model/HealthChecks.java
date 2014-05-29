@@ -8,5 +8,9 @@ import static java.util.Collections.emptyList;
 
 public class HealthChecks {
 	@JsonProperty(required = false)
-	public List<Ping> pings = emptyList();
+	private List<Ping> pings = emptyList();
+
+	public List<Ping> getPings() {
+		return pings;
+	}
 }

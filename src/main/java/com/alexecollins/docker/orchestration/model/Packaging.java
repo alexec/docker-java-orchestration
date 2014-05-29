@@ -10,5 +10,9 @@ import static java.util.Collections.emptyList;
 @SuppressWarnings("CanBeFinal")
 public class Packaging {
     @JsonProperty(required = false)
-    public List<String> add = emptyList();
+    private List<String> add = emptyList();
+
+	public List<String> getAdd() {
+		return add;
+	}
 }

@@ -91,7 +91,7 @@ class Repo {
 
 		final Map<Id, List<Id>> links = new HashMap<Id, List<Id>>();
 		for (Id id : in) {
-			links.put(id, confs.get(id).links);
+			links.put(id, confs.get(id).getLinks());
 		}
 
 		final List<Id> out = sort(links);

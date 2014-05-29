@@ -3,6 +3,7 @@ package com.alexecollins.docker.orchestration;
 
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.Credentials;
+import com.alexecollins.docker.orchestration.model.HealthChecks;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.kpelykh.docker.client.DockerClient;
 import com.kpelykh.docker.client.DockerException;
@@ -12,22 +13,17 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DockerOrchestratorUTest {
@@ -66,6 +62,7 @@ public class DockerOrchestratorUTest {
         when(repoMock.containerName(idMock)).thenReturn(CONTAINER_NAME);
         when(imageMock.getId()).thenReturn(IMAGE_NAME);
         when(confMock.getLinks()).thenReturn(new ArrayList<Id>());
+	    when(confMock.getHealthChecks()).thenReturn(new HealthChecks());
 
         when(fileOrchestratorMock.prepare(idMock, srcFileMock, confMock, fileMock)).thenReturn(fileMock);
 

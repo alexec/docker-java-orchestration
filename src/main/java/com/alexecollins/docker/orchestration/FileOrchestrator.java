@@ -52,7 +52,7 @@ public class FileOrchestrator {
         Filters.filter(destDir, filter, properties);
 
         // copy files
-		for (String file : conf.packaging.add) {
+		for (String file : conf.getPackaging().getAdd()) {
 			File fileEntry = new File(filter(file));
 			copyFileEntry(destDir, fileEntry);
 			Filters.filter(fileEntry, filter, properties);
