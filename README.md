@@ -5,7 +5,7 @@ A small library to orchestrate groups of Docker containers using YAML configurat
 Change Log
 ---
 1.2.0 (in progress)
-[ ] Support volumes
+* [ ] Support volumes
 1.1.0
 * Pings containers to see if they are up before returning.
 * Added a method the see if the container group is running.
