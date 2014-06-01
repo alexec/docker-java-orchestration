@@ -2,6 +2,7 @@ package com.alexecollins.docker.orchestration;
 
 
 import com.alexecollins.docker.orchestration.model.Credentials;
+import com.alexecollins.docker.orchestration.model.HealthChecks;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.model.Ping;
 import com.alexecollins.docker.orchestration.util.Pinger;
@@ -278,10 +279,11 @@ public class DockerOrchestrator {
 	}
 
 	private void healthCheck(Id id) {
-		for (Ping ping : repo.conf(id).getHealthChecks().getPings()) {
-			LOGGER.info("pinging " + ping.url);
-			if (!Pinger.ping(ping.url, ping.timeout)) {
-				throw new OrchestrationException("timeout waiting for " + ping.url + " for " + ping.timeout);
+		final HealthChecks healthChecks = repo.conf(id).getHealthChecks();
+		for (Ping ping : healthChecks.getPings()) {
+			LOGGER.info("pinging " + ping.getUrl());
+			if (!Pinger.ping(ping.getUrl(), ping.getTimeout())) {
+				throw new OrchestrationException("timeout waiting for " + ping.getUrl() + " for " + ping.getTimeout());
 			}
 		}
 	}

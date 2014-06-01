@@ -8,7 +8,15 @@ import java.net.URI;
 public class Ping {
 
 	@JsonProperty
-	public URI url;
+	private URI url;
 	@JsonProperty(required = false)
-	public int timeout = 30 * 1000;
+	private int timeout = 30 * 1000;
+
+	public URI getUrl() {
+		return url;
+	}
+
+	public int getTimeout() {
+		return timeout;
+	}
 }
