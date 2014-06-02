@@ -59,6 +59,8 @@ public final class Filters {
 	}
 
 	private static void move(File from, File to) throws IOException {
+        //renaming over an existing file fails under Windows.
+        to.delete();
 		if (!from.renameTo(to)) {
 			throw new IOException("failed to move " + from + " to " + to);
 		}
