@@ -9,22 +9,24 @@ import java.io.FileOutputStream;
 import java.util.Properties;
 import java.util.Scanner;
 
-import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class FiltersTest {
 
 	private File dir;
-	private File file;
+	private String file;
 
 	@Before
 	public void setUp() throws Exception {
 		dir = new File("target/test/filters");
+        file = "test.txt";
 		assert dir.isDirectory() || dir.mkdirs();
 
-		file = new File(dir, "test.txt");
-		new FileOutputStream(file).write("test ${project.version}\n".getBytes());
+		File testFile = new File(dir, file);
+		FileOutputStream stream = new FileOutputStream(testFile);
+        stream.write("test ${project.version}\n".getBytes());
+        stream.close();
 	}
 
 	@Test
@@ -39,7 +41,7 @@ public class FiltersTest {
 			}
 		}, properties);
 
-		assertThat(new Scanner(file).useDelimiter("\\A").next(), equalTo("test 1.0.0\n"));
+        assertTrue(new Scanner(new File(dir, file)).useDelimiter("\\A").next().matches("^test 1.0.0\\s*$"));
 	}
 
 	@Test

@@ -53,7 +53,7 @@ public class DockerOrchestratorUTest {
 
     @Before
     public void setup () throws DockerException, IOException {
-        testObj = new DockerOrchestrator(dockerMock, repoMock, fileMock, fileOrchestratorMock, credentialsMock);
+        testObj = new DockerOrchestrator(dockerMock, repoMock, fileOrchestratorMock, credentialsMock);
 
         when(repoMock.src(idMock)).thenReturn(srcFileMock);
         when(repoMock.conf(idMock)).thenReturn(confMock);
@@ -64,7 +64,7 @@ public class DockerOrchestratorUTest {
         when(confMock.getLinks()).thenReturn(new ArrayList<Id>());
 	    when(confMock.getHealthChecks()).thenReturn(new HealthChecks());
 
-        when(fileOrchestratorMock.prepare(idMock, srcFileMock, confMock, fileMock)).thenReturn(fileMock);
+        when(fileOrchestratorMock.prepare(idMock, srcFileMock, confMock)).thenReturn(fileMock);
 
         when(repoMock.ids(false)).thenReturn(Arrays.asList(idMock));
         when(dockerMock.build(fileMock, IMAGE_NAME)).thenReturn(clientResponseMock);
