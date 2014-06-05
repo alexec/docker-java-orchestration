@@ -14,6 +14,7 @@ import static org.junit.Assert.assertEquals;
 public class DockerOrchestratorIT {
 	File src = new File("src/test/docker");
 	File workDir = new File("target/docker");
+    File projDir = new File("");
 	DockerOrchestrator orchestrator;
 
 	@After
@@ -25,7 +26,7 @@ public class DockerOrchestratorIT {
 	public void setUp() throws Exception {
 		orchestrator = new DockerOrchestrator(
 				new DockerClient(DockerOrchestrator.DEFAULT_HOST, "1.9"),
-				src, workDir, "docker-java-orchestrator",
+				src, workDir, projDir, "docker-java-orchestrator",
 				new Credentials("alexec", System.getProperty("docker.password"), "alex.e.c@gmail.com"),
 				DockerOrchestrator.DEFAULT_FILTER, DockerOrchestrator.DEFAULT_PROPERTIES);
 	}

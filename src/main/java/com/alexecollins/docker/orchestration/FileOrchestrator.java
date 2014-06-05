@@ -29,7 +29,23 @@ public class FileOrchestrator {
      */
     private final Properties properties;
 
-    protected FileOrchestrator(FileFilter fileFilter, Properties properties) {
+    /**
+     * output directory
+     */
+    private final File workDir;
+
+    /**
+     * root directory from which paths stem
+     */
+    private final File rootDir;
+
+    protected FileOrchestrator(File workDir, File rootDir, FileFilter fileFilter, Properties properties) {
+        if(workDir == null) {
+            throw new IllegalArgumentException("Working output directory is null");
+        }
+        if(rootDir == null) {
+            throw new IllegalArgumentException("Root project directory is null");
+        }
         if (fileFilter == null) {
             throw new IllegalArgumentException("filter is null");
         }
@@ -37,11 +53,13 @@ public class FileOrchestrator {
             throw new IllegalArgumentException("properties is null");
         }
 
+        this.workDir = workDir;
+        this.rootDir = rootDir;
         this.filter = fileFilter;
         this.properties = properties;
     }
 
-    protected File prepare(Id id, File dockerFolder, Conf conf, File workDir) throws IOException {
+    protected File prepare(Id id, File dockerFolder, Conf conf) throws IOException {
         if (id == null) {
             throw new IllegalArgumentException("id is null");
         }
@@ -53,7 +71,7 @@ public class FileOrchestrator {
 
         // copy files
 		for (String file : conf.getPackaging().getAdd()) {
-			File fileEntry = new File(filter(file));
+			File fileEntry = new File(rootDir, filter(file));
 			copyFileEntry(destDir, fileEntry);
 			Filters.filter(fileEntry, filter, properties);
 		}

@@ -41,7 +41,6 @@ public class DockerOrchestrator {
 
 	private final DockerClient docker;
 	private final Repo repo;
-	private final File workDir;
 
     private final FileOrchestrator fileOrchestrator;
 
@@ -49,12 +48,12 @@ public class DockerOrchestrator {
      * @deprecated Does not support API version.
      */
     @Deprecated
-	public DockerOrchestrator(File src, File workDir, String prefix, Credentials credentials) {
-		this(defaultDockerClient(), src, workDir, prefix, credentials, DEFAULT_FILTER, DEFAULT_PROPERTIES);
+	public DockerOrchestrator(File src, File workDir, File rootDir, String prefix, Credentials credentials) {
+		this(defaultDockerClient(), src, workDir, rootDir, prefix, credentials, DEFAULT_FILTER, DEFAULT_PROPERTIES);
 	}
 
-    public DockerOrchestrator(DockerClient docker, File src, File workDir, String prefix, Credentials credentials, FileFilter filter, Properties properties) {
-        this(docker, new Repo(docker, prefix, src), workDir, new FileOrchestrator(filter, properties), credentials);
+    public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String prefix, Credentials credentials, FileFilter filter, Properties properties) {
+        this(docker, new Repo(docker, prefix, src), new FileOrchestrator(workDir, rootDir, filter, properties), credentials);
     }
 
 	private static DockerClient defaultDockerClient() {
@@ -65,20 +64,16 @@ public class DockerOrchestrator {
         }
     }
 
-    public DockerOrchestrator(DockerClient docker,  Repo repo, File workDir, FileOrchestrator fileOrchestrator, Credentials credentials) {
+    public DockerOrchestrator(DockerClient docker,  Repo repo, FileOrchestrator fileOrchestrator, Credentials credentials) {
         if (docker == null) {
             throw new IllegalArgumentException("docker is null");
         }
         if (repo == null) {
             throw new IllegalArgumentException("repo is null");
         }
-        if (workDir == null) {
-            throw new IllegalArgumentException("workDir is null");
-        }
 
 
         this.docker = docker;
-        this.workDir = workDir;
         this.repo = repo;
         this.fileOrchestrator = fileOrchestrator;
 
@@ -154,7 +149,7 @@ public class DockerOrchestrator {
         if (id == null) {
 			throw new IllegalArgumentException("id is null");
 		}
-        return fileOrchestrator.prepare(id, repo.src(id), repo.conf(id), workDir);
+        return fileOrchestrator.prepare(id, repo.src(id), repo.conf(id));
     }
 
 
