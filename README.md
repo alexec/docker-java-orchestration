@@ -4,9 +4,14 @@ A small library to orchestrate groups of Docker containers using YAML configurat
 
 Change Log
 ---
-1.2.0 (in progress)
+1.3.0 (in progress)
 
 * Support volumes (todo).
+
+1.2.0
+
+* Remove intermediate containers.
+* Support Windows.
  
 1.1.0
 
