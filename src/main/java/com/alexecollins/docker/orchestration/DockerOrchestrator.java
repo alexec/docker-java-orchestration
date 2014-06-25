@@ -6,6 +6,7 @@ import com.alexecollins.docker.orchestration.model.HealthChecks;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.model.Ping;
 import com.alexecollins.docker.orchestration.util.Pinger;
+import com.kpelykh.docker.client.BuildFlag;
 import com.kpelykh.docker.client.DockerClient;
 import com.kpelykh.docker.client.DockerException;
 import com.kpelykh.docker.client.model.*;
@@ -15,10 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 import static org.apache.commons.io.IOUtils.closeQuietly;
 import static org.apache.commons.io.IOUtils.copyLarge;
@@ -43,6 +41,7 @@ public class DockerOrchestrator {
 	private final Repo repo;
 
     private final FileOrchestrator fileOrchestrator;
+	private final Set<BuildFlag> buildFlags;
 
     /**
      * @deprecated Does not support API version.
@@ -53,8 +52,12 @@ public class DockerOrchestrator {
 	}
 
     public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String prefix, Credentials credentials, FileFilter filter, Properties properties) {
-        this(docker, new Repo(docker, prefix, src), new FileOrchestrator(workDir, rootDir, filter, properties), credentials);
+        this(docker, new Repo(docker, prefix, src), new FileOrchestrator(workDir, rootDir, filter, properties), credentials, EnumSet.noneOf(BuildFlag.class));
     }
+
+	public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String prefix, Credentials credentials, FileFilter filter, Properties properties, Set<BuildFlag> buildFlags) {
+		this(docker, new Repo(docker, prefix, src), new FileOrchestrator(workDir, rootDir, filter, properties), credentials, buildFlags);
+	}
 
 	private static DockerClient defaultDockerClient() {
         try {
@@ -64,13 +67,18 @@ public class DockerOrchestrator {
         }
     }
 
-    public DockerOrchestrator(DockerClient docker,  Repo repo, FileOrchestrator fileOrchestrator, Credentials credentials) {
-        if (docker == null) {
+	public DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Credentials credentials) {
+		this(docker,repo, fileOrchestrator, credentials, EnumSet.noneOf(BuildFlag.class));
+	}
+
+    public DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Credentials credentials, Set<BuildFlag> buildFlags) {
+	    if (docker == null) {
             throw new IllegalArgumentException("docker is null");
         }
         if (repo == null) {
             throw new IllegalArgumentException("repo is null");
         }
+	    if (buildFlags == null) {throw new IllegalArgumentException("buildFlags is null");}
 
 
         this.docker = docker;
@@ -80,7 +88,7 @@ public class DockerOrchestrator {
         if (credentials != null) {
             docker.setCredentials(credentials.username, credentials.password, credentials.email);
         }
-
+	    this.buildFlags = buildFlags;
     }
 
 	public void clean() {
@@ -160,7 +168,7 @@ public class DockerOrchestrator {
 
 		final ClientResponse response;
 		try {
-			response = docker.build(dockerFolder, repo.imageName(id));
+			response = docker.build(dockerFolder, repo.imageName(id), buildFlags);
 		} catch (DockerException e) {
 			throw new OrchestrationException(e);
 		}
@@ -268,7 +276,8 @@ public class DockerOrchestrator {
 		if (id == null) {throw new IllegalArgumentException("id is null");}
 		boolean running = false;
 		for (Container container : docker.listContainers(false)) {
-			running |= repo.findContainer(id).getId().equals(container.getId());
+			final Container candidate = repo.findContainer(id);
+			running |= candidate != null && candidate.getId().equals(container.getId());
 		}
 		return running;
 	}
