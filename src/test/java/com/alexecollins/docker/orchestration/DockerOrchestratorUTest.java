@@ -5,6 +5,7 @@ import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.Credentials;
 import com.alexecollins.docker.orchestration.model.HealthChecks;
 import com.alexecollins.docker.orchestration.model.Id;
+import com.kpelykh.docker.client.BuildFlag;
 import com.kpelykh.docker.client.DockerClient;
 import com.kpelykh.docker.client.DockerException;
 import com.kpelykh.docker.client.model.*;
@@ -20,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Set;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -67,7 +69,7 @@ public class DockerOrchestratorUTest {
         when(fileOrchestratorMock.prepare(idMock, srcFileMock, confMock)).thenReturn(fileMock);
 
         when(repoMock.ids(false)).thenReturn(Arrays.asList(idMock));
-        when(dockerMock.build(fileMock, IMAGE_NAME)).thenReturn(clientResponseMock);
+        when(dockerMock.build(eq(fileMock), eq(IMAGE_NAME), any(Set.class))).thenReturn(clientResponseMock);
         when(dockerMock.createContainer(any(ContainerConfig.class), eq(CONTAINER_NAME))).thenReturn(containerCreateResponseMock);
         when(clientResponseMock.getEntityInputStream()).thenReturn(IOUtils.toInputStream("Successfully built"));
         when(containerCreateResponseMock.getId()).thenReturn(CONTAINER_ID);
