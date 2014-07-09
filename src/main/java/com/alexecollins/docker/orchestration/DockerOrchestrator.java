@@ -9,6 +9,7 @@ import com.alexecollins.docker.orchestration.util.Pinger;
 import com.kpelykh.docker.client.BuildFlag;
 import com.kpelykh.docker.client.DockerClient;
 import com.kpelykh.docker.client.DockerException;
+import com.kpelykh.docker.client.NotFoundException;
 import com.kpelykh.docker.client.model.*;
 import com.sun.jersey.api.client.ClientResponse;
 import org.slf4j.Logger;
@@ -112,17 +113,18 @@ public class DockerOrchestrator {
 				throw new OrchestrationException(e);
 			}
 		}
-		final Image image;
+		String imageId = null;
 		try {
-			image = repo.findImage(id);
+			imageId = repo.getImageId(id);
+		} catch (NotFoundException e) {
+			LOGGER.warn("Image with tag {} not found: {} ", id, e.getMessage());
 		} catch (DockerException e) {
 			throw new OrchestrationException(e);
-
 		}
-		if (image != null) {
-			LOGGER.info("rmi " + image.getId());
+		if (imageId != null) {
+			LOGGER.info("rmi " + imageId);
 			try {
-				docker.removeImage(image.getId());
+				docker.removeImage(imageId);
 			} catch (DockerException e) {
 				LOGGER.warn(" - " + e.getMessage());
 			}
@@ -230,7 +232,7 @@ public class DockerOrchestrator {
     private boolean isImageIdFromContainerMatchingProvidedImageId(String containerId, final Id id) {
         try {
             String containerImageId = lookupImageIdFromContainer(containerId);
-            String imageId = repo.findImage(id).getId();
+            String imageId = repo.getImageId(id);
             return containerImageId.equals(imageId);
         } catch (DockerException e) {
             LOGGER.error("Unable to find image with id " + id, e);
@@ -263,7 +265,7 @@ public class DockerOrchestrator {
     private String createNewContainer(Id id) throws DockerException {
         LOGGER.info("creating " + id);
         final ContainerConfig config = new ContainerConfig();
-        config.setImage(repo.findImage(id).getId());
+        config.setImage(repo.getImageId(id));
 
 		String newContainerId = docker.createContainer(config, repo.containerName(id)).getId();
 		snooze();
@@ -364,7 +366,7 @@ public class DockerOrchestrator {
 	public void start() {
 		for (Id id : ids()) {
 			try {
-				if (repo.findImage(id) == null) {
+				if (!repo.imageExists(id)) {
 					build(id);
 				}
 			} catch (DockerException e) {
