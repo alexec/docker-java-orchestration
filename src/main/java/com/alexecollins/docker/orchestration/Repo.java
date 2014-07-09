@@ -6,8 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.kpelykh.docker.client.DockerClient;
 import com.kpelykh.docker.client.DockerException;
+import com.kpelykh.docker.client.NotFoundException;
 import com.kpelykh.docker.client.model.Container;
 import com.kpelykh.docker.client.model.Image;
+import com.kpelykh.docker.client.model.ImageInspectResponse;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,6 +50,10 @@ class Repo {
 	}
 
 	String imageName(Id id) {
+		Conf conf = conf(id);
+		if (conf != null && conf.hasTag()) {
+			return conf.getTag();
+		}
 		return prefix + "_" + id;
 	}
 
@@ -70,10 +76,23 @@ class Repo {
 		return containerIds.isEmpty() ? null : containerIds.get(0);
 	}
 
-
 	Image findImage(Id id) throws DockerException {
 		final List<Image> images = docker.getImages(imageName(id), true);
 		return images.isEmpty() ? null : images.get(0);
+	}
+
+	String getImageId(Id id) throws DockerException {
+		ImageInspectResponse image = docker.inspectImage(imageName(id));
+		return image.getId();
+	}
+
+	boolean imageExists(Id id) throws DockerException {
+		try {
+			docker.inspectImage(imageName(id));
+			return true;
+		} catch (NotFoundException e) {
+			return false;
+		}
 	}
 
 	File src() {

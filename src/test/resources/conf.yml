@@ -1,3 +1,4 @@
+tag: johnd/corgi-master:latest
 packaging:
   add:
     - target/example-1.0-SNAPSHOT.jar

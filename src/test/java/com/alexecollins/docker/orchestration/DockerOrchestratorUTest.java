@@ -45,7 +45,6 @@ public class DockerOrchestratorUTest {
     @Mock private FileOrchestrator fileOrchestratorMock;
     @Mock private ClientResponse clientResponseMock;
     @Mock private Conf confMock;
-    @Mock private Image imageMock;
     @Mock private ContainerCreateResponse containerCreateResponseMock;
     @Mock private ContainerConfig containerConfigMock;
     @Mock private Container containerMock;
@@ -60,9 +59,9 @@ public class DockerOrchestratorUTest {
         when(repoMock.src(idMock)).thenReturn(srcFileMock);
         when(repoMock.conf(idMock)).thenReturn(confMock);
         when(repoMock.imageName(idMock)).thenReturn(IMAGE_NAME);
-
+        when(repoMock.getImageId(idMock)).thenReturn(IMAGE_NAME);
         when(repoMock.containerName(idMock)).thenReturn(CONTAINER_NAME);
-        when(imageMock.getId()).thenReturn(IMAGE_NAME);
+
         when(confMock.getLinks()).thenReturn(new ArrayList<Id>());
 	    when(confMock.getHealthChecks()).thenReturn(new HealthChecks());
 
@@ -79,7 +78,7 @@ public class DockerOrchestratorUTest {
     @Test
     public void createAndStartNewContainer() throws DockerException, IOException {
 
-        when(repoMock.findImage(idMock)).thenReturn(null, imageMock);
+        when(repoMock.imageExists(idMock)).thenReturn(false, true);
 
         testObj.start();
 
@@ -90,12 +89,11 @@ public class DockerOrchestratorUTest {
     @Test
     public void startExistingContainerAsImageIdsMatch() throws DockerException, IOException {
 
-        when(repoMock.findImage(idMock)).thenReturn(imageMock);
+        when(repoMock.getImageId(idMock)).thenReturn(IMAGE_ID);
         when(repoMock.findContainer(idMock)).thenReturn(containerMock);
         when(containerMock.getId()).thenReturn(CONTAINER_ID);
         when(dockerMock.inspectContainer(CONTAINER_ID)).thenReturn(containerInspectResponseMock);
         when(containerInspectResponseMock.getImage()).thenReturn(IMAGE_ID);
-        when(imageMock.getId()).thenReturn(IMAGE_ID);
 
         testObj.start();
 
@@ -106,12 +104,11 @@ public class DockerOrchestratorUTest {
     @Test
     public void containerIsAlreadyRunning() throws DockerException, IOException {
 
-        when(repoMock.findImage(idMock)).thenReturn(imageMock);
+        when(repoMock.getImageId(idMock)).thenReturn(IMAGE_ID);
         when(repoMock.findContainer(idMock)).thenReturn(containerMock);
         when(containerMock.getId()).thenReturn(CONTAINER_ID);
         when(dockerMock.inspectContainer(CONTAINER_ID)).thenReturn(containerInspectResponseMock);
         when(containerInspectResponseMock.getImage()).thenReturn(IMAGE_ID);
-        when(imageMock.getId()).thenReturn(IMAGE_ID);
         when(dockerMock.listContainers(false)).thenReturn(Arrays.asList(containerMock));
 
         testObj.start();
@@ -123,12 +120,11 @@ public class DockerOrchestratorUTest {
     @Test
     public void removeExistingContainerThenCreateAndStartNewOneAsImageIdsDontMatch() throws DockerException, IOException {
 
-        when(repoMock.findImage(idMock)).thenReturn(imageMock);
+        when(repoMock.getImageId(idMock)).thenReturn(IMAGE_ID);
         when(repoMock.findContainer(idMock)).thenReturn(containerMock);
         when(containerMock.getId()).thenReturn(CONTAINER_ID);
         when(dockerMock.inspectContainer(CONTAINER_ID)).thenReturn(containerInspectResponseMock);
         when(containerInspectResponseMock.getImage()).thenReturn("A Different Image Id");
-        when(imageMock.getId()).thenReturn(IMAGE_ID);
 
         testObj.start();
 

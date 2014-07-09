@@ -5,10 +5,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
+
 import static java.util.Collections.emptyList;
 
 @SuppressWarnings("CanBeFinal")
 public class Conf {
+    @JsonProperty(required = false)
+    private String tag = null;
     @JsonProperty(required = false)
     private List<Id> links = emptyList();
     @JsonProperty(required = false)
@@ -19,6 +23,14 @@ public class Conf {
     private List<Id> volumesFrom = emptyList();
 	@JsonProperty(required = false)
 	private HealthChecks healthChecks = new HealthChecks();
+
+    public boolean hasTag() {
+        return !StringUtils.isBlank(tag);
+    }
+
+    public String getTag() {
+        return tag;
+    }
 
     public List<Id> getLinks() {
         return links;
