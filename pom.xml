@@ -73,7 +73,7 @@
         <dependency>
             <groupId>com.alexecollins</groupId>
             <artifactId>docker-java</artifactId>
-            <version>0.8.11</version>
+            <version>0.8.12-SNAPSHOT</version>
         </dependency>
         <!-- test -->
         <dependency>
