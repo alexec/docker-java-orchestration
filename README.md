@@ -7,6 +7,7 @@ Change Log
 1.3.0 (in progress)
 
 * Support volumes (todo).
+* Tag images.
 
 1.2.0
 
