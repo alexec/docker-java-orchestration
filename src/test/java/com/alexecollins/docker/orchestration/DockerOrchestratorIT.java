@@ -1,12 +1,16 @@
 package com.alexecollins.docker.orchestration;
 
 import com.alexecollins.docker.orchestration.model.Credentials;
+import com.alexecollins.docker.orchestration.model.Id;
 import com.kpelykh.docker.client.DockerClient;
+import com.kpelykh.docker.client.model.Container;
+import com.kpelykh.docker.client.model.Image;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -16,6 +20,7 @@ public class DockerOrchestratorIT {
 	File workDir = new File("target/docker");
     File projDir = new File("");
 	DockerOrchestrator orchestrator;
+	DockerClient docker;
 
 	@After
 	public void tearDown() throws Exception {
@@ -24,8 +29,9 @@ public class DockerOrchestratorIT {
 
 	@Before
 	public void setUp() throws Exception {
+		docker = new DockerClient(DockerOrchestrator.DEFAULT_HOST, "1.9");
 		orchestrator = new DockerOrchestrator(
-				new DockerClient(DockerOrchestrator.DEFAULT_HOST, "1.9"),
+				docker,
 				src, workDir, projDir, "docker-java-orchestrator",
 				new Credentials("alexec", System.getProperty("docker.password"), "alex.e.c@gmail.com"),
 				DockerOrchestrator.DEFAULT_FILTER, DockerOrchestrator.DEFAULT_PROPERTIES);
@@ -37,8 +43,16 @@ public class DockerOrchestratorIT {
 	}
 
 	@Test
-	public void testClean() throws Exception {
-		orchestrator.clean();
+	public void whenWeCleanThenAllImagesAndContainersAreDeleted() throws Exception {
+
+		final List<Image> expectedImages = docker.getImages();
+		final List<Container> expectedContainers = docker.listContainers(true);
+
+		orchestrator.build(new Id("busybox"));
+		orchestrator.clean(new Id("busybox"));
+
+		assertEquals(expectedImages, docker.getImages());
+		assertEquals(expectedContainers, docker.listContainers(true));
 	}
 
 	@Test

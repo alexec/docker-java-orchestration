@@ -36,7 +36,7 @@ public class DockerOrchestrator {
 	public static final Properties DEFAULT_PROPERTIES = new Properties();
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DockerOrchestrator.class);
-	private static final int snooze = 1000;
+	private static final int snooze = 100;
 
 	private final DockerClient docker;
 	private final Repo repo;
@@ -99,14 +99,14 @@ public class DockerOrchestrator {
 		}
 	}
 
-	private void clean(final Id id) {
+	void clean(final Id id) {
 		if (id == null) {
 			throw new IllegalArgumentException("id is null");
 		}
 		stop(id);
 		LOGGER.info("clean " + id);
 		for (Container container : repo.findContainers(id, true)) {
-			LOGGER.info("rm " + Arrays.toString(container.getNames()));
+			LOGGER.info("rm " + container.getId());
 			try {
 				docker.removeContainer(container.getId());
 			} catch (DockerException e) {
@@ -132,7 +132,7 @@ public class DockerOrchestrator {
 		snooze();
 	}
 
-	private void build(final Id id) {
+	void build(final Id id) {
 		if (id == null) {
 			throw new IllegalArgumentException("id is null");
 		}
@@ -188,9 +188,6 @@ public class DockerOrchestrator {
 		if (!log.contains("Successfully built")) {
 			throw new IllegalStateException("failed to build, log missing lines in" + log);
 		}
-
-		// imageId
-		// return substringBetween(log, "Successfully built ", "\\n\"}").trim();
 
 		snooze();
 	}
