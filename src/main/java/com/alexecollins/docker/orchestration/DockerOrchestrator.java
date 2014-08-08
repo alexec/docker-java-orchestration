@@ -26,7 +26,7 @@ import static org.apache.commons.io.IOUtils.copyLarge;
  * Orchestrates multiple Docker containers based on
  */
 public class DockerOrchestrator {
-	public static final String DEFAULT_HOST = "http://127.0.0.1:4243";
+	public static final String DEFAULT_HOST = "http://127.0.0.1:2375";
 	public static final FileFilter DEFAULT_FILTER = new FileFilter() {
 		@Override
 		public boolean accept(File pathname) {
@@ -53,14 +53,14 @@ public class DockerOrchestrator {
 	}
 
     public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String prefix, Credentials credentials, FileFilter filter, Properties properties) {
-        this(docker, new Repo(docker, prefix, src), new FileOrchestrator(workDir, rootDir, filter, properties), credentials, EnumSet.noneOf(BuildFlag.class));
+        this(docker, new Repo(docker, prefix, src, properties), new FileOrchestrator(workDir, rootDir, filter, properties), credentials, EnumSet.noneOf(BuildFlag.class));
     }
 
 	public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String prefix, Credentials credentials, FileFilter filter, Properties properties, Set<BuildFlag> buildFlags) {
-		this(docker, new Repo(docker, prefix, src), new FileOrchestrator(workDir, rootDir, filter, properties), credentials, buildFlags);
+        this(docker, new Repo(docker, prefix, src, properties), new FileOrchestrator(workDir, rootDir, filter, properties), credentials, buildFlags);
 	}
 
-	private static DockerClient defaultDockerClient() {
+    private static DockerClient defaultDockerClient() {
         try {
             return new DockerClient();
         } catch (DockerException e) {

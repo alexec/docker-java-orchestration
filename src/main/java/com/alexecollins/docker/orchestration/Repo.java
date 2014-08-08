@@ -2,6 +2,7 @@ package com.alexecollins.docker.orchestration;
 
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.Id;
+import com.alexecollins.docker.orchestration.util.Filters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.kpelykh.docker.client.DockerClient;
@@ -25,17 +26,20 @@ class Repo {
 	private final String prefix;
 	private final File src;
 	private final Map<Id, Conf> confs = new HashMap<Id, Conf>();
+    private final Properties properties;
 
-	@SuppressWarnings("ConstantConditions")
-	Repo(DockerClient docker, String prefix, File src){
-		if (docker == null) {throw new IllegalArgumentException("docker is null");}
+    @SuppressWarnings("ConstantConditions")
+	Repo(DockerClient docker, String prefix, File src, Properties properties){
+        if (docker == null) {throw new IllegalArgumentException("docker is null");}
 		if (prefix == null) {throw new IllegalArgumentException("prefix is null");}
 		if (src == null) {throw new IllegalArgumentException("src is null");}
 		if (!src.isDirectory()) {throw new IllegalArgumentException("src " + src + " does not exist or is directory");}
+        if (properties == null) {throw new IllegalArgumentException("properties is null");}
 
 		this.docker = docker;
 		this.prefix = prefix;
 		this.src = src;
+        this.properties = properties;
 
 		if (src.isDirectory()) {
 			for (File file : src.listFiles()) {
@@ -51,10 +55,12 @@ class Repo {
 
 	String imageName(Id id) {
 		Conf conf = conf(id);
-		if (conf != null && conf.hasTag()) {
-			return conf.getTag();
-		}
-		return prefix + "_" + id;
+		return Filters.filter(
+                (conf != null && conf.hasTag())
+                        ? conf.getTag()
+                        : prefix + "_" + id,
+                properties
+        );
 	}
 
 	String containerName(Id id) {

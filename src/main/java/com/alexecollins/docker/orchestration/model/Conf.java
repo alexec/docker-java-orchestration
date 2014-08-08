@@ -2,10 +2,9 @@ package com.alexecollins.docker.orchestration.model;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.List;
-
-import org.apache.commons.lang.StringUtils;
 
 import static java.util.Collections.emptyList;
 
@@ -51,4 +50,8 @@ public class Conf {
 	public Packaging getPackaging() {
 		return packaging;
 	}
+
+    public void setTag(String tag) {
+        this.tag = tag;
+    }
 }

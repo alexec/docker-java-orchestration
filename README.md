@@ -4,6 +4,10 @@ A small library to orchestrate groups of Docker containers using YAML configurat
 
 Change Log
 ---
+2.0.0
+
+* Updated to use port 2375 by default.
+
 1.4.0
 
 * Support disabling of image caching.

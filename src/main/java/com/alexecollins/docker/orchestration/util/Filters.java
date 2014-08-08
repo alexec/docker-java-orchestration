@@ -1,6 +1,8 @@
 package com.alexecollins.docker.orchestration.util;
 
 
+import com.alexecollins.docker.orchestration.model.Conf;
+
 import java.io.*;
 import java.util.Comparator;
 import java.util.Map;
@@ -40,12 +42,7 @@ public final class Filters {
 					String l;
 					while ((l = in.readLine()) != null) {
 						// ${...}
-						if (l.matches(".*\\$\\{.*\\}.*")) {
-							for (Map.Entry<Object, Object> e : properties.entrySet()) {
-								l = l.replace("${" + e.getKey() + "}", e.getValue().toString());
-							}
-						}
-						out.println(l);
+                        out.println(filter(l, properties));
 					}
 				} finally {
 					out.close();
@@ -58,7 +55,34 @@ public final class Filters {
 		}
 	}
 
-	private static void move(File from, File to) throws IOException {
+    public static String filter(String l, Properties properties) {
+        if (l.matches(".*\\$\\{.*\\}.*")) {
+            for (Map.Entry<Object, Object> e : properties.entrySet()) {
+                l = l.replace("${" + e.getKey() + "}", e.getValue().toString());
+            }
+        }
+        return l;
+    }
+
+    public static Conf filter(Conf conf, Properties properties) {
+
+        final Conf out = new Conf();
+
+        out.getHealthChecks().getPings().addAll(conf.getHealthChecks().getPings());
+        out.getLinks().addAll(conf.getLinks());
+        for (String add : conf.getPackaging().getAdd()) {
+            out.getPackaging().getAdd().add(Filters.filter(add, properties));
+        }
+        out.getPorts().addAll(conf.getPorts());
+        if (conf.getTag() != null) {
+            out.setTag(Filters.filter(conf.getTag(), properties));
+        }
+        out.getVolumesFrom().addAll(conf.getVolumesFrom());
+
+        return out;
+    }
+
+    private static void move(File from, File to) throws IOException {
         //renaming over an existing file fails under Windows.
         to.delete();
 		if (!from.renameTo(to)) {

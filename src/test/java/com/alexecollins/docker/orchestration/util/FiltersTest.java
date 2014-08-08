@@ -16,6 +16,7 @@ public class FiltersTest {
 
 	private File dir;
 	private String file;
+    private Properties properties;
 
 	@Before
 	public void setUp() throws Exception {
@@ -27,12 +28,17 @@ public class FiltersTest {
 		FileOutputStream stream = new FileOutputStream(testFile);
         stream.write("test ${project.version}\n".getBytes());
         stream.close();
-	}
+        properties = new Properties();
+        properties.setProperty("project.version", "1.0.0");
+    }
 
-	@Test
+    @Test
+    public void testSimpleFilter() throws Exception {
+        assertEquals("1.0.0", Filters.filter("${project.version}", properties));
+    }
+
+    @Test
 	public void testFilter() throws Exception {
-		final Properties properties = new Properties();
-		properties.setProperty("project.version", "1.0.0");
 
 		Filters.filter(dir, new FileFilter() {
 			@Override

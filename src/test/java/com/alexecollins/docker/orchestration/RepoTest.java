@@ -9,8 +9,6 @@ import org.junit.Test;
 import java.io.File;
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-
 
 public class RepoTest {
 
@@ -18,7 +16,7 @@ public class RepoTest {
 
     @Before
     public void setUp() throws Exception {
-        sut = new Repo(new DockerClient("http://localhost:4240"), "test", new File("."));
+        sut = new Repo(new DockerClient("http://localhost:4240"), "test", new File("."), new Properties());
     }
 
     @Test
