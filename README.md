@@ -35,3 +35,13 @@ Change Log
 1.0.2
 
 * First release.
+
+Contributors
+---
+* Alex Collins
+* Dan Jasek
+* Jacob Bay Hansen
+* Lachlan Coote
+* Laurie Hallowes
+* Panu Wetterstrand
+
