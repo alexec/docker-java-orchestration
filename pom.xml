@@ -71,9 +71,9 @@
             <version>2.1.3</version>
         </dependency>
         <dependency>
-            <groupId>com.alexecollins</groupId>
+            <groupId>com.github.docker-java</groupId>
             <artifactId>docker-java</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>0.10.0-SNAPSHOT</version>
         </dependency>
         <!-- test -->
         <dependency>

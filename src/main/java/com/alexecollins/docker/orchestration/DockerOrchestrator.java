@@ -6,12 +6,16 @@ import com.alexecollins.docker.orchestration.model.HealthChecks;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.model.Ping;
 import com.alexecollins.docker.orchestration.util.Pinger;
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.DockerException;
+import com.github.dockerjava.api.NotFoundException;
+import com.github.dockerjava.api.command.BuildImageCmd;
+import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.command.StartContainerCmd;
+import com.github.dockerjava.api.model.*;
+import com.github.dockerjava.core.DockerClientImpl;
 import com.kpelykh.docker.client.BuildFlag;
-import com.kpelykh.docker.client.DockerClient;
-import com.kpelykh.docker.client.DockerException;
-import com.kpelykh.docker.client.NotFoundException;
-import com.kpelykh.docker.client.model.*;
-import com.sun.jersey.api.client.ClientResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,31 +52,31 @@ public class DockerOrchestrator {
      * @deprecated Does not support API version.
      */
     @Deprecated
-	public DockerOrchestrator(File src, File workDir, File rootDir, String prefix, Credentials credentials) {
-		this(defaultDockerClient(), src, workDir, rootDir, prefix, credentials, DEFAULT_FILTER, DEFAULT_PROPERTIES);
+	public DockerOrchestrator(File src, File workDir, File rootDir, String prefix) {
+		this(defaultDockerClient(), src, workDir, rootDir, prefix, DEFAULT_FILTER, DEFAULT_PROPERTIES);
 	}
 
-    public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String prefix, Credentials credentials, FileFilter filter, Properties properties) {
-        this(docker, new Repo(docker, prefix, src, properties), new FileOrchestrator(workDir, rootDir, filter, properties), credentials, EnumSet.noneOf(BuildFlag.class));
+    public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String prefix, FileFilter filter, Properties properties) {
+        this(docker, new Repo(docker, prefix, src, properties), new FileOrchestrator(workDir, rootDir, filter, properties), EnumSet.noneOf(BuildFlag.class));
     }
 
-	public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String prefix, Credentials credentials, FileFilter filter, Properties properties, Set<BuildFlag> buildFlags) {
-        this(docker, new Repo(docker, prefix, src, properties), new FileOrchestrator(workDir, rootDir, filter, properties), credentials, buildFlags);
+	public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String prefix, FileFilter filter, Properties properties, Set<BuildFlag> buildFlags) {
+        this(docker, new Repo(docker, prefix, src, properties), new FileOrchestrator(workDir, rootDir, filter, properties), buildFlags);
 	}
 
     private static DockerClient defaultDockerClient() {
         try {
-            return new DockerClient();
+            return new DockerClientImpl();
         } catch (DockerException e) {
             throw new OrchestrationException(e);
         }
     }
 
-	public DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Credentials credentials) {
-		this(docker,repo, fileOrchestrator, credentials, EnumSet.noneOf(BuildFlag.class));
+	public DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator) {
+		this(docker,repo, fileOrchestrator, EnumSet.noneOf(BuildFlag.class));
 	}
 
-    public DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Credentials credentials, Set<BuildFlag> buildFlags) {
+    public DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Set<BuildFlag> buildFlags) {
 	    if (docker == null) {
             throw new IllegalArgumentException("docker is null");
         }
@@ -86,9 +90,6 @@ public class DockerOrchestrator {
         this.repo = repo;
         this.fileOrchestrator = fileOrchestrator;
 
-        if (credentials != null) {
-            docker.setCredentials(credentials.username, credentials.password, credentials.email);
-        }
 	    this.buildFlags = buildFlags;
     }
 
@@ -106,9 +107,9 @@ public class DockerOrchestrator {
 		stop(id);
 		LOGGER.info("clean " + id);
 		for (Container container : repo.findContainers(id, true)) {
-			LOGGER.info("rm " + container.getId());
+			LOGGER.info("rm -f " + container.getId());
 			try {
-				docker.removeContainer(container.getId());
+				docker.removeContainerCmd(container.getId()).withForce().exec();
 			} catch (DockerException e) {
 				throw new OrchestrationException(e);
 			}
@@ -124,7 +125,7 @@ public class DockerOrchestrator {
 		if (imageId != null) {
 			LOGGER.info("rmi " + imageId);
 			try {
-				docker.removeImage(imageId);
+				docker.removeImageCmd(imageId).exec();
 			} catch (DockerException e) {
 				LOGGER.warn(" - " + e.getMessage());
 			}
@@ -168,20 +169,28 @@ public class DockerOrchestrator {
 	@SuppressWarnings(("DM_DEFAULT_ENCODING"))
 	private void build(File dockerFolder, Id id) {
 
-		final ClientResponse response;
+		InputStream in;
 		try {
-			response = docker.build(dockerFolder, repo.imageName(id), buildFlags);
+            BuildImageCmd build = docker.buildImageCmd(dockerFolder);
+            for(BuildFlag f : buildFlags){
+                switch (f){
+                    case NO_CACHE: build.withNoCache();break;
+                    case REMOVE_INTERMEDIATE_IMAGES: build.withRemove(true);break;
+                }
+            }
+            build.withTag(repo.imageName(id));
+            in = build.exec();
 		} catch (DockerException e) {
 			throw new OrchestrationException(e);
 		}
 
 		final StringWriter out = new StringWriter();
 		try {
-			copyLarge(new InputStreamReader(response.getEntityInputStream(), Charset.defaultCharset()), out);
+			copyLarge(new InputStreamReader(in, Charset.defaultCharset()), out);
 		} catch (IOException e) {
 			throw new OrchestrationException(e);
 		} finally {
-			closeQuietly(response.getEntityInputStream());
+			closeQuietly(in);
 		}
 
 		String log = out.toString();
@@ -208,7 +217,7 @@ public class DockerOrchestrator {
 
             } else if (!isImageIdFromContainerMatchingProvidedImageId(existingContainer.getId(), id)) {
                 LOGGER.info("Image ids don-t match, removing container and creating new one from image");
-                docker.removeContainer(existingContainer.getId());
+                docker.removeContainerCmd(existingContainer.getId()).exec();
                 startContainer(createNewContainer(id), id);
 
             } else if(isRunning(id)) {
@@ -240,8 +249,8 @@ public class DockerOrchestrator {
 
     private String lookupImageIdFromContainer(String containerId) {
         try {
-            ContainerInspectResponse containerInspectResponse = docker.inspectContainer(containerId);
-            return containerInspectResponse.getImage();
+            InspectContainerResponse containerInspectResponse = docker.inspectContainerCmd(containerId).exec();
+            return containerInspectResponse.getImageId();
         } catch (DockerException e) {
             LOGGER.error("Unable to inspect container " + containerId, e);
             throw new OrchestrationException(e);
@@ -251,7 +260,10 @@ public class DockerOrchestrator {
     private void startContainer(String idOfContainerToStart, final Id id) {
         try {
             LOGGER.info("starting " + id);
-            docker.startContainer(idOfContainerToStart, newHostConfig(id));
+            StartContainerCmd start = docker.startContainerCmd(idOfContainerToStart);
+
+            newHostConfig(id,start);
+            start.exec();
         } catch (DockerException e) {
             LOGGER.error("Unable to start container " + idOfContainerToStart, e);
             throw new OrchestrationException(e);
@@ -261,12 +273,9 @@ public class DockerOrchestrator {
 
     private String createNewContainer(Id id) throws DockerException {
         LOGGER.info("creating " + id);
-        final ContainerConfig config = new ContainerConfig();
-        config.setImage(repo.getImageId(id));
-
-		String newContainerId = docker.createContainer(config, repo.containerName(id)).getId();
+		CreateContainerResponse response = docker.createContainerCmd(repo.getImageId(id)).withName(repo.containerName(id)).exec();
 		snooze();
-        return newContainerId;
+        return response.getId();
 	}
 
 
@@ -274,8 +283,8 @@ public class DockerOrchestrator {
 	private boolean isRunning(Id id) {
 		if (id == null) {throw new IllegalArgumentException("id is null");}
 		boolean running = false;
-		for (Container container : docker.listContainers(false)) {
-			final Container candidate = repo.findContainer(id);
+        final Container candidate = repo.findContainer(id);
+		for (Container container : docker.listContainersCmd().withShowAll(false).exec()) {
 			running |= candidate != null && candidate.getId().equals(container.getId());
 		}
 		return running;
@@ -300,11 +309,9 @@ public class DockerOrchestrator {
 		return ids;
 	}
 
-	private HostConfig newHostConfig(Id id) {
-		final HostConfig config = new HostConfig();
-
-		config.setPublishAllPorts(true);
-		config.setLinks(links(id));
+	private void newHostConfig(Id id, StartContainerCmd config) {
+		config.withPublishAllPorts(true);
+		config.withLinks(links(id));
 
 		LOGGER.info(" - links " + repo.conf(id).getLinks());
 
@@ -319,23 +326,19 @@ public class DockerOrchestrator {
 			final int b = split.length == 2 ? Integer.parseInt(split[1]) : a;
 
 			LOGGER.info(" - port " + e);
-			portBindings.addPort(new Ports.Port("tcp", String.valueOf(a), null, String.valueOf(b)));
+			portBindings.bind(new ExposedPort("tcp", a), new Ports.Binding(b));
 		}
 
-		config.setPortBindings(portBindings);
-
-		return config;
+		config.withPortBindings(portBindings);
 	}
 
-	private String[] links(Id id) {
-
+	private Link[] links(Id id) {
 		final List<Id> links = repo.conf(id).getLinks();
-		final String[] out = new String[links.size()];
+		final Link[] out = new Link[links.size()];
 		for (int i = 0; i < links.size(); i++) {
 			final String name = repo.findContainer(links.get(i)).getNames()[0];
-			out[i] = name + ":" + name;
+			out[i] = new Link(name,name);
 		}
-
 		return out;
 	}
 
@@ -346,7 +349,7 @@ public class DockerOrchestrator {
 		for (Container container : repo.findContainers(id, false)) {
 			LOGGER.info("stopping " + Arrays.toString(container.getNames()));
 			try {
-				docker.stopContainer(container.getId(), 1);
+				docker.stopContainerCmd(container.getId()).withTimeout(1);
 			} catch (DockerException e) {
 				throw new OrchestrationException(e);
 			}
@@ -391,7 +394,7 @@ public class DockerOrchestrator {
 
 	private void push(Id id) {
 		try {
-			docker.push(repo.imageName(id));
+			docker.pushImageCmd(repo.imageName(id)).exec();
 		} catch (DockerException e) {
 			throw new OrchestrationException(e);
 		}

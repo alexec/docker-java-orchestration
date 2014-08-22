@@ -1,9 +1,8 @@
 package com.alexecollins.docker.orchestration.model;
 
-public class Credentials {
-	public final String username;
-	public final String password;
-	public final String email;
+import com.github.dockerjava.api.model.AuthConfig;
+
+public class Credentials extends AuthConfig{
 
 	public Credentials(String username, String password, String email) {
 		if (username == null) {
@@ -15,8 +14,8 @@ public class Credentials {
 		if (email == null) {
 			throw new IllegalArgumentException("email is null");
 		}
-		this.username = username;
-		this.password = password;
-		this.email = email;
+        setUsername(username);
+        setPassword(password);
+        setEmail(email);
 	}
 }
