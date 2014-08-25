@@ -3,4 +3,4 @@
 A small library to orchestrate groups of Docker containers using YAML configuration.
 
 * [CONTRIB.md](CONTRIB.md)
-* [CHANGELOG.md](CHANGLOG.md)
+* [CHANGELOG.md](CHANGELOG.md)
