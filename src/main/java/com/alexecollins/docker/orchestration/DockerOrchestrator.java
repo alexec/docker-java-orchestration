@@ -1,18 +1,12 @@
 package com.alexecollins.docker.orchestration;
 
 
-import com.alexecollins.docker.orchestration.model.Credentials;
-import com.alexecollins.docker.orchestration.model.HealthChecks;
-import com.alexecollins.docker.orchestration.model.Id;
-import com.alexecollins.docker.orchestration.model.Ping;
+import com.alexecollins.docker.orchestration.model.*;
 import com.alexecollins.docker.orchestration.util.Pinger;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.NotFoundException;
-import com.github.dockerjava.api.command.BuildImageCmd;
-import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.InspectContainerResponse;
-import com.github.dockerjava.api.command.StartContainerCmd;
+import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.kpelykh.docker.client.BuildFlag;
@@ -273,14 +267,32 @@ public class DockerOrchestrator {
 
     private String createNewContainer(Id id) throws DockerException {
         LOGGER.info("creating " + id);
-		CreateContainerResponse response = docker.createContainerCmd(repo.getImageId(id)).withName(repo.containerName(id)).exec();
+        Conf conf = repo.conf(id);
+        CreateContainerCmd createCmd = docker.createContainerCmd(repo.getImageId(id));
+        createCmd.withName(repo.containerName(id));
+        LOGGER.info(" - env " + conf.getEnv());
+        createCmd.withEnv(asEnvList(conf.getEnv()));
+        CreateContainerResponse response = createCmd.exec();
 		snooze();
         return response.getId();
 	}
 
+    /**
+     * Converts String to String map to list of
+     * key=value strings.
+     * @param env
+     * @return
+     */
+    private String[] asEnvList(Map<String, String> env) {
+        ArrayList<String> list = new ArrayList<String>();
+        for(Map.Entry<String,String> entry : env.entrySet()){
+            list.add(entry.getKey()+"="+entry.getValue());
+        }
+        return list.toArray(new String[list.size()]);
+    }
 
 
-	private boolean isRunning(Id id) {
+    private boolean isRunning(Id id) {
 		if (id == null) {throw new IllegalArgumentException("id is null");}
 		boolean running = false;
         final Container candidate = repo.findContainer(id);
