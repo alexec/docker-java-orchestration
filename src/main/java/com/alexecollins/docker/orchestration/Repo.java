@@ -5,12 +5,16 @@ import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.util.Filters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.kpelykh.docker.client.DockerClient;
-import com.kpelykh.docker.client.DockerException;
-import com.kpelykh.docker.client.NotFoundException;
-import com.kpelykh.docker.client.model.Container;
-import com.kpelykh.docker.client.model.Image;
-import com.kpelykh.docker.client.model.ImageInspectResponse;
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.DockerException;
+import com.github.dockerjava.api.NotFoundException;
+import com.github.dockerjava.api.command.InspectImageResponse;
+import com.github.dockerjava.api.command.ListImagesCmd;
+import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.model.Image;
+import com.github.dockerjava.api.model.SearchItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,6 +24,8 @@ import static java.util.Arrays.asList;
 
 @SuppressWarnings("CanBeFinal")
 class Repo {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Repo.class);
 
 	private static ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
 	private final DockerClient docker;
@@ -69,7 +75,7 @@ class Repo {
 
 	List<Container> findContainers(Id id, boolean allContainers) {
 		final List<Container> strings = new ArrayList<Container>();
-		for (Container container : docker.listContainers(allContainers)) {
+		for (Container container : docker.listContainersCmd().withShowAll(allContainers).exec()) {
 			if (container.getImage().equals(imageName(id)) || asList(container.getNames()).contains(containerName(id))) {
 				strings.add(container);
 			}
@@ -82,19 +88,31 @@ class Repo {
 		return containerIds.isEmpty() ? null : containerIds.get(0);
 	}
 
-	Image findImage(Id id) throws DockerException {
-		final List<Image> images = docker.getImages(imageName(id), true);
-		return images.isEmpty() ? null : images.get(0);
-	}
 
-	String getImageId(Id id) throws DockerException {
-		ImageInspectResponse image = docker.inspectImage(imageName(id));
-		return image.getId();
-	}
+    public String getImageId(Id id) {
+        String imageName = imageName(id);
+        LOG.debug("Converting {} ({}) to image id.",id.toString(),imageName);
+        List<Image> images = docker.listImagesCmd().exec();
+        for (Image i : images){
+            for (String tag : i.getRepoTags()){
+                if (tag.startsWith(imageName)){
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Using {} ({}) for {}. It matches (enough) to {}.", new Object[]{
+                                i.getId(),
+                                tag,
+                                id.toString(),
+                                imageName});
+                    }
+                    return i.getId();
+                }
+            }
+        }
+        return null;
+    }
 
 	boolean imageExists(Id id) throws DockerException {
 		try {
-			docker.inspectImage(imageName(id));
+			docker.inspectImageCmd(imageName(id)).exec();
 			return true;
 		} catch (NotFoundException e) {
 			return false;

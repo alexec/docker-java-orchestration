@@ -5,8 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 
 @SuppressWarnings("CanBeFinal")
 public class Conf {
@@ -22,6 +24,12 @@ public class Conf {
     private List<Id> volumesFrom = emptyList();
 	@JsonProperty(required = false)
 	private HealthChecks healthChecks = new HealthChecks();
+    @JsonProperty(required = false)
+    private Map<String,String> env = emptyMap();
+
+    @JsonProperty(required = false)
+    private Map<String,String> volumes = emptyMap();
+
 
     public boolean hasTag() {
         return !StringUtils.isBlank(tag);
@@ -53,5 +61,11 @@ public class Conf {
 
     public void setTag(String tag) {
         this.tag = tag;
+    }
+
+    public Map<String,String> getEnv() { return this.env;  }
+
+    public Map<String, String> getVolumes() {
+        return volumes;
     }
 }

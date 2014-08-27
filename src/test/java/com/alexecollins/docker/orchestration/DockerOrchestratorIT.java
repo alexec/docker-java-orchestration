@@ -2,9 +2,11 @@ package com.alexecollins.docker.orchestration;
 
 import com.alexecollins.docker.orchestration.model.Credentials;
 import com.alexecollins.docker.orchestration.model.Id;
-import com.kpelykh.docker.client.DockerClient;
-import com.kpelykh.docker.client.model.Container;
-import com.kpelykh.docker.client.model.Image;
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.model.Image;
+import com.github.dockerjava.core.DockerClientConfig;
+import com.github.dockerjava.core.DockerClientImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -30,11 +32,18 @@ public class DockerOrchestratorIT {
 
 	@Before
 	public void setUp() throws Exception {
-		docker = new DockerClient(DockerOrchestrator.DEFAULT_HOST, "1.9");
+        DockerClientConfig.DockerClientConfigBuilder confgBuilder = new DockerClientConfig.DockerClientConfigBuilder()
+        .withUri(DockerOrchestrator.DEFAULT_HOST)
+        .withUsername("alexec")
+        .withPassword(System.getProperty("docker.password", ""))
+        .withEmail("alex.e.c@gmail.com")
+        .withVersion("1.9");
+
+		docker = new DockerClientImpl(confgBuilder.build());
 		orchestrator = new DockerOrchestrator(
 				docker,
-				src, workDir, projDir, "docker-java-orchestrator",
-				new Credentials("alexec", System.getProperty("docker.password", ""), "alex.e.c@gmail.com"),
+				src, workDir, projDir, "docker-java-orchestrator"
+				,
 				DockerOrchestrator.DEFAULT_FILTER, DockerOrchestrator.DEFAULT_PROPERTIES);
 	}
 
@@ -46,24 +55,24 @@ public class DockerOrchestratorIT {
 	@Test
 	public void whenWeCleanThenAllImagesAreDeleted() throws Exception {
 
-		final List<Image> expectedImages = docker.getImages();
+		final List<Image> expectedImages = docker.listImagesCmd().exec();
 
 		orchestrator.build(new Id("busybox"));
 		orchestrator.clean(new Id("busybox"));
 
-		assertEquals(expectedImages, docker.getImages());
+		assertEquals(expectedImages, docker.listImagesCmd().exec());
 	}
 
     @Ignore("quarantine")
     @Test
     public void whenWeCleanThenAllContainersAreDeleted() throws Exception {
 
-        final List<Container> expectedContainers = docker.listContainers(true);
+        final List<Container> expectedContainers = docker.listContainersCmd().withShowAll(true).exec();
 
         orchestrator.build(new Id("busybox"));
         orchestrator.clean(new Id("busybox"));
 
-        assertEquals(expectedContainers, docker.listContainers(true));
+        assertEquals(expectedContainers, docker.listContainersCmd().withShowAll(true).exec());
     }
 
 	@Test
