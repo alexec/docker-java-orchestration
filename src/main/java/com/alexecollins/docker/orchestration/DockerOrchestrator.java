@@ -8,8 +8,6 @@ import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.*;
-import com.github.dockerjava.core.DockerClientImpl;
-import com.kpelykh.docker.client.BuildFlag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,14 +40,6 @@ public class DockerOrchestrator {
     private final FileOrchestrator fileOrchestrator;
 	private final Set<BuildFlag> buildFlags;
 
-    /**
-     * @deprecated Does not support API version.
-     */
-    @Deprecated
-	public DockerOrchestrator(File src, File workDir, File rootDir, String prefix) {
-		this(defaultDockerClient(), src, workDir, rootDir, prefix, DEFAULT_FILTER, DEFAULT_PROPERTIES);
-	}
-
     public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String prefix, FileFilter filter, Properties properties) {
         this(docker, new Repo(docker, prefix, src, properties), new FileOrchestrator(workDir, rootDir, filter, properties), EnumSet.noneOf(BuildFlag.class));
     }
@@ -57,14 +47,6 @@ public class DockerOrchestrator {
 	public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String prefix, FileFilter filter, Properties properties, Set<BuildFlag> buildFlags) {
         this(docker, new Repo(docker, prefix, src, properties), new FileOrchestrator(workDir, rootDir, filter, properties), buildFlags);
 	}
-
-    private static DockerClient defaultDockerClient() {
-        try {
-            return new DockerClientImpl();
-        } catch (DockerException e) {
-            throw new OrchestrationException(e);
-        }
-    }
 
 	public DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator) {
 		this(docker,repo, fileOrchestrator, EnumSet.noneOf(BuildFlag.class));
@@ -117,8 +99,8 @@ public class DockerOrchestrator {
 			throw new OrchestrationException(e);
 		}
 		if (imageId != null) {
-			LOGGER.info("Removing image  " + imageId);
-			try {
+            LOGGER.info("Removing image " + imageId);
+            try {
 				docker.removeImageCmd(imageId).exec();
 			} catch (DockerException e) {
 				LOGGER.warn(e.getMessage());
@@ -142,7 +124,10 @@ public class DockerOrchestrator {
 	}
 
 	private void snooze() {
-		LOGGER.info("Snoozing for " + snooze + "ms");
+        if (snooze == 0) {
+            return;
+        }
+        LOGGER.info("Snoozing for " + snooze + "ms");
 		try {
 			Thread.sleep(snooze);
 		} catch (InterruptedException e) {
@@ -312,20 +297,11 @@ public class DockerOrchestrator {
 		}
 	}
 
-    private List<Id> volumesFrom(Id id) {
-		final List<Id> ids = new ArrayList<Id>();
-		for (Id from : repo.conf(id).getVolumesFrom()) {
-			ids.add(new Id(repo.findContainer(from).getId()));
-		}
-
-		return ids;
-	}
-
 	private void newHostConfig(Id id, StartContainerCmd config) {
 		config.withPublishAllPorts(true);
 
         Link[] links = links(id);
-		LOGGER.info(" - links " + Arrays.toString(links));
+        LOGGER.info(" - links " + repo.conf(id).getLinks());
         config.withLinks(links);
 
 		final Ports portBindings = new Ports();
@@ -420,8 +396,8 @@ public class DockerOrchestrator {
 
 	private void push(Id id) {
 		try {
-			docker.pushImageCmd(repo.imageName(id)).exec();
-		} catch (DockerException e) {
+            docker.pushImageCmd(repo.imageName(id)).withAuthConfig(docker.authConfig()).exec();
+        } catch (DockerException e) {
 			throw new OrchestrationException(e);
 		}
 		snooze();

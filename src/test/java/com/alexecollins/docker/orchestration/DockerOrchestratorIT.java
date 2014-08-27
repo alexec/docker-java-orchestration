@@ -1,6 +1,5 @@
 package com.alexecollins.docker.orchestration;
 
-import com.alexecollins.docker.orchestration.model.Credentials;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
@@ -19,49 +18,53 @@ import static org.junit.Assert.assertEquals;
 
 
 public class DockerOrchestratorIT {
-	File src = new File("src/test/docker");
-	File workDir = new File("target/docker");
+    File src = new File("src/test/docker");
+    File workDir = new File("target/docker");
     File projDir = new File("");
-	DockerOrchestrator orchestrator;
-	DockerClient docker;
+    DockerOrchestrator orchestrator;
+    DockerClient docker;
 
-	@After
-	public void tearDown() throws Exception {
-		orchestrator.clean();
-	}
+    @After
+    public void tearDown() throws Exception {
+        if (orchestrator != null)
+            orchestrator.clean();
+    }
 
-	@Before
-	public void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         DockerClientConfig.DockerClientConfigBuilder confgBuilder = new DockerClientConfig.DockerClientConfigBuilder()
-        .withUri(DockerOrchestrator.DEFAULT_HOST)
-        .withUsername("alexec")
-        .withPassword(System.getProperty("docker.password", ""))
-        .withEmail("alex.e.c@gmail.com")
-        .withVersion("1.9");
+                .withUri(DockerOrchestrator.DEFAULT_HOST)
+                .withUsername("alexec")
+                .withPassword(System.getProperty("docker.password", ""))
+                .withEmail("alex.e.c@gmail.com")
+                .withVersion("1.9");
 
-		docker = new DockerClientImpl(confgBuilder.build());
-		orchestrator = new DockerOrchestrator(
-				docker,
-				src, workDir, projDir, "docker-java-orchestrator"
-				,
-				DockerOrchestrator.DEFAULT_FILTER, DockerOrchestrator.DEFAULT_PROPERTIES);
-	}
+        docker = new DockerClientImpl(confgBuilder.build());
 
-	@Test
-	public void testList() throws Exception {
-		assertEquals(3, orchestrator.ids().size());
-	}
+        assert docker.authConfig() != null && docker.authConfig().getUsername() != null;
 
-	@Test
-	public void whenWeCleanThenAllImagesAreDeleted() throws Exception {
+        orchestrator = new DockerOrchestrator(
+                docker,
+                src, workDir, projDir, "docker-java-orchestrator"
+                ,
+                DockerOrchestrator.DEFAULT_FILTER, DockerOrchestrator.DEFAULT_PROPERTIES);
+    }
 
-		final List<Image> expectedImages = docker.listImagesCmd().exec();
+    @Test
+    public void testList() throws Exception {
+        assertEquals(3, orchestrator.ids().size());
+    }
 
-		orchestrator.build(new Id("busybox"));
-		orchestrator.clean(new Id("busybox"));
+    @Test
+    public void whenWeCleanThenAllImagesAreDeleted() throws Exception {
 
-		assertEquals(expectedImages, docker.listImagesCmd().exec());
-	}
+        final List<Image> expectedImages = docker.listImagesCmd().exec();
+
+        orchestrator.build(new Id("busybox"));
+        orchestrator.clean(new Id("busybox"));
+
+        assertEquals(expectedImages, docker.listImagesCmd().exec());
+    }
 
     @Ignore("quarantine")
     @Test
@@ -75,28 +78,28 @@ public class DockerOrchestratorIT {
         assertEquals(expectedContainers, docker.listContainersCmd().withShowAll(true).exec());
     }
 
-	@Test
-	public void testBuild() throws Exception {
-		orchestrator.build();
-	}
+    @Test
+    public void testBuild() throws Exception {
+        orchestrator.build();
+    }
 
-	@Test
-	public void testStart() throws Exception {
-		orchestrator.start();
-	}
+    @Test
+    public void testStart() throws Exception {
+        orchestrator.start();
+    }
 
-	@Test
-	public void testStop() throws Exception {
-		orchestrator.stop();
-	}
+    @Test
+    public void testStop() throws Exception {
+        orchestrator.stop();
+    }
 
-	@Test
-	public void testPush() throws Exception {
-		orchestrator.push();
-	}
+    @Test
+    public void testPush() throws Exception {
+        orchestrator.push();
+    }
 
-	@Test
-	public void testIsRunning() throws Exception {
-		orchestrator.isRunning();
-	}
+    @Test
+    public void testIsRunning() throws Exception {
+        orchestrator.isRunning();
+    }
 }
