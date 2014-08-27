@@ -16,7 +16,12 @@ public final class Pinger {
 			if (currentTimeMillis() - start > timeout) {
 				return false;
 			}
-		}
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
 		return true;
 	}
 

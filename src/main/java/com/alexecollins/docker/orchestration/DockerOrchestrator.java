@@ -34,7 +34,7 @@ public class DockerOrchestrator {
 	public static final Properties DEFAULT_PROPERTIES = new Properties();
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DockerOrchestrator.class);
-	private static final int snooze = 100;
+	private static final int snooze = 0;
 
 	private final DockerClient docker;
 	private final Repo repo;
@@ -99,9 +99,9 @@ public class DockerOrchestrator {
 			throw new IllegalArgumentException("id is null");
 		}
 		stop(id);
-		LOGGER.info("clean " + id);
+		LOGGER.info("Clean " + id);
 		for (Container container : repo.findContainers(id, true)) {
-			LOGGER.info("rm -f " + container.getId());
+			LOGGER.info("Removing container " + container.getId());
 			try {
 				docker.removeContainerCmd(container.getId()).withForce().exec();
 			} catch (DockerException e) {
@@ -112,16 +112,16 @@ public class DockerOrchestrator {
 		try {
 			imageId = repo.getImageId(id);
 		} catch (NotFoundException e) {
-			LOGGER.warn("Image with tag {} not found: {} ", id, e.getMessage());
+			LOGGER.warn("Image " + id + " not found");
 		} catch (DockerException e) {
 			throw new OrchestrationException(e);
 		}
 		if (imageId != null) {
-			LOGGER.info("rmi " + imageId);
+			LOGGER.info("Removing image  " + imageId);
 			try {
 				docker.removeImageCmd(imageId).exec();
 			} catch (DockerException e) {
-				LOGGER.warn(" - " + e.getMessage());
+				LOGGER.warn(e.getMessage());
 			}
 		}
 		snooze();
@@ -131,7 +131,7 @@ public class DockerOrchestrator {
 		if (id == null) {
 			throw new IllegalArgumentException("id is null");
 		}
-		LOGGER.info("package " + id);
+		LOGGER.info("Package " + id);
 		try {
 			build(prepare(id), id);
 		} catch (IOException e) {
@@ -142,7 +142,7 @@ public class DockerOrchestrator {
 	}
 
 	private void snooze() {
-		LOGGER.info("snoozing for " + snooze + "ms");
+		LOGGER.info("Snoozing for " + snooze + "ms");
 		try {
 			Thread.sleep(snooze);
 		} catch (InterruptedException e) {
@@ -210,7 +210,7 @@ public class DockerOrchestrator {
                 startContainer(containerId, id);
 
             } else if (!isImageIdFromContainerMatchingProvidedImageId(existingContainer.getId(), id)) {
-                LOGGER.info("Image ids don-t match, removing container and creating new one from image");
+                LOGGER.info("Image IDs do not match, removing container and creating new one from image");
                 docker.removeContainerCmd(existingContainer.getId()).exec();
                 startContainer(createNewContainer(id), id);
 
@@ -253,7 +253,7 @@ public class DockerOrchestrator {
 
     private void startContainer(String idOfContainerToStart, final Id id) {
         try {
-            LOGGER.info("starting " + id);
+            LOGGER.info("Starting " + id);
             StartContainerCmd start = docker.startContainerCmd(idOfContainerToStart);
 
             newHostConfig(id,start);
@@ -266,7 +266,7 @@ public class DockerOrchestrator {
 
 
     private String createNewContainer(Id id) throws DockerException {
-        LOGGER.info("creating " + id);
+        LOGGER.info("Creating " + id);
         Conf conf = repo.conf(id);
         CreateContainerCmd createCmd = docker.createContainerCmd(repo.getImageId(id));
         createCmd.withName(repo.containerName(id));
@@ -305,7 +305,7 @@ public class DockerOrchestrator {
 	private void healthCheck(Id id) {
 		final HealthChecks healthChecks = repo.conf(id).getHealthChecks();
 		for (Ping ping : healthChecks.getPings()) {
-			LOGGER.info("pinging " + ping.getUrl());
+			LOGGER.info("Pinging " + ping.getUrl());
 			if (!Pinger.ping(ping.getUrl(), ping.getTimeout())) {
 				throw new OrchestrationException("timeout waiting for " + ping.getUrl() + " for " + ping.getTimeout());
 			}
@@ -323,9 +323,10 @@ public class DockerOrchestrator {
 
 	private void newHostConfig(Id id, StartContainerCmd config) {
 		config.withPublishAllPorts(true);
-		config.withLinks(links(id));
 
-		LOGGER.info(" - links " + repo.conf(id).getLinks());
+        Link[] links = links(id);
+		LOGGER.info(" - links " + Arrays.toString(links));
+        config.withLinks(links);
 
 		final Ports portBindings = new Ports();
 		for (String e : repo.conf(id).getPorts()) {
@@ -372,7 +373,7 @@ public class DockerOrchestrator {
 			throw new IllegalArgumentException("id is null");
 		}
 		for (Container container : repo.findContainers(id, false)) {
-			LOGGER.info("stopping " + Arrays.toString(container.getNames()));
+			LOGGER.info("Stopping " + Arrays.toString(container.getNames()));
 			try {
 				docker.stopContainerCmd(container.getId()).withTimeout(1);
 			} catch (DockerException e) {
