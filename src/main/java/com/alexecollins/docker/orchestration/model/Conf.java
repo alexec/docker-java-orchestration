@@ -27,6 +27,10 @@ public class Conf {
     @JsonProperty(required = false)
     private Map<String,String> env = emptyMap();
 
+    @JsonProperty(required = false)
+    private Map<String,String> volumes = emptyMap();
+
+
     public boolean hasTag() {
         return !StringUtils.isBlank(tag);
     }
@@ -60,4 +64,8 @@ public class Conf {
     }
 
     public Map<String,String> getEnv() { return this.env;  }
+
+    public Map<String, String> getVolumes() {
+        return volumes;
+    }
 }

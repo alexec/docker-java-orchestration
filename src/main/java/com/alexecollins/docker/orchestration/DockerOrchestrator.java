@@ -340,8 +340,21 @@ public class DockerOrchestrator {
 			LOGGER.info(" - port " + e);
 			portBindings.bind(new ExposedPort("tcp", a), new Ports.Binding(b));
 		}
+        config.withPortBindings(portBindings);
 
-		config.withPortBindings(portBindings);
+        LOGGER.info(" - volumes " + repo.conf(id).getVolumes());
+
+        final List<Bind> binds = new ArrayList<Bind>();
+        for (Map.Entry<String,String> entry : repo.conf(id).getVolumes().entrySet()) {
+            String volumePath = entry.getKey();
+            String hostPath = entry.getValue();
+            File file = new File(hostPath);
+            String path = file.getAbsolutePath();
+            LOGGER.info(" - volumes " + volumePath +" <- "+ path);
+            binds.add(new Bind(path, new Volume(volumePath)));
+        }
+
+		config.withBinds(binds.toArray(new Bind[binds.size()]));
 	}
 
 	private Link[] links(Id id) {
