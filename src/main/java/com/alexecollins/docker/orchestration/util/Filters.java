@@ -5,9 +5,10 @@ import com.alexecollins.docker.orchestration.model.Conf;
 
 import java.io.*;
 import java.util.Comparator;
-import java.util.Map;
 import java.util.Properties;
 import java.util.TreeSet;
+
+import org.apache.commons.io.IOUtils;
 
 public final class Filters {
 	private Filters() {
@@ -35,15 +36,12 @@ public final class Filters {
 			}
 		} else if (fileFilter.accept(file)) {
 			final File outFile = new File(file + ".tmp");
-			final BufferedReader in = new BufferedReader(new FileReader(file));
+			final TokenReplacingReader in = new TokenReplacingReader(new BufferedReader(new FileReader(file)),
+					new PropertiesTokenResolver(properties));
 			try {
-				final PrintWriter out = new PrintWriter(new FileWriter(outFile));
+				final FileWriter out = new FileWriter(outFile);
 				try {
-					String l;
-					while ((l = in.readLine()) != null) {
-						// ${...}
-                        out.println(filter(l, properties));
-					}
+					IOUtils.copy(in, out);
 				} finally {
 					out.close();
 				}
@@ -56,12 +54,13 @@ public final class Filters {
 	}
 
     public static String filter(String l, Properties properties) {
-        if (l.matches(".*\\$\\{.*\\}.*")) {
-            for (Map.Entry<Object, Object> e : properties.entrySet()) {
-                l = l.replace("${" + e.getKey() + "}", e.getValue().toString());
-            }
+        try {
+            return IOUtils.toString(new TokenReplacingReader(
+                    new StringReader(l),
+                    new PropertiesTokenResolver(properties)));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        return l;
     }
 
     public static Conf filter(Conf conf, Properties properties) {

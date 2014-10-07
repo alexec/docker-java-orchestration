@@ -1,33 +1,33 @@
 package com.alexecollins.docker.orchestration.util;
 
-import org.junit.Before;
-import org.junit.Test;
-
+import static org.junit.Assert.assertEquals;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Properties;
-import java.util.Scanner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.apache.commons.io.IOUtils;
+import org.junit.Before;
+import org.junit.Test;
 
 public class FiltersTest {
 
 	private File dir;
-	private String file;
+	private String fileUnix;
+	private String fileWindows;
     private Properties properties;
 
 	@Before
 	public void setUp() throws Exception {
 		dir = new File("target/test/filters");
-        file = "test.txt";
 		assert dir.isDirectory() || dir.mkdirs();
 
-		File testFile = new File(dir, file);
-		FileOutputStream stream = new FileOutputStream(testFile);
-        stream.write("test ${project.version}\n".getBytes());
-        stream.close();
+		fileUnix = "unix.txt";
+		writeFile(new File(dir, fileUnix), "test ${project.version}\n");
+		fileWindows = "windows.txt";
+		writeFile(new File(dir, fileWindows), "test ${project.version}\r\n");
+
         properties = new Properties();
         properties.setProperty("project.version", "1.0.0");
     }
@@ -47,7 +47,8 @@ public class FiltersTest {
 			}
 		}, properties);
 
-        assertTrue(new Scanner(new File(dir, file)).useDelimiter("\\A").next().matches("^test 1.0.0\\s*$"));
+        assertEquals("test 1.0.0\n", IOUtils.toString(new File(dir, fileUnix).toURI()));
+        assertEquals("test 1.0.0\r\n", IOUtils.toString(new File(dir, fileWindows).toURI()));
 	}
 
 	@Test
@@ -58,5 +59,14 @@ public class FiltersTest {
 
 		assertEquals(2, Filters.maxKeyLength(p));
 
+	}
+
+	private void writeFile(File file, String data) throws IOException {
+		FileWriter out = new FileWriter(file);
+		try {
+			IOUtils.write(data, out);
+		} finally {
+			IOUtils.closeQuietly(out);
+		}
 	}
 }
