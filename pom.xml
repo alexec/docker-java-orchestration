@@ -73,7 +73,7 @@
         <dependency>
             <groupId>com.github.docker-java</groupId>
             <artifactId>docker-java</artifactId>
-            <version>0.10.0</version>
+            <version>0.10.2</version>
         </dependency>
         <!-- test -->
         <dependency>

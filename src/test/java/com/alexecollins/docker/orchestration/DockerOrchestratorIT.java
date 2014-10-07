@@ -4,8 +4,9 @@ import com.alexecollins.docker.orchestration.model.Id;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
+import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
-import com.github.dockerjava.core.DockerClientImpl;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -39,7 +40,7 @@ public class DockerOrchestratorIT {
                 .withEmail("alex.e.c@gmail.com")
                 .withVersion("1.9");
 
-        docker = new DockerClientImpl(confgBuilder.build());
+        docker = DockerClientBuilder.getInstance(confgBuilder.build()).build();
 
         assert docker.authConfig() != null && docker.authConfig().getUsername() != null;
 
