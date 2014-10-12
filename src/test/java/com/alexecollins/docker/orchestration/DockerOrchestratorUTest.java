@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -54,6 +53,7 @@ public class DockerOrchestratorUTest {
     @Mock private InspectContainerCmd inspectContainerCmdMock;
     @Mock private ListContainersCmd listContainersCmdMockOnlyRunning;
     @Mock private RemoveContainerCmd removeContainerCmdMock;
+    @Mock private StopContainerCmd stopContainerCmdMock;
 
     private DockerOrchestrator testObj;
 
@@ -78,6 +78,7 @@ public class DockerOrchestratorUTest {
         when(fileOrchestratorMock.prepare(idMock, srcFileMock, confMock)).thenReturn(fileMock);
 
         when(repoMock.ids(false)).thenReturn(Arrays.asList(idMock));
+        when(repoMock.ids(true)).thenReturn(Arrays.asList(idMock));
 
         when(dockerMock.buildImageCmd(eq(fileMock))).thenReturn(buildImageCmdMock);
         when(buildImageCmdMock.exec()).thenReturn(IOUtils.toInputStream("Successfully built"));
@@ -89,7 +90,7 @@ public class DockerOrchestratorUTest {
         when(createContainerResponse.getId()).thenReturn(CONTAINER_ID);
 
         when(dockerMock.startContainerCmd(CONTAINER_ID)).thenReturn(startContainerCmdMock);
-
+        when(dockerMock.stopContainerCmd(CONTAINER_ID)).thenReturn(stopContainerCmdMock);
         when(dockerMock.removeContainerCmd(CONTAINER_ID)).thenReturn(removeContainerCmdMock);
 
         when(dockerMock.listContainersCmd()).thenReturn(listContainersCmdMockOnlyRunning);
@@ -144,5 +145,15 @@ public class DockerOrchestratorUTest {
         verify(removeContainerCmdMock).exec();
         verify(createContainerCmdMock).exec();
         verify(startContainerCmdMock).exec();
+    }
+
+    @Test
+    public void stopARunningContainer() {
+        when(repoMock.findContainers(idMock, false)).thenReturn(Arrays.asList(containerMock));
+        when(stopContainerCmdMock.withTimeout(1)).thenReturn(stopContainerCmdMock);
+
+        testObj.stop();
+
+        verify(stopContainerCmdMock).exec();
     }
 }

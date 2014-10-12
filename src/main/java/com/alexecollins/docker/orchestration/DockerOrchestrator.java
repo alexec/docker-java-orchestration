@@ -351,7 +351,7 @@ public class DockerOrchestrator {
 		for (Container container : repo.findContainers(id, false)) {
 			LOGGER.info("Stopping " + Arrays.toString(container.getNames()));
 			try {
-				docker.stopContainerCmd(container.getId()).withTimeout(1);
+				docker.stopContainerCmd(container.getId()).withTimeout(1).exec();
 			} catch (DockerException e) {
 				throw new OrchestrationException(e);
 			}
