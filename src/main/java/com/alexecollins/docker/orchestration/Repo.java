@@ -3,20 +3,21 @@ package com.alexecollins.docker.orchestration;
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.util.Filters;
+import com.alexecollins.docker.orchestration.util.PropertiesTokenResolver;
+import com.alexecollins.docker.orchestration.util.TokenReplacingReader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.NotFoundException;
-import com.github.dockerjava.api.command.InspectImageResponse;
-import com.github.dockerjava.api.command.ListImagesCmd;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
-import com.github.dockerjava.api.model.SearchItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
@@ -51,7 +52,7 @@ class Repo {
 			for (File file : src.listFiles()) {
 				final File confFile = new File(file, "conf.yml");
                 try {
-                    confs.put(new Id(file.getName()), confFile.length() > 0 ? MAPPER.readValue(confFile, Conf.class) : new Conf());
+                    confs.put(new Id(file.getName()), confFile.length() > 0 ? MAPPER.readValue(confReader(confFile, properties), Conf.class) : new Conf());
                 } catch (IOException e) {
                    throw new OrchestrationException(e);
                 }
@@ -59,8 +60,12 @@ class Repo {
 		}
 	}
 
-	String imageName(Id id) {
-		Conf conf = conf(id);
+    private static TokenReplacingReader confReader(File confFile, Properties properties) throws FileNotFoundException {
+        return new TokenReplacingReader(new FileReader(confFile), new PropertiesTokenResolver(properties));
+    }
+
+    String imageName(Id id) {
+        Conf conf = conf(id);
 		return Filters.filter(
                 (conf != null && conf.hasTag())
                         ? conf.getTag()

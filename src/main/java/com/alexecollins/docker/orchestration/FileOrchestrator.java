@@ -9,12 +9,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.util.Map;
 import java.util.Properties;
 
-import static org.apache.commons.io.FileUtils.copyDirectory;
-import static org.apache.commons.io.FileUtils.copyDirectoryToDirectory;
-import static org.apache.commons.io.FileUtils.copyFileToDirectory;
+import static org.apache.commons.io.FileUtils.*;
 
 public class FileOrchestrator {
 
@@ -40,10 +37,10 @@ public class FileOrchestrator {
     private final File rootDir;
 
     protected FileOrchestrator(File workDir, File rootDir, FileFilter fileFilter, Properties properties) {
-        if(workDir == null) {
+        if (workDir == null) {
             throw new IllegalArgumentException("Working output directory is null");
         }
-        if(rootDir == null) {
+        if (rootDir == null) {
             throw new IllegalArgumentException("Root project directory is null");
         }
         if (fileFilter == null) {
@@ -70,24 +67,17 @@ public class FileOrchestrator {
         Filters.filter(destDir, filter, properties);
 
         // copy files
-		for (String file : conf.getPackaging().getAdd()) {
-			File fileEntry = new File(rootDir, filter(file));
-			copyFileEntry(destDir, fileEntry);
-			Filters.filter(fileEntry, filter, properties);
-		}
+        for (String file : conf.getPackaging().getAdd()) {
+            File fileEntry = new File(rootDir, file);
+            copyFileEntry(destDir, fileEntry);
+            Filters.filter(fileEntry, filter, properties);
+        }
 
         return destDir;
     }
 
-    private String filter(String file) {
-		for (Map.Entry<Object, Object> e : properties.entrySet()) {
-			file = file.replace("${" + e.getKey() + "}", e.getValue().toString());
-		}
-		return file;
-	}
-
     private void copyFileEntry(final File destDir, File fileEntry) throws IOException {
-	    LOGGER.info(" - add " + fileEntry);
+        LOGGER.info(" - add " + fileEntry);
         if (fileEntry.isDirectory()) {
             copyDirectoryToDirectory(fileEntry, destDir);
         } else {
