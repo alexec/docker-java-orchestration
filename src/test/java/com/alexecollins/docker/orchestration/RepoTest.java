@@ -9,7 +9,7 @@ import org.junit.Test;
 import java.io.File;
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 
 public class RepoTest {
@@ -22,7 +22,7 @@ public class RepoTest {
         DockerClient client = DockerClientBuilder.getInstance("http://localhost:4240").build();
         Properties properties = new Properties();
         properties.setProperty("project.version", PROJECT_VERSION);
-        sut = new Repo(client, "test", new File("src/test/docker"), properties);
+        sut = new Repo(client, "test", new File("src/test/docker-repo"), properties);
     }
 
     @Test

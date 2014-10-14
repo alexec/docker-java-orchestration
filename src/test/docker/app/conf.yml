@@ -1,5 +1,2 @@
 links:
   - mysql
-packaging:
-    add:
-        - example-${project.version}.jar
