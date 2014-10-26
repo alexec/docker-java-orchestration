@@ -315,8 +315,8 @@ public class DockerOrchestrator {
 			final int b = split.length == 2 ? Integer.parseInt(split[1]) : a;
 
 			LOGGER.info(" - port " + e);
-			portBindings.bind(new ExposedPort("tcp", a), new Ports.Binding(b));
-		}
+            portBindings.bind(new ExposedPort(a, InternetProtocol.TCP), new Ports.Binding(b));
+        }
         config.withPortBindings(portBindings);
 
         LOGGER.info(" - volumes " + repo.conf(id).getVolumes());
