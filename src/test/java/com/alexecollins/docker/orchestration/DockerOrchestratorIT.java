@@ -6,7 +6,6 @@ import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -33,7 +32,7 @@ public class DockerOrchestratorIT {
 
     @Before
     public void setUp() throws Exception {
-        DockerClientConfig.DockerClientConfigBuilder confgBuilder = new DockerClientConfig.DockerClientConfigBuilder()
+        DockerClientConfig.DockerClientConfigBuilder confgBuilder = DockerClientConfig.createDefaultConfigBuilder()
                 .withUri(DockerOrchestrator.DEFAULT_HOST)
                 .withUsername("alexec")
                 .withPassword(System.getProperty("docker.password", ""))
