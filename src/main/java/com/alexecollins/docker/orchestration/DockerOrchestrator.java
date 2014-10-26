@@ -8,6 +8,7 @@ import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.*;
+import com.github.dockerjava.api.model.Link;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,8 +93,8 @@ public class DockerOrchestrator {
 		}
 		String imageId = null;
 		try {
-			imageId = repo.getImageId(id);
-		} catch (NotFoundException e) {
+            imageId = repo.findImageId(id);
+        } catch (NotFoundException e) {
 			LOGGER.warn("Image " + id + " not found");
 		} catch (DockerException e) {
 			throw new OrchestrationException(e);
@@ -101,8 +102,8 @@ public class DockerOrchestrator {
 		if (imageId != null) {
             LOGGER.info("Removing image " + imageId);
             try {
-				docker.removeImageCmd(imageId).exec();
-			} catch (DockerException e) {
+                docker.removeImageCmd(imageId).withForce().exec();
+            } catch (DockerException e) {
 				LOGGER.warn(e.getMessage());
 			}
 		}
@@ -157,7 +158,7 @@ public class DockerOrchestrator {
                     case REMOVE_INTERMEDIATE_IMAGES: build.withRemove(true);break;
                 }
             }
-            build.withTag(repo.imageName(id));
+            build.withTag(repo.tag(id));
             in = build.exec();
 		} catch (DockerException e) {
 			throw new OrchestrationException(e);
@@ -217,7 +218,7 @@ public class DockerOrchestrator {
     private boolean isImageIdFromContainerMatchingProvidedImageId(String containerId, final Id id) {
         try {
             String containerImageId = lookupImageIdFromContainer(containerId);
-            String imageId = repo.getImageId(id);
+            String imageId = repo.findImageId(id);
             return containerImageId.equals(imageId);
         } catch (DockerException e) {
             LOGGER.error("Unable to find image with id " + id, e);
@@ -253,7 +254,7 @@ public class DockerOrchestrator {
     private String createNewContainer(Id id) throws DockerException {
         LOGGER.info("Creating " + id);
         Conf conf = repo.conf(id);
-        CreateContainerCmd createCmd = docker.createContainerCmd(repo.getImageId(id));
+        CreateContainerCmd createCmd = docker.createContainerCmd(repo.findImageId(id));
         createCmd.withName(repo.containerName(id));
         LOGGER.info(" - env " + conf.getEnv());
         createCmd.withEnv(asEnvList(conf.getEnv()));
@@ -335,12 +336,14 @@ public class DockerOrchestrator {
 	}
 
 	private Link[] links(Id id) {
-		final List<Id> links = repo.conf(id).getLinks();
-		final Link[] out = new Link[links.size()];
+        final List<com.alexecollins.docker.orchestration.model.Link> links = repo.conf(id).getLinks();
+        final Link[] out = new Link[links.size()];
 		for (int i = 0; i < links.size(); i++) {
-			final String name = repo.findContainer(links.get(i)).getNames()[0];
-			out[i] = new Link(name,name);
-		}
+            com.alexecollins.docker.orchestration.model.Link link = links.get(i);
+            final String name = com.alexecollins.docker.orchestration.util.Links.name(repo.findContainer(link.getId()).getNames());
+            final String alias = link.getAlias();
+            out[i] = new Link(name, alias);
+        }
 		return out;
 	}
 

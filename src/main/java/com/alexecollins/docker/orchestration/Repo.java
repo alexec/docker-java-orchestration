@@ -2,7 +2,6 @@ package com.alexecollins.docker.orchestration;
 
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.Id;
-import com.alexecollins.docker.orchestration.util.Filters;
 import com.alexecollins.docker.orchestration.util.PropertiesTokenResolver;
 import com.alexecollins.docker.orchestration.util.TokenReplacingReader;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,10 +14,7 @@ import com.github.dockerjava.api.model.Image;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 import static java.util.Arrays.asList;
@@ -60,22 +56,24 @@ class Repo {
 		}
 	}
 
-    private static TokenReplacingReader confReader(File confFile, Properties properties) throws FileNotFoundException {
+    private static Reader confReader(File confFile, Properties properties) throws FileNotFoundException {
         return new TokenReplacingReader(new FileReader(confFile), new PropertiesTokenResolver(properties));
     }
 
-    String imageName(Id id) {
+    public String tag(Id id) {
         Conf conf = conf(id);
-		return Filters.filter(
-                (conf != null && conf.hasTag())
+        return
+                conf.hasTag()
                         ? conf.getTag()
-                        : prefix + "_" + id,
-                properties
-        );
-	}
+                        : imageName(id);
+    }
 
-	String containerName(Id id) {
-		return "/" + prefix + "_" + id;
+    public String imageName(Id id) {
+        return prefix + "_" + id;
+    }
+
+    String containerName(Id id) {
+        return "/" + prefix + "_" + id;
 	}
 
 	List<Container> findContainers(Id id, boolean allContainers) {
@@ -94,24 +92,23 @@ class Repo {
 	}
 
 
-    public String getImageId(Id id) {
-        String imageName = imageName(id);
-        LOG.debug("Converting {} ({}) to image id.",id.toString(),imageName);
+    public String findImageId(Id id) {
+        String imageTag = tag(id);
+        LOG.debug("Converting {} ({}) to image id.", id, imageTag);
         List<Image> images = docker.listImagesCmd().exec();
         for (Image i : images){
             for (String tag : i.getRepoTags()){
-                if (tag.startsWith(imageName)){
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Using {} ({}) for {}. It matches (enough) to {}.", new Object[]{
-                                i.getId(),
-                                tag,
-                                id.toString(),
-                                imageName});
-                    }
+                if (tag.startsWith(imageTag)) {
+                    LOG.debug("Using {} ({}) for {}. It matches (enough) to {}.", new Object[]{
+                            i.getId(),
+                            tag,
+                            id.toString(),
+                            imageTag});
                     return i.getId();
                 }
             }
         }
+        LOG.debug("could not find image ID for \"" + id + "\" (tag \"" + imageTag + "\")");
         return null;
     }
 
@@ -139,8 +136,8 @@ class Repo {
 
 		final Map<Id, List<Id>> links = new HashMap<Id, List<Id>>();
 		for (Id id : in) {
-			links.put(id, confs.get(id).getLinks());
-		}
+            links.put(id, com.alexecollins.docker.orchestration.util.Links.ids(confs.get(id).getLinks()));
+        }
 
 		final List<Id> out = sort(links);
 

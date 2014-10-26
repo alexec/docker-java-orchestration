@@ -4,6 +4,7 @@ package com.alexecollins.docker.orchestration;
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.HealthChecks;
 import com.alexecollins.docker.orchestration.model.Id;
+import com.alexecollins.docker.orchestration.model.Link;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.command.*;
@@ -65,13 +66,13 @@ public class DockerOrchestratorUTest {
         when(repoMock.src(idMock)).thenReturn(srcFileMock);
         when(repoMock.conf(idMock)).thenReturn(confMock);
         when(repoMock.imageName(idMock)).thenReturn(IMAGE_NAME);
-        when(repoMock.getImageId(idMock)).thenReturn(IMAGE_ID);
+        when(repoMock.findImageId(idMock)).thenReturn(IMAGE_ID);
         when(repoMock.containerName(idMock)).thenReturn(CONTAINER_NAME);
 
-        when(confMock.getLinks()).thenReturn(new ArrayList<Id>());
-	    when(confMock.getHealthChecks()).thenReturn(new HealthChecks());
+        when(confMock.getLinks()).thenReturn(new ArrayList<Link>());
+        when(confMock.getHealthChecks()).thenReturn(new HealthChecks());
 
-        when(repoMock.getImageId(idMock)).thenReturn(IMAGE_ID);
+        when(repoMock.findImageId(idMock)).thenReturn(IMAGE_ID);
         when(repoMock.findContainer(idMock)).thenReturn(containerMock);
         when(containerMock.getId()).thenReturn(CONTAINER_ID);
 

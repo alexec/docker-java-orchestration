@@ -4,8 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.junit.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ConfTest {
     private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
@@ -20,5 +19,7 @@ public class ConfTest {
         assertNotNull(conf.getPackaging());
         assertNotNull(conf.getPorts());
         assertNotNull(conf.getVolumesFrom());
+
+        assertEquals(new Link("foo:bar"), conf.getLinks().get(0));
     }
 }

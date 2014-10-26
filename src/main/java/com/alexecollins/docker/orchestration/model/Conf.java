@@ -15,20 +15,20 @@ public class Conf {
     @JsonProperty(required = false)
     private String tag = null;
     @JsonProperty(required = false)
-    private List<Id> links = emptyList();
+    private List<Link> links = emptyList();
     @JsonProperty(required = false)
     private Packaging packaging = new Packaging();
     @JsonProperty(required = false)
     private List<String> ports = emptyList();
     @JsonProperty(required = false)
     private List<Id> volumesFrom = emptyList();
-	@JsonProperty(required = false)
-	private HealthChecks healthChecks = new HealthChecks();
     @JsonProperty(required = false)
-    private Map<String,String> env = emptyMap();
+    private HealthChecks healthChecks = new HealthChecks();
+    @JsonProperty(required = false)
+    private Map<String, String> env = emptyMap();
 
     @JsonProperty(required = false)
-    private Map<String,String> volumes = emptyMap();
+    private Map<String, String> volumes = emptyMap();
 
 
     public boolean hasTag() {
@@ -39,7 +39,11 @@ public class Conf {
         return tag;
     }
 
-    public List<Id> getLinks() {
+    public void setTag(String tag) {
+        this.tag = tag;
+    }
+
+    public List<Link> getLinks() {
         return links;
     }
 
@@ -47,23 +51,21 @@ public class Conf {
         return ports;
     }
 
-	public HealthChecks getHealthChecks() {
-		return healthChecks;
-	}
-
-	public List<Id> getVolumesFrom() {
-		return volumesFrom;
-	}
-
-	public Packaging getPackaging() {
-		return packaging;
-	}
-
-    public void setTag(String tag) {
-        this.tag = tag;
+    public HealthChecks getHealthChecks() {
+        return healthChecks;
     }
 
-    public Map<String,String> getEnv() { return this.env;  }
+    public List<Id> getVolumesFrom() {
+        return volumesFrom;
+    }
+
+    public Packaging getPackaging() {
+        return packaging;
+    }
+
+    public Map<String, String> getEnv() {
+        return this.env;
+    }
 
     public Map<String, String> getVolumes() {
         return volumes;
