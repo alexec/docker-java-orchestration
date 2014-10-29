@@ -13,7 +13,8 @@ import org.junit.Test;
 import java.io.File;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 
 public class DockerOrchestratorIT {
@@ -31,16 +32,10 @@ public class DockerOrchestratorIT {
 
     @Before
     public void setUp() throws Exception {
-        DockerClientConfig.DockerClientConfigBuilder confgBuilder = DockerClientConfig.createDefaultConfigBuilder()
-                .withUri(DockerOrchestrator.DEFAULT_HOST)
-                .withUsername("alexec")
-                .withPassword(System.getProperty("docker.password", ""))
-                .withEmail("alex.e.c@gmail.com")
-                .withVersion("1.9");
 
-        docker = DockerClientBuilder.getInstance(confgBuilder.build()).build();
+        docker = DockerClientBuilder.getInstance(DockerClientConfig.createDefaultConfigBuilder().build()).build();
 
-        assert docker.authConfig() != null && docker.authConfig().getUsername() != null;
+        assertTrue("please create ~/.docker.io.properties (or other config) to run this test", docker.authConfig() != null && docker.authConfig().getUsername() != null);
 
         orchestrator = new DockerOrchestrator(
                 docker,
