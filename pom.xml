@@ -16,8 +16,10 @@
     <name>Docker Java Orchestration</name>
 
     <modules>
+        <module>docker-java-orchestration-model</module>
         <module>docker-java-orchestration-core</module>
         <module>docker-java-orchestration-plugin-api</module>
+        <module>docker-java-orchestration-plugin-virtual-box</module>
     </modules>
 
     <description>A library for orchestrating Docker containers.</description>
