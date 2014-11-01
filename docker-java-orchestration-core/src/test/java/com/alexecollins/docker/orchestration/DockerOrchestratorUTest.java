@@ -17,6 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -35,6 +37,7 @@ public class DockerOrchestratorUTest {
 
     private static final String CONTAINER_NAME = "theContainer";
     private static final String CONTAINER_ID = "containerId";
+    private final Logger logger = mock(Logger.class);
 
     @Mock private DockerClient dockerMock;
     @Mock private Repo repoMock;
@@ -61,7 +64,7 @@ public class DockerOrchestratorUTest {
 
     @Before
     public void setup () throws DockerException, IOException {
-        testObj = new DockerOrchestrator(dockerMock, repoMock, fileOrchestratorMock);
+        testObj = new DockerOrchestrator(dockerMock, repoMock, fileOrchestratorMock, logger);
 
         when(repoMock.src(idMock)).thenReturn(srcFileMock);
         when(repoMock.conf(idMock)).thenReturn(confMock);
@@ -156,5 +159,21 @@ public class DockerOrchestratorUTest {
         testObj.stop();
 
         verify(stopContainerCmdMock).exec();
+    }
+
+    @Test
+    public void logsLoadedPlugin() throws Exception {
+        verify(logger).info("loaded " + TestPlugin.class + " plugin");
+    }
+
+    @Test
+    public void plugin() throws Exception {
+        TestPlugin testObjPlugin = testObj.getPlugin(TestPlugin.class);
+
+        assertNull(testObjPlugin.lastStarted());
+
+        testObj.start();
+
+        assertEquals("idMock", testObjPlugin.lastStarted());
     }
 }

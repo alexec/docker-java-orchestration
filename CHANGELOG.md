@@ -1,5 +1,9 @@
 Change Log
 ===
+2.1.3
+
+* Provide a plugin system.
+
 2.1.0
 
 * Fixed bug preventing correct linking of containers.
