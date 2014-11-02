@@ -1,8 +1,9 @@
 Change Log
 ===
-2.1.3
+2.2.0
 
 * Provide a plugin system.
+
 
 2.1.0
 
