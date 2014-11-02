@@ -12,17 +12,18 @@ import org.junit.Test;
 
 import java.io.File;
 import java.util.List;
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 
 public class DockerOrchestratorIT {
-    File src = new File("src/test/docker");
-    File workDir = new File("target/docker");
-    File projDir = new File("");
-    DockerOrchestrator orchestrator;
-    DockerClient docker;
+    private final File src = new File("src/test/docker");
+    private final File workDir = new File("target/docker");
+    private final File projDir = new File("");
+    private DockerOrchestrator orchestrator;
+    private DockerClient docker;
 
     @After
     public void tearDown() throws Exception {
@@ -33,15 +34,20 @@ public class DockerOrchestratorIT {
     @Before
     public void setUp() throws Exception {
 
-        docker = DockerClientBuilder.getInstance(DockerClientConfig.createDefaultConfigBuilder().build()).build();
+        DockerClientConfig config = DockerClientConfig.createDefaultConfigBuilder().build();
+        docker = DockerClientBuilder.getInstance(config).build();
 
         assertTrue("please create ~/.docker.io.properties (or other config) to run this test", docker.authConfig() != null && docker.authConfig().getUsername() != null);
 
         orchestrator = new DockerOrchestrator(
                 docker,
-                src, workDir, projDir, "docker-java-orchestrator"
-                ,
-                DockerOrchestrator.DEFAULT_FILTER, DockerOrchestrator.DEFAULT_PROPERTIES);
+                src,
+                workDir,
+                projDir,
+                config.getUsername(),
+                "docker-java-orchestrator",
+                DockerOrchestrator.DEFAULT_FILTER,
+                new Properties());
     }
 
     @Test

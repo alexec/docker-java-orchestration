@@ -83,8 +83,10 @@ public class DockerOrchestratorUTest {
 
         when(repoMock.ids(false)).thenReturn(Arrays.asList(idMock));
         when(repoMock.ids(true)).thenReturn(Arrays.asList(idMock));
+        when(repoMock.tag(any(Id.class))).thenReturn("test-tag");
 
         when(dockerMock.buildImageCmd(eq(fileMock))).thenReturn(buildImageCmdMock);
+        when(buildImageCmdMock.withTag(any(String.class))).thenReturn(buildImageCmdMock);
         when(buildImageCmdMock.exec()).thenReturn(IOUtils.toInputStream("Successfully built"));
 
         when(dockerMock.createContainerCmd(IMAGE_ID)).thenReturn(createContainerCmdMock);
@@ -163,7 +165,7 @@ public class DockerOrchestratorUTest {
 
     @Test
     public void logsLoadedPlugin() throws Exception {
-        verify(logger).info("loaded " + TestPlugin.class + " plugin");
+        verify(logger).info("Loaded " + TestPlugin.class + " plugin");
     }
 
     @Test
@@ -174,6 +176,6 @@ public class DockerOrchestratorUTest {
 
         testObj.start();
 
-        assertEquals("idMock", testObjPlugin.lastStarted());
+        assertEquals("idMock", testObjPlugin.lastStarted().toString());
     }
 }

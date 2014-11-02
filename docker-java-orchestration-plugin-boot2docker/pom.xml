@@ -9,14 +9,14 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>docker-java-orchestration-plugin-api</artifactId>
+    <artifactId>docker-java-orchestration-plugin-boot2docker</artifactId>
 
-    <name>Docker Java Orchestration Plugin API</name>
+    <name>Docker Java Orchestration Plugin Virtual Box</name>
 
     <dependencies>
         <dependency>
             <groupId>com.alexecollins.docker</groupId>
-            <artifactId>docker-java-orchestration-model</artifactId>
+            <artifactId>docker-java-orchestration-plugin-api</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

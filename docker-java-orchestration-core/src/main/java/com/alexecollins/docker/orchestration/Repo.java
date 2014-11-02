@@ -26,25 +26,28 @@ class Repo {
 
 	private static ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
 	private final DockerClient docker;
-	private final String prefix;
+    private final String user;
+	private final String project;
 	private final File src;
 	private final Map<Id, Conf> confs = new HashMap<Id, Conf>();
-    private final Properties properties;
 
+    /**
+     * @param user Name of the repo use. Maybe null.
+     */
     @SuppressWarnings("ConstantConditions")
-	Repo(DockerClient docker, String prefix, File src, Properties properties){
+	Repo(DockerClient docker, String user, String project, File src, Properties properties){
         if (docker == null) {throw new IllegalArgumentException("docker is null");}
-		if (prefix == null) {throw new IllegalArgumentException("prefix is null");}
+    	if (project == null) {throw new IllegalArgumentException("project is null");}
 		if (src == null) {throw new IllegalArgumentException("src is null");}
 		if (!src.isDirectory()) {throw new IllegalArgumentException("src " + src + " does not exist or is directory");}
         if (properties == null) {throw new IllegalArgumentException("properties is null");}
 
+        this.user = user;
 		this.docker = docker;
-		this.prefix = prefix;
+		this.project = project;
 		this.src = src;
-        this.properties = properties;
 
-		if (src.isDirectory()) {
+        if (src.isDirectory()) {
 			for (File file : src.listFiles()) {
 				final File confFile = new File(file, "conf.yml");
                 try {
@@ -69,11 +72,11 @@ class Repo {
     }
 
     public String imageName(Id id) {
-        return prefix + "_" + id;
+        return user + "/" + project + "_" + id;
     }
 
     String containerName(Id id) {
-        return "/" + prefix + "_" + id;
+        return "/" + project + "_" + id;
 	}
 
 	List<Container> findContainers(Id id, boolean allContainers) {

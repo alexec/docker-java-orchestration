@@ -2,37 +2,38 @@ package com.alexecollins.docker.orchestration.model;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.commons.lang.StringUtils;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 
 @SuppressWarnings("CanBeFinal")
 public class Conf {
     @JsonProperty(required = false)
     private String tag = null;
     @JsonProperty(required = false)
-    private List<Link> links = emptyList();
+    private List<Link> links = new ArrayList<Link>();
     @JsonProperty(required = false)
     private Packaging packaging = new Packaging();
+    /**
+     * E.g. "8080" or "8080 8080" where the former is the exposed port and the latter the container port.
+     */
     @JsonProperty(required = false)
-    private List<String> ports = emptyList();
+    private List<String> ports = new ArrayList<String>();
     @JsonProperty(required = false)
-    private List<Id> volumesFrom = emptyList();
+    private List<Id> volumesFrom = new ArrayList<Id>();
     @JsonProperty(required = false)
     private HealthChecks healthChecks = new HealthChecks();
     @JsonProperty(required = false)
-    private Map<String, String> env = emptyMap();
+    private Map<String, String> env = new HashMap<String, String>();
 
     @JsonProperty(required = false)
-    private Map<String, String> volumes = emptyMap();
+    private Map<String, String> volumes = new HashMap<String, String>();
 
 
     public boolean hasTag() {
-        return !StringUtils.isBlank(tag);
+        return tag != null && !tag.isEmpty();
     }
 
     public String getTag() {

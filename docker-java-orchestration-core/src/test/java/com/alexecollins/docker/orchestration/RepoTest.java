@@ -22,7 +22,7 @@ public class RepoTest {
         DockerClient client = DockerClientBuilder.getInstance("http://localhost:4240").build();
         Properties properties = new Properties();
         properties.setProperty("project.version", PROJECT_VERSION);
-        sut = new Repo(client, "test", new File("src/test/docker-repo"), properties);
+        sut = new Repo(client, "test", "test", new File("src/test/docker-repo"), properties);
     }
 
     @Test
