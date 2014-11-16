@@ -157,9 +157,9 @@ public class DockerOrchestrator {
                     case REMOVE_INTERMEDIATE_IMAGES: build = build.withRemove(true);break;
                 }
             }
-            String name = repo.tag(id);
-            build = build.withTag(name);
-            logger.info("Build " + id + " (" + name + ")");
+            String tag = repo.tag(id);
+            build = build.withTag(tag);
+            logger.info("Build " + id + " (" + tag + ")");
             throwExceptionIfThereIsAnError(build.exec());
 		} catch (DockerException e) {
 			throw new OrchestrationException(e);

@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 
 public class DockerOrchestratorIT {
@@ -37,14 +36,12 @@ public class DockerOrchestratorIT {
         DockerClientConfig config = DockerClientConfig.createDefaultConfigBuilder().build();
         docker = DockerClientBuilder.getInstance(config).build();
 
-        assertTrue("please create ~/.docker.io.properties (or other config) to run this test", docker.authConfig() != null && docker.authConfig().getUsername() != null);
-
         orchestrator = new DockerOrchestrator(
                 docker,
                 src,
                 workDir,
                 projDir,
-                config.getUsername(),
+                "registry",
                 "docker-java-orchestrator",
                 DockerOrchestrator.DEFAULT_FILTER,
                 new Properties());
@@ -94,6 +91,7 @@ public class DockerOrchestratorIT {
 
     @Test
     public void testPush() throws Exception {
+        orchestrator.build();
         orchestrator.push();
     }
 

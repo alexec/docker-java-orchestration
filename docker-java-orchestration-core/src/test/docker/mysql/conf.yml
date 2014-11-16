@@ -1,3 +1,3 @@
-tag: trog/it-mysql:latest
+tag: registry/it-mysql:latest
 ports:
   - 3306
