@@ -2,8 +2,9 @@ Change Log
 ===
 2.2.0
 
-* Provide a plugin system.
-
+* Provide a plugin system, and a boot2docker plugin that sets up port fowarding automatically.
+* [DJO Issue 30](https://github.com/alexec/docker-maven-plugin/issues/30) Use version of docker-java that supports SSL.
+* Improved error reporting on push.
 
 2.1.0
 
