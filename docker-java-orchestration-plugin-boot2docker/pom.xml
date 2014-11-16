@@ -10,7 +10,7 @@
 
     <artifactId>docker-java-orchestration-plugin-boot2docker</artifactId>
 
-    <name>Docker Java Orchestration Plugin Virtual Box</name>
+    <name>Docker Java Orchestration Plugin Boot2Docker</name>
 
     <dependencies>
         <dependency>
