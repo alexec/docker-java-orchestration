@@ -31,6 +31,12 @@ public class Conf {
     @JsonProperty(required = false)
     private Map<String, String> volumes = new HashMap<String, String>();
 
+    @JsonProperty(required = false)
+    private boolean exposeContainerIp = false;
+
+    public boolean isExposeContainerIp() {
+        return exposeContainerIp;
+    }
 
     public boolean hasTag() {
         return tag != null && !tag.isEmpty();

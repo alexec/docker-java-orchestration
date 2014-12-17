@@ -364,7 +364,7 @@ public class DockerOrchestrator {
 		}
 	}
 
-	public void start() {
+	public Map<String, String> start() {
 		for (Id id : ids()) {
 			try {
 				if (!repo.imageExists(id)) {
@@ -375,6 +375,17 @@ public class DockerOrchestrator {
 			}
 			start(id);
 		}
+
+        Map<String,String> nameAndIpMap = new HashMap<String, String>();
+        for (Id id: ids()) {
+            Conf conf = repo.conf(id);
+            if(conf.isExposeContainerIp()) {
+                String containerName = repo.containerName(id);
+                InspectContainerResponse containerInspectResponse = docker.inspectContainerCmd(containerName).exec();
+                nameAndIpMap.put(containerName, containerInspectResponse.getNetworkSettings().getIpAddress());
+            }
+        }
+        return nameAndIpMap;
 	}
 
 	public void stop() {
