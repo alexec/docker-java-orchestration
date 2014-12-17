@@ -17,8 +17,6 @@ import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Orchestrates multiple Docker containers based on
@@ -32,6 +30,7 @@ public class DockerOrchestrator {
 	};
     private static final int SNOOZE = 0;
     private static final Logger DEFAULT_LOGGER = LoggerFactory.getLogger(DockerOrchestrator.class);
+    private static final String CONTAINER_IP_PATTERN = "__CONTAINER.IP__";
 
     private final Logger logger;
 	private final DockerClient docker;
@@ -287,17 +286,15 @@ public class DockerOrchestrator {
 		return running;
 	}
 
-    private static Pattern HOST_NAME_TEMPLATE = Pattern.compile("\\{\\{(\\S+\\)}\\}");
+
 
     private void healthCheck(Id id) {
         final HealthChecks healthChecks = conf(id).getHealthChecks();
         for (Ping ping : healthChecks.getPings()) {
             URI uri;
-            Matcher matcher = HOST_NAME_TEMPLATE.matcher(ping.getUrl().getHost());
-            if (matcher.matches()) {
-                String host = getIPAddresses().get(matcher.group(1));
+            if (ping.getUrl().toString().contains(CONTAINER_IP_PATTERN)) {
                 try {
-                    uri = new URI(ping.getUrl().getScheme(), ping.getUrl().getUserInfo(), host, ping.getUrl().getPort(), ping.getUrl().getPath(), ping.getUrl().getQuery(), ping.getUrl().getFragment());
+                    uri = new URI(ping.getUrl().toString().replace(CONTAINER_IP_PATTERN, getIPAddresses().get(id.toString())));
                 } catch (URISyntaxException e) {
                     throw new OrchestrationException("Bad health check URI syntax: " + e.getMessage() + ", input: " + e.getInput() + ", index:" + e.getIndex());
                 }
