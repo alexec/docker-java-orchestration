@@ -32,7 +32,7 @@ public class Conf {
     private Map<String, String> volumes = new HashMap<String, String>();
 
     @JsonProperty(required = false)
-    private boolean exposeContainerIp = false;
+    private boolean exposeContainerIp = true;
 
     public boolean isExposeContainerIp() {
         return exposeContainerIp;

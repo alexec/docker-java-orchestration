@@ -14,7 +14,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Orchestrates multiple Docker containers based on
@@ -143,7 +147,6 @@ public class DockerOrchestrator {
         logger.info("Prepare " + id);
         return fileOrchestrator.prepare(id, repo.src(id), conf(id));
     }
-
 
 
 
@@ -284,15 +287,30 @@ public class DockerOrchestrator {
 		return running;
 	}
 
-	private void healthCheck(Id id) {
-		final HealthChecks healthChecks = conf(id).getHealthChecks();
-		for (Ping ping : healthChecks.getPings()) {
-			logger.info("Pinging " + ping.getUrl());
-			if (!Pinger.ping(ping.getUrl(), ping.getTimeout())) {
-				throw new OrchestrationException("timeout waiting for " + ping.getUrl() + " for " + ping.getTimeout());
-			}
-		}
-	}
+    private static Pattern HOST_NAME_TEMPLATE = Pattern.compile("\\{\\{(\\S+\\)}\\}");
+
+    private void healthCheck(Id id) {
+        final HealthChecks healthChecks = conf(id).getHealthChecks();
+        for (Ping ping : healthChecks.getPings()) {
+            URI uri;
+            Matcher matcher = HOST_NAME_TEMPLATE.matcher(ping.getUrl().getHost());
+            if (matcher.matches()) {
+                String host = getIPAddresses().get(matcher.group(1));
+                try {
+                    uri = new URI(ping.getUrl().getScheme(), ping.getUrl().getUserInfo(), host, ping.getUrl().getPort(), ping.getUrl().getPath(), ping.getUrl().getQuery(), ping.getUrl().getFragment());
+                } catch (URISyntaxException e) {
+                    throw new OrchestrationException("Bad health check URI syntax: " + e.getMessage() + ", input: " + e.getInput() + ", index:" + e.getIndex());
+                }
+            } else {
+                uri = ping.getUrl();
+            }
+            logger.info("Pinging " + uri);
+
+            if (!Pinger.ping(uri, ping.getTimeout())) {
+                throw new OrchestrationException("timeout waiting for " + uri + " for " + ping.getTimeout());
+            }
+        }
+    }
 
 	private void prepareHostConfig(Id id, StartContainerCmd config) {
 		config.withPublishAllPorts(true);
@@ -364,7 +382,7 @@ public class DockerOrchestrator {
 		}
 	}
 
-	public Map<String, String> start() {
+	public void start() {
 		for (Id id : ids()) {
 			try {
 				if (!repo.imageExists(id)) {
@@ -375,18 +393,20 @@ public class DockerOrchestrator {
 			}
 			start(id);
 		}
+	}
 
-        Map<String,String> nameAndIpMap = new HashMap<String, String>();
-        for (Id id: ids()) {
+    public Map<String, String> getIPAddresses() {
+        Map<String, String> idToIpAddressMap = new HashMap<String, String>();
+        for (Id id : ids()) {
             Conf conf = repo.conf(id);
-            if(conf.isExposeContainerIp()) {
+            if (conf.isExposeContainerIp()) {
                 String containerName = repo.containerName(id);
                 InspectContainerResponse containerInspectResponse = docker.inspectContainerCmd(containerName).exec();
-                nameAndIpMap.put(containerName, containerInspectResponse.getNetworkSettings().getIpAddress());
+                idToIpAddressMap.put(id.toString(), containerInspectResponse.getNetworkSettings().getIpAddress());
             }
         }
-        return nameAndIpMap;
-	}
+        return idToIpAddressMap;
+    }
 
 	public void stop() {
 		for (Id id : repo.ids(true)) {
