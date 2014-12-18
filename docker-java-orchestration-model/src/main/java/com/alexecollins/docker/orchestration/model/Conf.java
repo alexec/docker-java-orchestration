@@ -4,6 +4,7 @@ package com.alexecollins.docker.orchestration.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +12,7 @@ import java.util.Map;
 @SuppressWarnings("CanBeFinal")
 public class Conf {
     @JsonProperty(required = false)
-    private String tag = null;
+    private List<String> tags = new ArrayList<String>();
     @JsonProperty(required = false)
     private List<Link> links = new ArrayList<Link>();
     @JsonProperty(required = false)
@@ -31,17 +32,27 @@ public class Conf {
     @JsonProperty(required = false)
     private Map<String, String> volumes = new HashMap<String, String>();
 
-
     public boolean hasTag() {
-        return tag != null && !tag.isEmpty();
+      return tags != null && !tags.isEmpty();
     }
 
+    /**
+     * @return Returns the first tag of a list of tags
+     */
     public String getTag() {
-        return tag;
+        return tags.get(0);
     }
 
     public void setTag(String tag) {
-        this.tag = tag;
+        setTags(Arrays.asList(tag));
+    }
+    
+    public List<String> getTags() {
+      return tags;
+    }
+    
+    public void setTags(List<String> tags) {
+      this.tags = tags;
     }
 
     public List<Link> getLinks() {

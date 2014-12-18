@@ -147,9 +147,9 @@ public class DockerOrchestrator {
 
 
 
-	@SuppressWarnings(("DM_DEFAULT_ENCODING"))
-	private void build(File dockerFolder, Id id) {
-		try {
+    @SuppressWarnings(("DM_DEFAULT_ENCODING"))
+    private void build(File dockerFolder, Id id) {
+        try {
             BuildImageCmd build = docker.buildImageCmd(dockerFolder);
             for(BuildFlag f : buildFlags){
                 switch (f){
@@ -161,14 +161,21 @@ public class DockerOrchestrator {
             build = build.withTag(tag);
             logger.info("Build " + id + " (" + tag + ")");
             throwExceptionIfThereIsAnError(build.exec());
-		} catch (DockerException e) {
-			throw new OrchestrationException(e);
-		} catch (IOException e) {
+            
+            for (String otherTag : repo.conf(id).getTags()) {
+              if (otherTag.contains(":")) {
+                String[] parts = otherTag.split(":");
+                docker.tagImageCmd(repo.findImageId(id), parts[0], parts[1]).exec();
+              }
+            }
+        } catch (DockerException e) {
+            throw new OrchestrationException(e);
+        } catch (IOException e) {
             throw new OrchestrationException(e);
         }
 
         snooze();
-	}
+    }
 
 
     private void start(final Id id) {

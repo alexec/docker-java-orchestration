@@ -35,29 +35,29 @@ class Repo {
      * @param user Name of the repo use. Maybe null.
      */
     @SuppressWarnings("ConstantConditions")
-	Repo(DockerClient docker, String user, String project, File src, Properties properties){
+    Repo(DockerClient docker, String user, String project, File src, Properties properties){
         if (docker == null) {throw new IllegalArgumentException("docker is null");}
-    	if (project == null) {throw new IllegalArgumentException("project is null");}
-		if (src == null) {throw new IllegalArgumentException("src is null");}
-		if (!src.isDirectory()) {throw new IllegalArgumentException("src " + src + " does not exist or is directory");}
+        if (project == null) {throw new IllegalArgumentException("project is null");}
+        if (src == null) {throw new IllegalArgumentException("src is null");}
+        if (!src.isDirectory()) {throw new IllegalArgumentException("src " + src + " does not exist or is directory");}
         if (properties == null) {throw new IllegalArgumentException("properties is null");}
 
         this.user = user;
-		this.docker = docker;
-		this.project = project;
-		this.src = src;
+        this.docker = docker;
+        this.project = project;
+        this.src = src;
 
         if (src.isDirectory()) {
-			for (File file : src.listFiles()) {
-				final File confFile = new File(file, "conf.yml");
+          for (File file : src.listFiles()) {
+            final File confFile = new File(file, "conf.yml");
                 try {
                     confs.put(new Id(file.getName()), confFile.length() > 0 ? MAPPER.readValue(confReader(confFile, properties), Conf.class) : new Conf());
                 } catch (IOException e) {
                    throw new OrchestrationException(e);
                 }
             }
-		}
-	}
+        }
+    }
 
     private static Reader confReader(File confFile, Properties properties) throws FileNotFoundException {
         return new TokenReplacingReader(new FileReader(confFile), new PropertiesTokenResolver(properties));
