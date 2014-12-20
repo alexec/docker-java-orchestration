@@ -14,6 +14,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 
 /**
@@ -28,6 +30,7 @@ public class DockerOrchestrator {
 	};
     private static final int SNOOZE = 0;
     private static final Logger DEFAULT_LOGGER = LoggerFactory.getLogger(DockerOrchestrator.class);
+    private static final String CONTAINER_IP_PATTERN = "__CONTAINER.IP__";
 
     private final Logger logger;
 	private final DockerClient docker;
@@ -291,15 +294,28 @@ public class DockerOrchestrator {
 		return running;
 	}
 
-	private void healthCheck(Id id) {
-		final HealthChecks healthChecks = conf(id).getHealthChecks();
-		for (Ping ping : healthChecks.getPings()) {
-			logger.info("Pinging " + ping.getUrl());
-			if (!Pinger.ping(ping.getUrl(), ping.getTimeout())) {
-				throw new OrchestrationException("timeout waiting for " + ping.getUrl() + " for " + ping.getTimeout());
-			}
-		}
-	}
+
+
+    private void healthCheck(Id id) {
+        final HealthChecks healthChecks = conf(id).getHealthChecks();
+        for (Ping ping : healthChecks.getPings()) {
+            URI uri;
+            if (ping.getUrl().toString().contains(CONTAINER_IP_PATTERN)) {
+                try {
+                    uri = new URI(ping.getUrl().toString().replace(CONTAINER_IP_PATTERN, getIPAddresses().get(id.toString())));
+                } catch (URISyntaxException e) {
+                    throw new OrchestrationException("Bad health check URI syntax: " + e.getMessage() + ", input: " + e.getInput() + ", index:" + e.getIndex());
+                }
+            } else {
+                uri = ping.getUrl();
+            }
+            logger.info("Pinging " + uri);
+
+            if (!Pinger.ping(uri, ping.getTimeout())) {
+                throw new OrchestrationException("timeout waiting for " + uri + " for " + ping.getTimeout());
+            }
+        }
+    }
 
 	private void prepareHostConfig(Id id, StartContainerCmd config) {
 		config.withPublishAllPorts(true);
@@ -383,6 +399,19 @@ public class DockerOrchestrator {
 			start(id);
 		}
 	}
+
+    public Map<String, String> getIPAddresses() {
+        Map<String, String> idToIpAddressMap = new HashMap<String, String>();
+        for (Id id : ids()) {
+            Conf conf = repo.conf(id);
+            if (conf.isExposeContainerIp()) {
+                String containerName = repo.containerName(id);
+                InspectContainerResponse containerInspectResponse = docker.inspectContainerCmd(containerName).exec();
+                idToIpAddressMap.put(id.toString(), containerInspectResponse.getNetworkSettings().getIpAddress());
+            }
+        }
+        return idToIpAddressMap;
+    }
 
 	public void stop() {
 		for (Id id : repo.ids(true)) {
