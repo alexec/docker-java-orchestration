@@ -1,8 +1,9 @@
 Change Log
 ===
-2.1.0
+2.3.0
 
 * [DJO Pull 15](https://github.com/alexec/docker-java-orchestration/pull/15) Add method to get ID addresses.
+* Changed to Apache 2.0 licence.
 
 2.2.0
 
