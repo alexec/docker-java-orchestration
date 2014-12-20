@@ -1,5 +1,9 @@
 Change Log
 ===
+2.1.0
+
+* [DJO Pull 15](https://github.com/alexec/docker-java-orchestration/pull/15) Add method to get ID addresses.
+
 2.2.0
 
 * Provide a plugin system, and a boot2docker plugin that sets up port fowarding automatically.
