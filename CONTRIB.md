@@ -2,6 +2,7 @@ Contributors
 ===
 
 * Alex Collins
+* Changgeng Li
 * Christian Heineman
 * Dan Jasek
 * Jacob Bay Hansen
