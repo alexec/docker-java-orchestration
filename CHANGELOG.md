@@ -4,6 +4,7 @@ Change Log
 
 * [DJO Pull 15](https://github.com/alexec/docker-java-orchestration/pull/15) Add method to get ID addresses.
 * Changed to Apache 2.0 licence.
+* [DJO Issue 32](https://github.com/alexec/docker-maven-plugin/issues/32) Added support for private repositories.
 
 2.2.0
 
