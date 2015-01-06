@@ -8,6 +8,7 @@ import com.alexecollins.docker.orchestration.model.Link;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.command.*;
+import com.github.dockerjava.api.model.AuthConfig;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ContainerConfig;
 import org.apache.commons.io.IOUtils;
@@ -37,6 +38,9 @@ public class DockerOrchestratorUTest {
 
     private static final String CONTAINER_NAME = "theContainer";
     private static final String CONTAINER_ID = "containerId";
+
+    private static final String TAG_NAME = "test-tag";
+
     private final Logger logger = mock(Logger.class);
 
     @Mock private DockerClient dockerMock;
@@ -58,6 +62,8 @@ public class DockerOrchestratorUTest {
     @Mock private ListContainersCmd listContainersCmdMockOnlyRunning;
     @Mock private RemoveContainerCmd removeContainerCmdMock;
     @Mock private StopContainerCmd stopContainerCmdMock;
+    @Mock private TagImageCmd tagImageCmdMock;
+    @Mock private PushImageCmd pushImageCmd;
 
     private DockerOrchestrator testObj;
 
@@ -74,6 +80,7 @@ public class DockerOrchestratorUTest {
 
         when(confMock.getLinks()).thenReturn(new ArrayList<Link>());
         when(confMock.getHealthChecks()).thenReturn(new HealthChecks());
+        when(confMock.getTags()).thenReturn(Arrays.asList(IMAGE_NAME + ":" + TAG_NAME));
 
         when(repoMock.findImageId(idMock)).thenReturn(IMAGE_ID);
         when(repoMock.findContainer(idMock)).thenReturn(containerMock);
@@ -83,7 +90,7 @@ public class DockerOrchestratorUTest {
 
         when(repoMock.ids(false)).thenReturn(Arrays.asList(idMock));
         when(repoMock.ids(true)).thenReturn(Arrays.asList(idMock));
-        when(repoMock.tag(any(Id.class))).thenReturn("test-tag");
+        when(repoMock.tag(any(Id.class))).thenReturn(IMAGE_NAME + ":" + TAG_NAME);
 
         when(dockerMock.buildImageCmd(eq(fileMock))).thenReturn(buildImageCmdMock);
         when(buildImageCmdMock.withTag(any(String.class))).thenReturn(buildImageCmdMock);
@@ -107,6 +114,12 @@ public class DockerOrchestratorUTest {
         when(inspectContainerCmdMock.exec()).thenReturn(containerInspectResponseMock);
         when(containerInspectResponseMock.getImageId()).thenReturn(IMAGE_ID);
 
+        when(dockerMock.tagImageCmd(anyString(), anyString(), anyString())).thenReturn(tagImageCmdMock);
+        when(tagImageCmdMock.withForce()).thenReturn(tagImageCmdMock);
+
+        when(dockerMock.pushImageCmd(anyString())).thenReturn(pushImageCmd);
+        when(pushImageCmd.withAuthConfig(any(AuthConfig.class))).thenReturn(pushImageCmd);
+        when(pushImageCmd.exec()).thenReturn(IOUtils.toInputStream("{\"status\":\"The push refers to...\"}"));
     }
 
 
@@ -177,5 +190,42 @@ public class DockerOrchestratorUTest {
         testObj.start();
 
         assertEquals("idMock", testObjPlugin.lastStarted().toString());
+    }
+
+    @Test
+    public void buildImage() {
+        testObj.build(idMock);
+
+        verify(dockerMock).tagImageCmd(IMAGE_ID, IMAGE_NAME, TAG_NAME);
+    }
+
+    @Test
+    public void buildImageWithRegistryAndPort() {
+        String repositoryWithRegistryAndPort = "my.registry.com:5000/mynamespace/myrepository";
+
+        when(confMock.getTags()).thenReturn(Arrays.asList(repositoryWithRegistryAndPort + ":" + TAG_NAME));
+        when(tagImageCmdMock.withForce()).thenReturn(tagImageCmdMock);
+
+        testObj.build(idMock);
+
+        verify(dockerMock).tagImageCmd(IMAGE_ID, repositoryWithRegistryAndPort, TAG_NAME);
+    }
+
+    @Test
+    public void pushImage() {
+        testObj.push();
+
+        verify(dockerMock).pushImageCmd(IMAGE_NAME);
+    }
+
+    @Test
+    public void pushImageWithRegistryAndPort() {
+        String repositoryWithRegistryAndPort = "my.registry.com:5000/mynamespace/myrepository";
+
+        when(repoMock.tag(idMock)).thenReturn(repositoryWithRegistryAndPort + ":" + TAG_NAME);
+
+        testObj.push();
+
+        verify(dockerMock).pushImageCmd(repositoryWithRegistryAndPort);
     }
 }

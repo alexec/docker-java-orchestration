@@ -164,12 +164,14 @@ public class DockerOrchestrator {
             build = build.withTag(tag);
             logger.info("Build " + id + " (" + tag + ")");
             throwExceptionIfThereIsAnError(build.exec());
-            
+
             for (String otherTag : repo.conf(id).getTags()) {
-              if (otherTag.contains(":")) {
-                String[] parts = otherTag.split(":");
-                docker.tagImageCmd(repo.findImageId(id), parts[0], parts[1]).exec();
-              }
+                int lastIndexOfColon = otherTag.lastIndexOf(':');
+                if (lastIndexOfColon > -1) {
+                    String repositoryName = otherTag.substring(0, lastIndexOfColon);
+                    String tagName = otherTag.substring(lastIndexOfColon + 1);
+                    docker.tagImageCmd(repo.findImageId(id), repositoryName, tagName).withForce().exec();
+                }
             }
         } catch (DockerException e) {
             throw new OrchestrationException(e);
@@ -444,7 +446,7 @@ public class DockerOrchestrator {
 	}
 
     private String repo(Id id) {
-        return repo.tag(id).replaceFirst(":.*", "");
+        return repo.tag(id).replaceFirst(":[^:]*$", "");
     }
 
     private void throwExceptionIfThereIsAnError(InputStream exec) throws IOException {
