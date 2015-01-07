@@ -15,13 +15,17 @@ import java.util.List;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 
 public class DockerOrchestratorIT {
     private final File src = new File("src/test/docker");
+    private final File srcWrong = new File("src/test/wrongDocker");
     private final File workDir = new File("target/docker");
     private final File projDir = new File("");
     private DockerOrchestrator orchestrator;
+    private DockerOrchestrator wrongOrchestrator;
     private DockerClient docker;
 
     @After
@@ -39,6 +43,16 @@ public class DockerOrchestratorIT {
         orchestrator = new DockerOrchestrator(
                 docker,
                 src,
+                workDir,
+                projDir,
+                "registry",
+                "docker-java-orchestrator",
+                DockerOrchestrator.DEFAULT_FILTER,
+                new Properties());
+
+        wrongOrchestrator = new DockerOrchestrator(
+                docker,
+                srcWrong,
                 workDir,
                 projDir,
                 "registry",
@@ -98,5 +112,25 @@ public class DockerOrchestratorIT {
     @Test
     public void testIsRunning() throws Exception {
         orchestrator.isRunning();
+    }
+
+    @Test
+    public void testValidate() throws Exception {
+        boolean hasException = false;
+        try {
+            orchestrator.validate();
+        } catch (Exception e) {
+            hasException= true;
+        }
+        assertFalse(hasException);
+
+        hasException = false;
+        try {
+            wrongOrchestrator.validate();
+        } catch (Exception e) {
+            hasException= true;
+        }
+        assertTrue(hasException);
+
     }
 }
