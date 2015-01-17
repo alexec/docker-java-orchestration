@@ -1,5 +1,9 @@
 Change Log
 ===
+2.3.1
+
+* Fix splitting of tag name when tag contains port declaration for non-default registry.
+
 2.3.0
 
 * [DJO Pull 15](https://github.com/alexec/docker-java-orchestration/pull/15) Add method to get ID addresses.
