@@ -8,7 +8,7 @@ import java.util.List;
 
 @SuppressWarnings("CanBeFinal")
 public class Packaging {
-    @JsonProperty(required = false)
+    @JsonProperty
     private List<String> add = new ArrayList<String>();
 
 	public List<String> getAdd() {

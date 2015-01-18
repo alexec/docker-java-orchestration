@@ -313,8 +313,8 @@ public class DockerOrchestrator {
             }
             logger.info("Pinging " + uri);
 
-            if (!Pinger.ping(uri, ping.getTimeout())) {
-                throw new OrchestrationException("timeout waiting for " + uri + " for " + ping.getTimeout());
+            if (!Pinger.ping(uri, ping.getPattern(), ping.getTimeout())) {
+                throw new OrchestrationException("timeout waiting for " + uri + " for " + ping.getTimeout() + " with pattern " + ping.getPattern());
             }
         }
     }
