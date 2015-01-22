@@ -379,7 +379,10 @@ public class DockerOrchestrator {
 			} catch (DockerException e) {
 				throw new OrchestrationException(e);
 			}
-			snooze();
+            for (Plugin plugin : plugins) {
+                plugin.stopped(id, conf(id));
+            }
+            snooze();
 		}
 	}
 

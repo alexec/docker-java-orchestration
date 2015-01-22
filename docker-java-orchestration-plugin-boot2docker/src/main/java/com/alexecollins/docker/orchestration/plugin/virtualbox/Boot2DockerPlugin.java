@@ -17,23 +17,36 @@ public class Boot2DockerPlugin implements Plugin {
     public void started(Id id, Conf conf) {
         for (String stringPort : conf.getPorts()) {
             int port = Integer.parseInt(stringPort.split(" ")[0]);
-            LOGGER.info("Setting up VirtualBox port forward for " + port);
-            try {
-                deletePortForward(port);
-            } catch (RuntimeException e) {
-                if (!e.getMessage().contains("NS_ERROR_INVALID_ARG")) {
-                    throw e;
-                }
-            }
+            quietlyDeletePortForward(port);
             createPortForward(port);
         }
     }
 
+    @Override
+    public void stopped(Id id, Conf conf) {
+        for (String stringPort : conf.getPorts()) {
+            int port = Integer.parseInt(stringPort.split(" ")[0]);
+            quietlyDeletePortForward(port);
+        }
+    }
+
+    private void quietlyDeletePortForward(int port) {
+        try {
+            deletePortForward(port);
+        } catch (RuntimeException e) {
+            if (!e.getMessage().contains("NS_ERROR_INVALID_ARG")) {
+                throw e;
+            }
+        }
+    }
+
     private void deletePortForward(int port) {
+        LOGGER.info("Deleting VirtualBox port forward for " + port);
         exec("VBoxManage controlvm boot2docker-vm natpf1 delete " + port);
     }
 
     private void createPortForward(int port) {
+        LOGGER.info("Creating VirtualBox port forward for " + port);
         exec("VBoxManage controlvm boot2docker-vm natpf1 " + port + ",tcp,127.0.0.1," + port + ",," + port + "");
     }
 

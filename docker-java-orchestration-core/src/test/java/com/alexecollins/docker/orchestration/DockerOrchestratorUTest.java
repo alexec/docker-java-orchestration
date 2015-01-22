@@ -110,6 +110,8 @@ public class DockerOrchestratorUTest {
         when(listContainersCmdMockOnlyRunning.withShowAll(false)).thenReturn(listContainersCmdMockOnlyRunning);
         when(listContainersCmdMockOnlyRunning.exec()).thenReturn(Collections.EMPTY_LIST);
 
+        when(stopContainerCmdMock.withTimeout(anyInt())).thenReturn(stopContainerCmdMock);
+
         when(dockerMock.inspectContainerCmd(CONTAINER_ID)).thenReturn(inspectContainerCmdMock);
         when(inspectContainerCmdMock.exec()).thenReturn(containerInspectResponseMock);
         when(containerInspectResponseMock.getImageId()).thenReturn(IMAGE_ID);
@@ -182,7 +184,7 @@ public class DockerOrchestratorUTest {
     }
 
     @Test
-    public void plugin() throws Exception {
+    public void pluginStarted() throws Exception {
         TestPlugin testObjPlugin = testObj.getPlugin(TestPlugin.class);
 
         assertNull(testObjPlugin.lastStarted());
@@ -190,6 +192,18 @@ public class DockerOrchestratorUTest {
         testObj.start();
 
         assertEquals("idMock", testObjPlugin.lastStarted().toString());
+    }
+
+    @Test
+    public void pluginStopped() throws Exception {
+        when(repoMock.findContainers(idMock, false)).thenReturn(Arrays.asList(containerMock));
+        TestPlugin testObjPlugin = testObj.getPlugin(TestPlugin.class);
+
+        assertNull(testObjPlugin.lastStopped());
+
+        testObj.stop();
+
+        assertEquals("idMock", testObjPlugin.lastStopped().toString());
     }
 
     @Test
