@@ -9,9 +9,9 @@ import java.util.List;
 @SuppressWarnings("CanBeFinal")
 public class Packaging {
     @JsonProperty
-    private List<String> add = new ArrayList<String>();
+    private List<Item> add = new ArrayList<Item>();
 
-	public List<String> getAdd() {
+	public List<Item> getAdd() {
 		return add;
 	}
 }

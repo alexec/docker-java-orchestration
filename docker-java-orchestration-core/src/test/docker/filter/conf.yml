@@ -1,0 +1,5 @@
+packaging:
+    add:
+        - example-${project.version}.jar
+        - path: example-${project.version}.jar
+          filter: false
