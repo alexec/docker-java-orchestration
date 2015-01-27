@@ -34,32 +34,38 @@ public class FileValidator {
     private final static HashMap<String, Pattern> instructionsParams = new HashMap<String, Pattern>();
 
     static {
-        instructionsParams.put("FROM", Pattern.compile("/^[a-z0-9.\\/_-]+(:[a-z0-9._-]+)?$/"));
-        instructionsParams.put("MAINTAINER", Pattern.compile("/.+/"));
-        instructionsParams.put("EXPOSE", Pattern.compile("/^[0-9]+([0-9\\s]+)?$/"));
-        instructionsParams.put("ENV", Pattern.compile("/^[a-zA-Z_]+[a-zA-Z0-9_]* .+$/"));
-        instructionsParams.put("USER", Pattern.compile("/^[a-z_][a-z0-9_]{0,30}$/"));
-        instructionsParams.put("RUN", Pattern.compile("/.+/"));
-        instructionsParams.put("CMD", Pattern.compile("/.+/"));
-        instructionsParams.put("ONBUILD", Pattern.compile("/.+/"));
-        instructionsParams.put("ENTRYPOINT", Pattern.compile("/.+/"));
-        instructionsParams.put("ADD", Pattern.compile("/^(~?[A-z0-9\\/_.-]+|https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*))\\s~?[A-z0-9\\/_.-]+$/"));
-        instructionsParams.put("COPY", Pattern.compile("/^(~?[A-z0-9\\/_.-]+|https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*))\\s~?[A-z0-9\\/_.-]+$/"));
-        instructionsParams.put("VOLUME", Pattern.compile("/^~?([A-z0-9\\/_.-]+|\\[(\\s*)?(\"[A-z0-9\\/_. -]+\"(,\\s*)?)+(\\s*)?\\])$/"));
-        instructionsParams.put("WORKDIR", Pattern.compile("/^~?[A-z0-9\\/_.-]+$/"));
+        instructionsParams.put("FROM", Pattern.compile("^[a-z0-9.\\/_-]+(:[a-z0-9._-]+)?$", Pattern.MULTILINE ));
+        instructionsParams.put("MAINTAINER", Pattern.compile(".+"));
+        instructionsParams.put("EXPOSE", Pattern.compile("^[0-9]+([0-9\\s]+)?$"));
+        instructionsParams.put("ENV", Pattern.compile("^[a-zA-Z_]+[a-zA-Z0-9_]* .+$"));
+        instructionsParams.put("USER", Pattern.compile("^[a-z_][a-z0-9_]{0,30}$"));
+        instructionsParams.put("RUN", Pattern.compile(".+"));
+        instructionsParams.put("CMD", Pattern.compile(".+"));
+        instructionsParams.put("ONBUILD", Pattern.compile(".+"));
+        instructionsParams.put("ENTRYPOINT", Pattern.compile(".+"));
+        instructionsParams.put("ADD", Pattern.compile("^(~?[A-z0-9\\/_.-]+|https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*))\\s~?[A-z0-9\\/_.-]+$"));
+        instructionsParams.put("COPY", Pattern.compile("^(~?[A-z0-9\\/_.-]+|https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*))\\s~?[A-z0-9\\/_.-]+$"));
+        instructionsParams.put("VOLUME", Pattern.compile("^~?([A-z0-9\\/_.-]+|\\[(\\s*)?(\"[A-z0-9\\/_. -]+\"(,\\s*)?)+(\\s*)?\\])$"));
+        instructionsParams.put("WORKDIR", Pattern.compile("^~?[A-z0-9\\/_.-]+$"));
     }
 
 
     public static void validate(Id id, File src) throws IOException {
         Preconditions.checkArgument(src.exists(),
                 "Path %s doesn't exist", src);
-        Preconditions.checkArgument(src.isDirectory(),
-                "Folder %s doesn't exist", src);
-        Preconditions.checkState(new File(src, "Dockerfile").exists(),
-                "Dockerfile doesn't exist in " + src);
+        File dockerFile;
+        if(src.isDirectory()) {
+            Preconditions.checkState(new File(src, "Dockerfile").exists(),
+                    "Dockerfile doesn't exist in " + src);
 
-
-        File dockerFile = new File(src, "Dockerfile");
+            dockerFile = new File(src, "Dockerfile");
+        } else {
+            Preconditions.checkState("Dockerfile".equals(src.getName()),
+                    "Dockerfile isn't " + src);
+            dockerFile = src;
+            src = dockerFile.getParentFile();
+        }
+        
         List<String> dockerFileContent = FileUtils.readLines(dockerFile);
 
         if (dockerFileContent.size() <= 0) {
@@ -97,7 +103,7 @@ public class FileValidator {
         Map<String, String> environmentMap = new HashMap<String, String>();
 
         int lineNumber = 0;
-
+        boolean fromCheck = false;
         for (String cmd : dockerFileContent) {
 
             lineNumber++;
@@ -105,14 +111,39 @@ public class FileValidator {
             if (cmd.trim().isEmpty() || cmd.startsWith("#"))
                 continue; // skip emtpy and commend lines
 
-            String[] splitedCmd = cmd.trim().split(" ", 2);
-            String instruction = splitedCmd[0];
-            String instructionParams = splitedCmd[1];
+            String instruction;
+            String instructionParams;
+            if(cmd.trim().contains(" ")) {
+                String[] splitedCmd = cmd.trim().split(" ", 2);
+                instruction = splitedCmd[0];
+                instructionParams = splitedCmd[1];
+            } else {
+                instruction = cmd.trim();
+                instructionParams = null;
+            }
+
+            // First instruction must be FROM
+            if (!fromCheck) {
+                fromCheck = true;
+                if (!"FROM".equalsIgnoreCase(instruction)) {
+                    throw new IllegalArgumentException(String.format(
+                            "Missing or misplaced FROM on line [%d]", lineNumber));
+                }
+            } else {
+                if ("FROM".equalsIgnoreCase(instruction)) {
+                    throw new IllegalArgumentException(String.format(
+                            "Missing or misplaced FROM on line [%d]", lineNumber));
+                }
+            }
+
 
             if (instructionsParams.containsKey(instruction)) {
-                if (instructionsParams.get(instruction).matcher(instructionParams).groupCount() != 2)
+                if (! instructionsParams.get(instruction).matcher(instructionParams).matches())
                     throw new IllegalArgumentException(String.format(
                             "Wrong %s format on line [%d]", instruction, lineNumber));
+            } else {
+                throw new IllegalArgumentException(String.format(
+                        "Wrong instruction %s on line [%d]", instruction, lineNumber));
             }
 
         }
