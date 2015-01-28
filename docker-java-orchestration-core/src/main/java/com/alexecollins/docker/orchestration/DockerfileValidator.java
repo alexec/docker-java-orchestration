@@ -5,6 +5,7 @@ import com.github.dockerjava.api.DockerClientException;
 import com.github.dockerjava.core.GoLangFileMatch;
 import com.github.dockerjava.core.GoLangFileMatchException;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
@@ -17,15 +18,10 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * Created with IntelliJ IDEA.
- * User: guillaume_dufour
- * Date: 07/01/15
- * Time: 15:25
- * To change this template use File | Settings | File Templates.
+ * Dockerfile validator : validate the file format 
+ * TODO add check on best practice
  */
-public class FileValidator {
-
-    private final static String[] instructions = new String[] {"CMD", "FROM","MAINTAINER","RUN","EXPOSE","ENV","ADD","ENTRYPOINT","VOLUME","USER","WORKDIR","ONBUILD","COPY"};
+public class DockerfileValidator {
 
     // Some regexes sourced from:
     // http://stackoverflow.com/a/2821201/1216976
@@ -104,6 +100,7 @@ public class FileValidator {
 
         int lineNumber = 0;
         boolean fromCheck = false;
+        String currentLine = "";
         for (String cmd : dockerFileContent) {
 
             lineNumber++;
@@ -111,14 +108,19 @@ public class FileValidator {
             if (cmd.trim().isEmpty() || cmd.startsWith("#"))
                 continue; // skip emtpy and commend lines
 
+            currentLine += cmd;
+            if(cmd.endsWith("\\")) {
+                continue;
+            }
+            
             String instruction;
             String instructionParams;
-            if(cmd.trim().contains(" ")) {
-                String[] splitedCmd = cmd.trim().split(" ", 2);
-                instruction = splitedCmd[0];
-                instructionParams = splitedCmd[1];
+            if(currentLine.trim().contains(" ")) {
+                final String[] splitedLine = currentLine.trim().split(" ", 2);
+                instruction = splitedLine[0];
+                instructionParams = splitedLine[1];
             } else {
-                instruction = cmd.trim();
+                instruction = currentLine.trim();
                 instructionParams = null;
             }
 
@@ -127,12 +129,12 @@ public class FileValidator {
                 fromCheck = true;
                 if (!"FROM".equalsIgnoreCase(instruction)) {
                     throw new IllegalArgumentException(String.format(
-                            "Missing or misplaced FROM on line [%d]", lineNumber));
+                            "Missing or misplaced FROM on line [%d] of %s, found %s", lineNumber, dockerFile, currentLine));
                 }
             } else {
                 if ("FROM".equalsIgnoreCase(instruction)) {
                     throw new IllegalArgumentException(String.format(
-                            "Missing or misplaced FROM on line [%d]", lineNumber));
+                            "Missing or misplaced FROM on line [%d] of %s, found %s", lineNumber, dockerFile, currentLine));
                 }
             }
 
@@ -140,12 +142,21 @@ public class FileValidator {
             if (instructionsParams.containsKey(instruction)) {
                 if (! instructionsParams.get(instruction).matcher(instructionParams).matches())
                     throw new IllegalArgumentException(String.format(
-                            "Wrong %s format on line [%d]", instruction, lineNumber));
+                            "Wrong %s format on line [%d] of %s", currentLine, lineNumber, dockerFile));
             } else {
                 throw new IllegalArgumentException(String.format(
-                        "Wrong instruction %s on line [%d]", instruction, lineNumber));
+                        "Wrong instruction %s on line [%d] of %s", currentLine, lineNumber, dockerFile));
             }
+            
+            //Deal with multi lines
+            currentLine = "";
 
+        }
+        
+        if(!Strings.isNullOrEmpty(currentLine)){
+            throw new IllegalArgumentException(String.format(
+                    "Last instruction is not finish on line [%d] of %s, please remove the backslash", lineNumber, dockerFile));
+            
         }
 
     }

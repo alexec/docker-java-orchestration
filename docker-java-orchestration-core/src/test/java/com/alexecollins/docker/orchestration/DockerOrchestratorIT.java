@@ -14,9 +14,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 
 public class DockerOrchestratorIT {
@@ -116,21 +114,18 @@ public class DockerOrchestratorIT {
 
     @Test
     public void testValidate() throws Exception {
-        boolean hasException = false;
         try {
             orchestrator.validate();
         } catch (Exception e) {
-            hasException= true;
+            fail("Validate doesn't work on right formatted Dockerfile:"+e.getMessage());
         }
-        assertFalse(hasException);
-
-        hasException = false;
+        
         try {
             wrongOrchestrator.validate();
+            fail("Validate doesn't detect a wrong formatted Dockerfile");
         } catch (Exception e) {
-            hasException= true;
+            assertEquals("Missing or misplaced FROM on line [1] of src/test/wrongDocker/Dockerfile, found WRONG wrong command", e.getMessage());
         }
-        assertTrue(hasException);
 
     }
 }

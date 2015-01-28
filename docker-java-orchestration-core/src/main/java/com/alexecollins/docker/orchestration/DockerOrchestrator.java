@@ -132,12 +132,10 @@ public class DockerOrchestrator {
             throw new IllegalArgumentException("id is null");
         }
         try {
-            FileValidator.validate(id, repo.src(id));
+            DockerfileValidator.validate(id, repo.src(id));
         } catch (IOException e) {
             throw new OrchestrationException(e);
         }
-
-        snooze();
     }
 
 	private void snooze() {
