@@ -22,13 +22,17 @@ import java.util.*;
  * Orchestrates multiple Docker containers based on
  */
 public class DockerOrchestrator {
+    /**
+     * @deprecated This will be removed in a future release.
+     */
+    @Deprecated
+    @SuppressWarnings("unused")
     public static final FileFilter DEFAULT_FILTER = new FileFilter() {
 		@Override
 		public boolean accept(File pathname) {
 			return false;
 		}
 	};
-    private static final int SNOOZE = 0;
     private static final Logger DEFAULT_LOGGER = LoggerFactory.getLogger(DockerOrchestrator.class);
     private static final String CONTAINER_IP_PATTERN = "__CONTAINER.IP__";
 
@@ -39,34 +43,47 @@ public class DockerOrchestrator {
     private final FileOrchestrator fileOrchestrator;
 	private final Set<BuildFlag> buildFlags;
     private final List<Plugin> plugins = new ArrayList<Plugin>();
+    private final DockerfileValidator dockerfileValidator;
 
+    /**
+     * @deprecated Please use builder from now on.
+     */
+    @Deprecated
     public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String user, String project, FileFilter filter, Properties properties) {
-        this(docker, new Repo(docker, user, project, src, properties), new FileOrchestrator(workDir, rootDir, filter, properties), EnumSet.noneOf(BuildFlag.class), DEFAULT_LOGGER);
+        this(docker, new Repo(docker, user, project, src, properties), new FileOrchestrator(workDir, rootDir, filter, properties), EnumSet.noneOf(BuildFlag.class), DEFAULT_LOGGER, new DockerfileValidator());
     }
 
-	public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String user, String project, FileFilter filter, Properties properties, Set<BuildFlag> buildFlags) {
-        this(docker, new Repo(docker, user, project, src, properties), new FileOrchestrator(workDir, rootDir, filter, properties), buildFlags, DEFAULT_LOGGER);
-	}
+    /**
+     * @deprecated Please use builder from now on.
+     */
+    @Deprecated
+    public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String user, String project, FileFilter filter, Properties properties, Set<BuildFlag> buildFlags) {
+        this(docker, new Repo(docker, user, project, src, properties), new FileOrchestrator(workDir, rootDir, filter, properties), buildFlags, DEFAULT_LOGGER, new DockerfileValidator());
+    }
 
-	DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Logger logger) {
-		this(docker,repo, fileOrchestrator, EnumSet.noneOf(BuildFlag.class), logger);
-	}
-
-    private DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Set<BuildFlag> buildFlags, Logger logger) {
-	    if (docker == null) {
+    DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Set<BuildFlag> buildFlags, Logger logger, DockerfileValidator dockerfileValidator) {
+        if (docker == null) {
             throw new IllegalArgumentException("docker is null");
         }
         if (repo == null) {
             throw new IllegalArgumentException("repo is null");
         }
-	    if (buildFlags == null) {throw new IllegalArgumentException("buildFlags is null");}
-
+        if (buildFlags == null) {
+            throw new IllegalArgumentException("buildFlags is null");
+        }
+        if (fileOrchestrator == null) {
+            throw new IllegalArgumentException("fileOrchestrator is null");
+        }
+        if (dockerfileValidator == null) {
+            throw new IllegalArgumentException("dockerfileValidator is null");
+        }
 
         this.docker = docker;
         this.repo = repo;
         this.fileOrchestrator = fileOrchestrator;
 	    this.buildFlags = buildFlags;
         this.logger = logger;
+        this.dockerfileValidator = dockerfileValidator;
 
         for (Plugin plugin : ServiceLoader.load(Plugin.class)) {
             plugins.add(plugin);
@@ -74,11 +91,15 @@ public class DockerOrchestrator {
         }
     }
 
-	public void clean() {
-		for (Id id : repo.ids(true)) {
-			stop(id);
-			clean(id);
-		}
+    public static DockerOrchestratorBuilder builder() {
+        return new DockerOrchestratorBuilder();
+    }
+
+    public void clean() {
+        for (Id id : repo.ids(true)) {
+            stop(id);
+            clean(id);
+        }
 	}
 
 	void clean(final Id id) {
@@ -111,8 +132,7 @@ public class DockerOrchestrator {
 				logger.warn(e.getMessage());
 			}
 		}
-		snooze();
-	}
+    }
 
 	void build(final Id id) {
 		if (id == null) {
@@ -124,31 +144,18 @@ public class DockerOrchestrator {
 			throw new OrchestrationException(e);
 		}
 
-		snooze();
-	}
+    }
 
-    void validate(final Id id) {
+    private void validate(final Id id) {
         if (id == null) {
             throw new IllegalArgumentException("id is null");
         }
         try {
-            DockerfileValidator.validate(id, repo.src(id));
+            dockerfileValidator.validate(repo.src(id));
         } catch (IOException e) {
             throw new OrchestrationException(e);
         }
     }
-
-	private void snooze() {
-        if (SNOOZE == 0) {
-            return;
-        }
-        logger.info("Snoozing for " + SNOOZE + "ms");
-		try {
-			Thread.sleep(SNOOZE);
-		} catch (InterruptedException e) {
-			throw new OrchestrationException(e);
-		}
-	}
 
     private File prepare(Id id) throws IOException {
         if (id == null) {
@@ -187,9 +194,7 @@ public class DockerOrchestrator {
             throw new OrchestrationException(e);
         }
 
-        snooze();
     }
-
 
     private void start(final Id id) {
         if (id == null) {
@@ -220,8 +225,7 @@ public class DockerOrchestrator {
         } catch (DockerException e) {
             throw new OrchestrationException(e);
         }
-	    snooze();
-	    healthCheck(id);
+        healthCheck(id);
     }
 
     private boolean isImageIdFromContainerMatchingProvidedImageId(String containerId, final Id id) {
@@ -268,7 +272,6 @@ public class DockerOrchestrator {
         return repo.conf(id);
     }
 
-
     private String createNewContainer(Id id) throws DockerException {
         logger.info("Creating " + id);
         Conf conf = conf(id);
@@ -277,7 +280,6 @@ public class DockerOrchestrator {
         logger.info(" - env " + conf.getEnv());
         createCmd.withEnv(asEnvList(conf.getEnv()));
         CreateContainerResponse response = createCmd.exec();
-		snooze();
         return response.getId();
 	}
 
@@ -293,7 +295,6 @@ public class DockerOrchestrator {
         return list.toArray(new String[list.size()]);
     }
 
-
     private boolean isRunning(Id id) {
 		if (id == null) {throw new IllegalArgumentException("id is null");}
 		boolean running = false;
@@ -303,8 +304,6 @@ public class DockerOrchestrator {
 		}
 		return running;
 	}
-
-
 
     private void healthCheck(Id id) {
         final HealthChecks healthChecks = conf(id).getHealthChecks();
@@ -390,9 +389,8 @@ public class DockerOrchestrator {
             for (Plugin plugin : plugins) {
                 plugin.stopped(id, conf(id));
             }
-            snooze();
-		}
-	}
+        }
+    }
 
 	public void build() {
 		for (Id id : ids()) {
@@ -459,8 +457,7 @@ public class DockerOrchestrator {
 		} catch (IOException e) {
 			throw new OrchestrationException(e);
         }
-        snooze();
-	}
+    }
 
     private String repo(Id id) {
         return repo.tag(id).replaceFirst(":[^:]*$", "");
@@ -491,6 +488,7 @@ public class DockerOrchestrator {
 		return true;
 	}
 
+    @SuppressWarnings("unchecked")
     <P extends Plugin> P getPlugin(Class<P> pluginClass) {
         for (Plugin plugin : plugins) {
             if (plugin.getClass().equals(pluginClass)) {

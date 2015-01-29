@@ -1,8 +1,8 @@
 package com.alexecollins.docker.orchestration;
 
-import com.alexecollins.docker.orchestration.model.Item;
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.Id;
+import com.alexecollins.docker.orchestration.model.Item;
 import com.alexecollins.docker.orchestration.util.Filters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +14,7 @@ import java.util.Properties;
 
 import static org.apache.commons.io.FileUtils.*;
 
-public class FileOrchestrator {
+class FileOrchestrator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileOrchestrator.class);
 
@@ -37,7 +37,7 @@ public class FileOrchestrator {
      */
     private final File rootDir;
 
-    protected FileOrchestrator(File workDir, File rootDir, FileFilter fileFilter, Properties properties) {
+    FileOrchestrator(File workDir, File rootDir, FileFilter fileFilter, Properties properties) {
         if (workDir == null) {
             throw new IllegalArgumentException("Working output directory is null");
         }
@@ -57,7 +57,7 @@ public class FileOrchestrator {
         this.properties = properties;
     }
 
-    protected File prepare(Id id, File dockerFolder, Conf conf) throws IOException {
+    File prepare(Id id, File dockerFolder, Conf conf) throws IOException {
         if (id == null) {
             throw new IllegalArgumentException("id is null");
         }

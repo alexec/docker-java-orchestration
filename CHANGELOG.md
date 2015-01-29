@@ -4,6 +4,8 @@ Change Log
 
 * Added the ability to verify the body of a ping health-check.
 * [DJO Issue 17](https://github.com/alexec/docker-java-orchestration/issues/17) Can disable filtering on "added" properties.
+* [DJO Pull 18](https://github.com/alexec/docker-java-orchestration/pull/18) Added ability to validate your `Dockerfile`s.
+* Exposed `DockerOrchestrator.builder()` to make it easier to build it.
 
 2.3.1
 

@@ -13,10 +13,14 @@ import java.io.InputStreamReader;
 public class Boot2DockerPlugin implements Plugin {
     private static final Logger LOGGER = LoggerFactory.getLogger(Boot2DockerPlugin.class);
 
+    private static int hostPort(String stringPort) {
+        return Integer.parseInt(stringPort.split(" ")[0]);
+    }
+
     @Override
     public void started(Id id, Conf conf) {
         for (String stringPort : conf.getPorts()) {
-            int port = Integer.parseInt(stringPort.split(" ")[0]);
+            int port = hostPort(stringPort);
             quietlyDeletePortForward(port);
             createPortForward(port);
         }
@@ -25,7 +29,7 @@ public class Boot2DockerPlugin implements Plugin {
     @Override
     public void stopped(Id id, Conf conf) {
         for (String stringPort : conf.getPorts()) {
-            int port = Integer.parseInt(stringPort.split(" ")[0]);
+            int port = hostPort(stringPort);
             quietlyDeletePortForward(port);
         }
     }

@@ -8,60 +8,62 @@ import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 
 public class DockerOrchestratorIT {
     private final File src = new File("src/test/docker");
-    private final File srcWrong = new File("src/test/wrongDocker");
     private final File workDir = new File("target/docker");
     private final File projDir = new File("");
     private DockerOrchestrator orchestrator;
-    private DockerOrchestrator wrongOrchestrator;
     private DockerClient docker;
+
+    private static Properties properties() throws IOException {
+        Properties properties = new Properties();
+        File file = File.createTempFile("testFile", "txt");
+        properties.setProperty("testFile.path", file.getCanonicalPath());
+        properties.setProperty("testFile.name", file.getName());
+        return properties;
+    }
 
     @After
     public void tearDown() throws Exception {
-        if (orchestrator != null)
-            orchestrator.clean();
+        if (orchestrator != null) {
+            try {
+                orchestrator.clean();
+            } catch (Exception e) {
+                System.err.println("ignoring exception in tear down " + e);
+            }
+        }
     }
 
     @Before
     public void setUp() throws Exception {
 
-        DockerClientConfig config = DockerClientConfig.createDefaultConfigBuilder().build();
-        docker = DockerClientBuilder.getInstance(config).build();
+        docker = DockerClientBuilder.getInstance(DockerClientConfig.createDefaultConfigBuilder().build()).build();
 
-        orchestrator = new DockerOrchestrator(
-                docker,
-                src,
-                workDir,
-                projDir,
-                "registry",
-                "docker-java-orchestrator",
-                DockerOrchestrator.DEFAULT_FILTER,
-                new Properties());
-
-        wrongOrchestrator = new DockerOrchestrator(
-                docker,
-                srcWrong,
-                workDir,
-                projDir,
-                "registry",
-                "docker-java-orchestrator",
-                DockerOrchestrator.DEFAULT_FILTER,
-                new Properties());
+        orchestrator = DockerOrchestrator.builder()
+                .docker(docker)
+                .src(src)
+                .workDir(workDir)
+                .rootDir(projDir)
+                .user("registry")
+                .properties(properties())
+                .project("docker-java-orchestrator")
+                .build();
     }
 
     @Test
     public void testList() throws Exception {
-        assertEquals(3, orchestrator.ids().size());
+        assertEquals(4, orchestrator.ids().size());
     }
 
     @Test
@@ -101,6 +103,7 @@ public class DockerOrchestratorIT {
         orchestrator.stop();
     }
 
+    @Ignore("no private repo to test with")
     @Test
     public void testPush() throws Exception {
         orchestrator.build();
@@ -110,22 +113,5 @@ public class DockerOrchestratorIT {
     @Test
     public void testIsRunning() throws Exception {
         orchestrator.isRunning();
-    }
-
-    @Test
-    public void testValidate() throws Exception {
-        try {
-            orchestrator.validate();
-        } catch (Exception e) {
-            fail("Validate doesn't work on right formatted Dockerfile:"+e.getMessage());
-        }
-        
-        try {
-            wrongOrchestrator.validate();
-            fail("Validate doesn't detect a wrong formatted Dockerfile");
-        } catch (Exception e) {
-            assertEquals("Missing or misplaced FROM on line [1] of src/test/wrongDocker/Dockerfile, found WRONG wrong command", e.getMessage());
-        }
-
     }
 }
