@@ -8,6 +8,9 @@ public class Item {
     @JsonProperty
     private boolean filter = true;
 
+    public Item() {
+    }
+
     // allows for backwards compatibility
     public Item(String path) {
         this.path = path;
