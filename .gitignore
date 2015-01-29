@@ -6,6 +6,7 @@
 .project
 .settings
 .classpath
+pom.xml.versionsBackup
 
 # Ignore all build/dist directories
 target

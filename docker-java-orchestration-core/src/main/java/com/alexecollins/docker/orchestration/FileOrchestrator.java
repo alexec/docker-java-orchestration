@@ -1,5 +1,6 @@
 package com.alexecollins.docker.orchestration;
 
+import com.alexecollins.docker.orchestration.model.Item;
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.util.Filters;
@@ -67,10 +68,12 @@ public class FileOrchestrator {
         Filters.filter(destDir, filter, properties);
 
         // copy files
-        for (String file : conf.getPackaging().getAdd()) {
-            File fileEntry = new File(rootDir, file);
+        for (Item item : conf.getPackaging().getAdd()) {
+            File fileEntry = new File(rootDir, item.getPath());
             copyFileEntry(destDir, fileEntry);
-            Filters.filter(fileEntry, filter, properties);
+            if (item.shouldFilter()) {
+                Filters.filter(fileEntry, filter, properties);
+            }
         }
 
         return destDir;

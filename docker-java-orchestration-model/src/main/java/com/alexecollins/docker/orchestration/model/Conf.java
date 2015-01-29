@@ -11,28 +11,28 @@ import java.util.Map;
 
 @SuppressWarnings("CanBeFinal")
 public class Conf {
-    @JsonProperty(required = false)
+    @JsonProperty
     private List<String> tags = new ArrayList<String>();
-    @JsonProperty(required = false)
+    @JsonProperty
     private List<Link> links = new ArrayList<Link>();
-    @JsonProperty(required = false)
+    @JsonProperty
     private Packaging packaging = new Packaging();
     /**
      * E.g. "8080" or "8080 8080" where the former is the exposed port and the latter the container port.
      */
-    @JsonProperty(required = false)
+    @JsonProperty
     private List<String> ports = new ArrayList<String>();
-    @JsonProperty(required = false)
+    @JsonProperty
     private List<Id> volumesFrom = new ArrayList<Id>();
-    @JsonProperty(required = false)
+    @JsonProperty
     private HealthChecks healthChecks = new HealthChecks();
-    @JsonProperty(required = false)
+    @JsonProperty
     private Map<String, String> env = new HashMap<String, String>();
 
-    @JsonProperty(required = false)
+    @JsonProperty
     private Map<String, String> volumes = new HashMap<String, String>();
 
-    @JsonProperty(required = false)
+    @JsonProperty
     private boolean exposeContainerIp = true;
 
     public boolean isExposeContainerIp() {

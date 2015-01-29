@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class HealthChecks {
-	@JsonProperty(required = false)
+	@JsonProperty
 	private List<Ping> pings = new ArrayList<Ping>();
 
 	public List<Ping> getPings() {

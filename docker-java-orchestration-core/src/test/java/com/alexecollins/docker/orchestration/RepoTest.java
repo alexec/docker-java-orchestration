@@ -77,6 +77,6 @@ public class RepoTest {
 
     @Test
     public void testPropertiesReplaced() throws Exception {
-        assertEquals("example-" + PROJECT_VERSION + ".jar", sut.conf(new Id("app")).getPackaging().getAdd().get(0));
+        assertEquals("example-" + PROJECT_VERSION + ".jar", sut.conf(new Id("app")).getPackaging().getAdd().get(0).getPath());
     }
 }

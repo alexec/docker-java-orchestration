@@ -18,5 +18,6 @@ public class Boo2DockerPluginIT {
         Conf conf = new Conf();
         conf.getPorts().add("6543");
         boot2DockerPlugin.started(null, conf);
+        boot2DockerPlugin.stopped(null, conf);
     }
 }
