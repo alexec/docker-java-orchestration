@@ -10,4 +10,5 @@ Contributors
 * Laurie Hallowes
 * Panu Wetterstrand
 * Sam Morrison
+* Guillaume Dufour
 

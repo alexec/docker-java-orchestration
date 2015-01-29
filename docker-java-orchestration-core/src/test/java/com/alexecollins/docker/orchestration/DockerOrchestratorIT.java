@@ -14,14 +14,16 @@ import java.io.File;
 import java.util.List;
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 
 public class DockerOrchestratorIT {
     private final File src = new File("src/test/docker");
+    private final File srcWrong = new File("src/test/wrongDocker");
     private final File workDir = new File("target/docker");
     private final File projDir = new File("");
     private DockerOrchestrator orchestrator;
+    private DockerOrchestrator wrongOrchestrator;
     private DockerClient docker;
 
     @After
@@ -39,6 +41,16 @@ public class DockerOrchestratorIT {
         orchestrator = new DockerOrchestrator(
                 docker,
                 src,
+                workDir,
+                projDir,
+                "registry",
+                "docker-java-orchestrator",
+                DockerOrchestrator.DEFAULT_FILTER,
+                new Properties());
+
+        wrongOrchestrator = new DockerOrchestrator(
+                docker,
+                srcWrong,
                 workDir,
                 projDir,
                 "registry",
@@ -98,5 +110,22 @@ public class DockerOrchestratorIT {
     @Test
     public void testIsRunning() throws Exception {
         orchestrator.isRunning();
+    }
+
+    @Test
+    public void testValidate() throws Exception {
+        try {
+            orchestrator.validate();
+        } catch (Exception e) {
+            fail("Validate doesn't work on right formatted Dockerfile:"+e.getMessage());
+        }
+        
+        try {
+            wrongOrchestrator.validate();
+            fail("Validate doesn't detect a wrong formatted Dockerfile");
+        } catch (Exception e) {
+            assertEquals("Missing or misplaced FROM on line [1] of src/test/wrongDocker/Dockerfile, found WRONG wrong command", e.getMessage());
+        }
+
     }
 }

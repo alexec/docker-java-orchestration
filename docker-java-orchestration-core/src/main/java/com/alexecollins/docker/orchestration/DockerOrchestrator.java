@@ -127,6 +127,17 @@ public class DockerOrchestrator {
 		snooze();
 	}
 
+    void validate(final Id id) {
+        if (id == null) {
+            throw new IllegalArgumentException("id is null");
+        }
+        try {
+            DockerfileValidator.validate(id, repo.src(id));
+        } catch (IOException e) {
+            throw new OrchestrationException(e);
+        }
+    }
+
 	private void snooze() {
         if (SNOOZE == 0) {
             return;
@@ -146,9 +157,6 @@ public class DockerOrchestrator {
         logger.info("Prepare " + id);
         return fileOrchestrator.prepare(id, repo.src(id), conf(id));
     }
-
-
-
 
     @SuppressWarnings(("DM_DEFAULT_ENCODING"))
     private void build(File dockerFolder, Id id) {
@@ -391,6 +399,12 @@ public class DockerOrchestrator {
 			build(id);
 		}
 	}
+
+    public void validate() {
+        for (Id id : ids()) {
+            validate(id);
+        }
+    }
 
 	public void start() {
 		for (Id id : ids()) {
