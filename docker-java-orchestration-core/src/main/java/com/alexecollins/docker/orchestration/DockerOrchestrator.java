@@ -127,15 +127,11 @@ public class DockerOrchestrator {
 		snooze();
 	}
 
-    void validate(final Id id) {
+    void validate(final Id id) throws IOException {
         if (id == null) {
             throw new IllegalArgumentException("id is null");
         }
-        try {
-            DockerfileValidator.validate(id, repo.src(id));
-        } catch (IOException e) {
-            throw new OrchestrationException(e);
-        }
+        DockerfileValidator.validate(id, repo.src(id));
     }
 
 	private void snooze() {
@@ -401,9 +397,16 @@ public class DockerOrchestrator {
 	}
 
     public void validate() {
+        Exception innerException = null;
         for (Id id : ids()) {
-            validate(id);
+            try {
+                validate(id);
+            } catch(Exception e) {
+                innerException = e;
+            }
         }
+        if(innerException != null)
+            throw new OrchestrationException(innerException);
     }
 
 	public void start() {
