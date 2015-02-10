@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -148,17 +149,30 @@ public class DockerfileValidator {
 
 
             if (instructionsParams.containsKey(instruction)) {
-                if (! instructionsParams.get(instruction).matcher(instructionParams).matches()) {
+                Matcher curMatcher = instructionsParams.get(instruction).matcher(instructionParams);
+                if (! curMatcher.matches()) {
                     logger.severe(String.format(
                             "Wrong %s format on line [%d] of %s", currentLine, lineNumber, dockerFile));
                     isOnError = true;
                 }
+
+                if ("FROM".equalsIgnoreCase(instruction) ) {
+                    if(!curMatcher.find()) {
+                        logger.warning(String.format(
+                                "Provide a version and don't use latest version in FROM on line [%d] of %s, found %s", lineNumber, dockerFile, currentLine));
+                    } else {
+                        logger.warning(String.format(
+                                "Version [%s] is provide in FROM on line [%d] of %s, found %s", curMatcher.group(), lineNumber, dockerFile, currentLine));
+                    }
+                    
+                }
+                
             } else {
                 logger.severe(String.format(
                         "Wrong instruction %s on line [%d] of %s", currentLine, lineNumber, dockerFile));
                 isOnError = true;
             }
-            
+
             //Deal with multi lines
             currentLine = "";
 
