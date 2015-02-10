@@ -1,5 +1,5 @@
 packaging:
     add:
-        - example-${project.version}.jar
-        - path: example-${project.version}.jar
+        - ${testFile.path}
+        - path: ${testFile.path}
           filter: false

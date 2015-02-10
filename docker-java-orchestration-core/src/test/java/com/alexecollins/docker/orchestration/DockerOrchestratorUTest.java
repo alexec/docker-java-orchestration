@@ -1,10 +1,7 @@
 package com.alexecollins.docker.orchestration;
 
 
-import com.alexecollins.docker.orchestration.model.Conf;
-import com.alexecollins.docker.orchestration.model.HealthChecks;
-import com.alexecollins.docker.orchestration.model.Id;
-import com.alexecollins.docker.orchestration.model.Link;
+import com.alexecollins.docker.orchestration.model.*;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.command.*;
@@ -25,8 +22,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -64,13 +63,22 @@ public class DockerOrchestratorUTest {
     @Mock private StopContainerCmd stopContainerCmdMock;
     @Mock private TagImageCmd tagImageCmdMock;
     @Mock private PushImageCmd pushImageCmd;
+    @Mock
+    private DockerfileValidator dockerfileValidator;
 
     private DockerOrchestrator testObj;
 
 
     @Before
     public void setup () throws DockerException, IOException {
-        testObj = new DockerOrchestrator(dockerMock, repoMock, fileOrchestratorMock, logger);
+        testObj = new DockerOrchestrator(
+                dockerMock,
+                repoMock,
+                fileOrchestratorMock,
+                EnumSet.noneOf(BuildFlag.class),
+                logger,
+                dockerfileValidator
+        );
 
         when(repoMock.src(idMock)).thenReturn(srcFileMock);
         when(repoMock.conf(idMock)).thenReturn(confMock);
@@ -108,7 +116,7 @@ public class DockerOrchestratorUTest {
 
         when(dockerMock.listContainersCmd()).thenReturn(listContainersCmdMockOnlyRunning);
         when(listContainersCmdMockOnlyRunning.withShowAll(false)).thenReturn(listContainersCmdMockOnlyRunning);
-        when(listContainersCmdMockOnlyRunning.exec()).thenReturn(Collections.EMPTY_LIST);
+        when(listContainersCmdMockOnlyRunning.exec()).thenReturn(Collections.<Container>emptyList());
 
         when(stopContainerCmdMock.withTimeout(anyInt())).thenReturn(stopContainerCmdMock);
 
@@ -139,7 +147,7 @@ public class DockerOrchestratorUTest {
     @Test
     public void startExistingContainerAsImageIdsMatch() throws DockerException, IOException {
         when(repoMock.imageExists(idMock)).thenReturn(true);
-        when(listContainersCmdMockOnlyRunning.exec()).thenReturn(Collections.EMPTY_LIST);
+        when(listContainersCmdMockOnlyRunning.exec()).thenReturn(Collections.<Container>emptyList());
 
         testObj.start();
 
@@ -241,5 +249,13 @@ public class DockerOrchestratorUTest {
         testObj.push();
 
         verify(dockerMock).pushImageCmd(repositoryWithRegistryAndPort);
+    }
+
+    @Test
+    public void validationDelegatesToDockerfileValidator() throws Exception {
+
+        testObj.validate();
+        verify(dockerfileValidator).validate(srcFileMock);
+
     }
 }

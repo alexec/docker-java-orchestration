@@ -16,7 +16,8 @@ public class Boo2DockerPluginIT {
     @Test
     public void quiet() {
         Conf conf = new Conf();
-        conf.getPorts().add("6543");
+        conf.getPorts().add("4321");
+        conf.getPorts().add("6543 6543");
         boot2DockerPlugin.started(null, conf);
         boot2DockerPlugin.stopped(null, conf);
     }
