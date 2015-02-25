@@ -12,7 +12,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,7 +22,7 @@ import java.util.regex.Pattern;
  */
 class DockerfileValidator {
 
-    private static Logger logger = Logger.getLogger(DockerfileValidator.class.getName());
+    private static Logger logger =  LoggerFactory.getLogger(DockerfileValidator.class);
 
     // Some regexes sourced from:
     // http://stackoverflow.com/a/2821201/1216976
@@ -87,12 +88,12 @@ class DockerfileValidator {
                 try {
                     // validate pattern and make sure we aren't excluding Dockerfile
                     if (GoLangFileMatch.match(pattern, "Dockerfile")) {
-                        logger.severe(
+                        logger.error(
                                 String.format("Dockerfile is excluded by pattern '%s' on line %s in .dockerignore file", pattern, lineNumber));
                         isOnError = true;
                     }
                 } catch (GoLangFileMatchException e) {
-                    logger.severe(String.format("Invalid pattern '%s' on line %s in .dockerignore file", pattern, lineNumber));
+                    logger.error(String.format("Invalid pattern '%s' on line %s in .dockerignore file", pattern, lineNumber));
                     isOnError = true;
                 }
             }
@@ -128,53 +129,68 @@ class DockerfileValidator {
             if (!fromCheck) {
                 fromCheck = true;
                 if (!"FROM".equalsIgnoreCase(instruction)) {
-                    logger.severe(String.format(
+                    logger.error(String.format(
                             "Missing or misplaced FROM on line [%d] of %s, found %s", lineNumber, dockerFile, currentLine));
                     isOnError = true;
                 }
             } else {
                 if ("FROM".equalsIgnoreCase(instruction)) {
-                    logger.severe(String.format(
+                    logger.error(String.format(
                             "Missing or misplaced FROM on line [%d] of %s, found %s", lineNumber, dockerFile, currentLine));
                     isOnError = true;
                 }
             }
 
             if (INSTRUCTIONS_PATTERNS.containsKey(instruction)) {
-                assert instructionParams != null;
-                Matcher curMatcher = INSTRUCTIONS_PATTERNS.get(instruction).matcher(instructionParams);
-                if (!curMatcher.matches()) {
-                    logger.severe(String.format(
-                            "Wrong %s format on line [%d] of %s", currentLine, lineNumber, dockerFile));
+                if(instructionParams == null)
+                {
+                    logger.error(String.format(
+                            "Missing param on line [%d] of %s, found %s", lineNumber, dockerFile, currentLine));
                     isOnError = true;
-                }
-
-                if ("FROM".equalsIgnoreCase(instruction)) {
-                    curMatcher = INSTRUCTIONS_PATTERNS.get(instruction).matcher(instructionParams);
-                    if (!curMatcher.find()) {
-                        logger.warning(String.format(
-                                "Provide a version and don't use latest version in FROM on line [%d] of %s, found %s", lineNumber, dockerFile, currentLine));
-                    } else {
-                        logger.warning(String.format(
-                                "Version [%s] is provide in FROM on line [%d] of %s, found %s", curMatcher.group(1), lineNumber, dockerFile, currentLine));
+                } else {
+                    Matcher curMatcher = INSTRUCTIONS_PATTERNS.get(instruction).matcher(instructionParams);
+                    if (!curMatcher.matches()) {
+                        logger.error(String.format(
+                                "Wrong %s format on line [%d] of %s", currentLine, lineNumber, dockerFile));
+                        isOnError = true;
                     }
 
-                }
+                    if ("FROM".equalsIgnoreCase(instruction)) {
+                        curMatcher = INSTRUCTIONS_PATTERNS.get(instruction).matcher(instructionParams);
 
-                if ("RUN".equalsIgnoreCase(instruction)) {
-                    if (instructionParams != null && instructionParams.length() > 100) {
-                        String[] realLine = instructionParams.split("\\\\");
-                        for (int i = 0; i < realLine.length; i++) {
-                            if (realLine[i].length() > 100) {
-                                logger.warning(String.format(
-                                        "The line %d of %s is too long (more than 100 chars) : %s...", (lineNumber - realLine.length + i + 1), dockerFile, realLine[i].substring(0, 50)));
+                         if(curMatcher.find()){
+                             String version = "";
+                             if(curMatcher.groupCount() >= 1)
+                                version = curMatcher.group(1);
+                             
+                             if(version.length() == 0) {
+                                logger.warn(String.format(
+                                        "Provide a version and don't use latest version in FROM on line [%d] of %s, found %s", lineNumber, dockerFile, currentLine));
+                             } else if(version.equals(":latest")) {
+                                logger.warn(String.format(
+                                        "Don't use latest version in FROM on line [%d] of %s, found %s", lineNumber, dockerFile, currentLine));
+                                
+                             }
+                                
+                        }
+
+                    }
+
+                    if ("RUN".equalsIgnoreCase(instruction)) {
+                        if (instructionParams.length() > 100) {
+                            String[] realLine = instructionParams.split("\\\\");
+                            for (int i = 0; i < realLine.length; i++) {
+                                if (realLine[i].length() > 100) {
+                                    logger.warn(String.format(
+                                            "The line %d of %s is too long (more than 100 chars) : %s...", (lineNumber - realLine.length + i + 1), dockerFile, realLine[i].substring(0, 50)));
+                                }
                             }
                         }
                     }
                 }
 
             } else {
-                logger.severe(String.format(
+                logger.error(String.format(
                         "Wrong instruction %s on line [%d] of %s", currentLine, lineNumber, dockerFile));
                 isOnError = true;
             }
@@ -185,7 +201,7 @@ class DockerfileValidator {
         }
 
         if (!Strings.isNullOrEmpty(currentLine)) {
-            logger.severe(String.format(
+            logger.error(String.format(
                     "Last instruction is not finish on line [%d] of %s, please remove the backslash", lineNumber, dockerFile));
             isOnError = true;
 
