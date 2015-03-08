@@ -399,9 +399,16 @@ public class DockerOrchestrator {
 	}
 
     public void validate() {
+        Exception innerException = null;
         for (Id id : ids()) {
-            validate(id);
+            try {
+                validate(id);
+            } catch(Exception e) {
+                innerException = e;
+            }
         }
+        if(innerException != null)
+            throw new OrchestrationException(innerException);
     }
 
 	public void start() {

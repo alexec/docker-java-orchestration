@@ -28,7 +28,7 @@ public class DockerfileValidatorTest {
             validator.validate(new File("src/test/wrongDocker"));
             fail("Validate doesn't detect a wrong formatted Dockerfile");
         } catch (Exception e) {
-            assertEquals("Missing or misplaced FROM on line [1] of src/test/wrongDocker/Dockerfile, found WRONG wrong command", e.getMessage());
+            assertEquals("Error while validate Dockerfile src/test/wrongDocker/Dockerfile.", e.getMessage());
         }
 
     }
