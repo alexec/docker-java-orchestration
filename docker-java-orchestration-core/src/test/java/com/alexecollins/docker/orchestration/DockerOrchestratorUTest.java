@@ -8,6 +8,8 @@ import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.AuthConfig;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ContainerConfig;
+import com.github.dockerjava.api.model.PushEventStreamItem;
+import com.github.dockerjava.jaxrs.BuildImageCmdExec;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.client.ClientResponse;
 import org.junit.Before;
@@ -19,6 +21,7 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,7 +44,8 @@ public class DockerOrchestratorUTest {
     private static final String TAG_NAME = "test-tag";
 
     private final Logger logger = mock(Logger.class);
-
+    private final PushImageCmd.Response pushResponse = mock(PushImageCmd.Response.class);
+    private final BuildImageCmd.Response buildResponse = mock(BuildImageCmd.Response.class);
     @Mock private DockerClient dockerMock;
     @Mock private Repo repoMock;
     @Mock private File fileMock;
@@ -65,9 +69,7 @@ public class DockerOrchestratorUTest {
     @Mock private PushImageCmd pushImageCmd;
     @Mock
     private DockerfileValidator dockerfileValidator;
-
     private DockerOrchestrator testObj;
-
 
     @Before
     public void setup () throws DockerException, IOException {
@@ -102,7 +104,7 @@ public class DockerOrchestratorUTest {
 
         when(dockerMock.buildImageCmd(eq(fileMock))).thenReturn(buildImageCmdMock);
         when(buildImageCmdMock.withTag(any(String.class))).thenReturn(buildImageCmdMock);
-        when(buildImageCmdMock.exec()).thenReturn(IOUtils.toInputStream("Successfully built"));
+        when(buildImageCmdMock.exec()).thenReturn(new BuildImageCmdExec.ResponseImpl(IOUtils.toInputStream("Successfully built")));
 
         when(dockerMock.createContainerCmd(IMAGE_ID)).thenReturn(createContainerCmdMock);
         when(createContainerCmdMock.exec()).thenReturn(createContainerResponse);
@@ -129,7 +131,19 @@ public class DockerOrchestratorUTest {
 
         when(dockerMock.pushImageCmd(anyString())).thenReturn(pushImageCmd);
         when(pushImageCmd.withAuthConfig(any(AuthConfig.class))).thenReturn(pushImageCmd);
-        when(pushImageCmd.exec()).thenReturn(IOUtils.toInputStream("{\"status\":\"The push refers to...\"}"));
+        when(pushImageCmd.exec()).thenReturn(new PushImageCmd.Response() {
+            private final InputStream proxy = IOUtils.toInputStream("{\"status\":\"The push refers to...\"}");
+
+            @Override
+            public int read() throws IOException {
+                return proxy.read();
+            }
+
+            @Override
+            public Iterable<PushEventStreamItem> getItems() throws IOException {
+                return null;
+            }
+        });
     }
 
 
