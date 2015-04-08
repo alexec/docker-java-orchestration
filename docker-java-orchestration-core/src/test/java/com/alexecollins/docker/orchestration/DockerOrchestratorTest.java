@@ -44,8 +44,6 @@ public class DockerOrchestratorTest {
     private static final String TAG_NAME = "test-tag";
 
     private final Logger logger = mock(Logger.class);
-    private final PushImageCmd.Response pushResponse = mock(PushImageCmd.Response.class);
-    private final BuildImageCmd.Response buildResponse = mock(BuildImageCmd.Response.class);
     @Mock private DockerClient dockerMock;
     @Mock private Repo repoMock;
     @Mock private File fileMock;
@@ -180,7 +178,7 @@ public class DockerOrchestratorTest {
     }
 
     @Test
-    public void removeExistingContainerThenCreateAndStartNewOneAsImageIdsDontMatch() throws DockerException, IOException {
+    public void removeExistingContainerThenCreateAndStartNewOneAsImageIdsDoNotMatch() throws DockerException, IOException {
         when(containerInspectResponseMock.getImageId()).thenReturn("A Different Image Id");
 
         testObj.start();
