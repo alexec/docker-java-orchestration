@@ -22,6 +22,7 @@ public class Boot2DockerPlugin implements Plugin {
         for (String stringPort : conf.getPorts()) {
             int port = hostPort(stringPort);
             quietlyDeletePortForward(port);
+            LOGGER.info("Creating VirtualBox port forward for " + port);
             createPortForward(port);
         }
     }
@@ -45,17 +46,15 @@ public class Boot2DockerPlugin implements Plugin {
     }
 
     private void deletePortForward(int port) {
-        LOGGER.info("Deleting VirtualBox port forward for " + port);
         exec("VBoxManage controlvm boot2docker-vm natpf1 delete " + port);
     }
 
     private void createPortForward(int port) {
-        LOGGER.info("Creating VirtualBox port forward for " + port);
         exec("VBoxManage controlvm boot2docker-vm natpf1 " + port + ",tcp,127.0.0.1," + port + ",," + port + "");
     }
 
     private void exec(String command) {
-        LOGGER.info("Executing " + command);
+        LOGGER.debug("Executing " + command);
         int exitCode;
         String message;
         try {
