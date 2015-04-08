@@ -3,6 +3,7 @@ Change Log
 2.4.1
 
 * Do not treat files in `src/main/docker` as containers, only directories.
+* Made validation more tolerant to property filtering.
 
 2.4.0
 

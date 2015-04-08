@@ -6,14 +6,14 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,30 +22,29 @@ import java.util.regex.Pattern;
  */
 class DockerfileValidator {
 
-    private static Logger logger =  LoggerFactory.getLogger(DockerfileValidator.class);
-
     // Some regexes sourced from:
     // http://stackoverflow.com/a/2821201/1216976
     // http://stackoverflow.com/a/3809435/1216976
     // http://stackoverflow.com/a/6949914/1216976
     private final static Map<String, Pattern> INSTRUCTIONS_PATTERNS = instructionsPatterns();
+    private static Logger logger = LoggerFactory.getLogger(DockerfileValidator.class);
 
     private static Map<String, Pattern> instructionsPatterns() {
         Pattern addPattern = Pattern.compile("^(~?[${}A-z0-9\\/_.-]+|https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*))\\s~?[A-z0-9\\/_.-]+$");
         Map<String, Pattern> instructionPatterns = new HashMap<String, Pattern>();
-        instructionPatterns.put("FROM", Pattern.compile("^[a-z0-9./_-]+((:[a-z0-9._-]+)?)$", Pattern.MULTILINE));
+        instructionPatterns.put("FROM", Pattern.compile("^[${}a-z0-9./_-]+((:[${}a-z0-9._-]+)?)$", Pattern.MULTILINE));
         instructionPatterns.put("MAINTAINER", Pattern.compile(".+"));
-        instructionPatterns.put("EXPOSE", Pattern.compile("^[0-9]+([0-9\\s]+)?$"));
-        instructionPatterns.put("ENV", Pattern.compile("^[a-zA-Z_]+[a-zA-Z0-9_]* .+$"));
-        instructionPatterns.put("USER", Pattern.compile("^[a-z_][a-z0-9_]{0,30}$"));
+        instructionPatterns.put("EXPOSE", Pattern.compile("^[${A-z0-9]+([${}A-z0-9\\s]+)?$"));
+        instructionPatterns.put("ENV", Pattern.compile("^[${}a-zA-Z_]+[${}a-zA-Z0-9_]* .+$"));
+        instructionPatterns.put("USER", Pattern.compile("^[${}a-z_][${}a-z0-9_]{0,30}$"));
         instructionPatterns.put("RUN", Pattern.compile(".+"));
         instructionPatterns.put("CMD", Pattern.compile(".+"));
         instructionPatterns.put("ONBUILD", Pattern.compile(".+"));
         instructionPatterns.put("ENTRYPOINT", Pattern.compile(".+"));
         instructionPatterns.put("ADD", addPattern);
         instructionPatterns.put("COPY", addPattern);
-        instructionPatterns.put("VOLUME", Pattern.compile("^~?([A-z0-9\\/_.-]+|\\[(\\s*)?(\"[A-z0-9\\/_. -]+\"(,\\s*)?)+(\\s*)?\\])$"));
-        instructionPatterns.put("WORKDIR", Pattern.compile("^~?[A-z0-9\\/_.-]+$"));
+        instructionPatterns.put("VOLUME", Pattern.compile("^~?([${}A-z0-9\\/_.-]+|\\[(\\s*)?(\"[A-z0-9\\/_. -]+\"(,\\s*)?)+(\\s*)?\\])$"));
+        instructionPatterns.put("WORKDIR", Pattern.compile("^~?[${}A-z0-9\\/_.-]+$"));
         return instructionPatterns;
     }
 
@@ -148,15 +147,16 @@ class DockerfileValidator {
                             "Missing param on line [%d] of %s, found %s", lineNumber, dockerFile, currentLine));
                     isOnError = true;
                 } else {
-                    Matcher curMatcher = INSTRUCTIONS_PATTERNS.get(instruction).matcher(instructionParams);
+                    Pattern instructionPattern = INSTRUCTIONS_PATTERNS.get(instruction);
+                    Matcher curMatcher = instructionPattern.matcher(instructionParams);
                     if (!curMatcher.matches()) {
                         logger.error(String.format(
-                                "Wrong %s format on line [%d] of %s", currentLine, lineNumber, dockerFile));
+                                "Wrong %s format on line [%d] of %s, must match", currentLine, lineNumber, dockerFile));
                         isOnError = true;
                     }
 
                     if ("FROM".equalsIgnoreCase(instruction)) {
-                        curMatcher = INSTRUCTIONS_PATTERNS.get(instruction).matcher(instructionParams);
+                        curMatcher = instructionPattern.matcher(instructionParams);
 
                          if(curMatcher.find()){
                              String version = "";
