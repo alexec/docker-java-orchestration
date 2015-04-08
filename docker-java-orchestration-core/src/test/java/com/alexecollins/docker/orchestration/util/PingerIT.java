@@ -1,7 +1,14 @@
 package com.alexecollins.docker.orchestration.util;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.regex.Pattern;
 
@@ -10,23 +17,49 @@ import static org.junit.Assert.assertTrue;
 
 public class PingerIT {
 
+    private final int timeout = 100;
+    private HttpServer httpServer;
+    private URI httpServerAddress;
+
+    @Before
+    public void setUp() throws Exception {
+        httpServer = HttpServer.create(new InetSocketAddress(0), 0);
+        httpServer.createContext("/", new HttpHandler() {
+            @Override
+            public void handle(HttpExchange httpExchange) throws IOException {
+                byte[] body = "Foo".getBytes();
+                httpExchange.sendResponseHeaders(200, body.length);
+                httpExchange.getResponseBody().write(body);
+                httpExchange.getResponseBody().flush();
+                httpExchange.close();
+            }
+        });
+        httpServer.start();
+        httpServerAddress = URI.create(String.format("http://localhost:%d/", httpServer.getAddress().getPort()));
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        httpServer.stop(0);
+    }
+
     @Test
-    public void testGoogle() throws Exception {
-        assertTrue(Pinger.ping(URI.create("http://www.google.com"), 5000));
+    public void validHost() throws Exception {
+        assertTrue(Pinger.ping(httpServerAddress, timeout));
     }
 
     @Test
     public void ensureRegexpMatches() throws Exception {
-        assertTrue(Pinger.ping(URI.create("http://www.alexecollins.com"), Pattern.compile("Alex Collins"), 1000));
+        assertTrue(Pinger.ping(httpServerAddress, Pattern.compile("Foo"), timeout));
     }
 
     @Test
     public void ensureBadRegexpDoesNotMatch() throws Exception {
-        assertFalse(Pinger.ping(URI.create("http://www.alexecollins.com"), Pattern.compile("Bill Murray"), 1000));
+        assertFalse(Pinger.ping(httpServerAddress, Pattern.compile("Bill Murray"), timeout));
     }
 
     @Test
-    public void testNoop() throws Exception {
-        assertFalse(Pinger.ping(URI.create("http://noop"), 5000));
+    public void invalidHost() throws Exception {
+        assertFalse(Pinger.ping(URI.create("http://noop"), timeout));
     }
 }
