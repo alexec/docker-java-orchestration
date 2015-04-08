@@ -168,7 +168,7 @@ public class DockerOrchestrator {
     @SuppressWarnings(("DM_DEFAULT_ENCODING"))
     private void build(File dockerFolder, Id id) {
         try {
-            BuildImageCmd build = docker.buildImageCmd(dockerFolder);
+            BuildImageCmd build = docker.buildImageCmd(dockerFolder).withRemove(false);
             for(BuildFlag f : buildFlags){
                 switch (f){
                     case NO_CACHE: build = build.withNoCache();break;
