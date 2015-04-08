@@ -16,6 +16,7 @@ public class RepoTest {
 
     private static final String PROJECT_VERSION = "1.0";
     private final Id appId = new Id("app");
+    private final Id filterId = new Id("filter");
     private Repo sut;
 
     @Before
@@ -83,6 +84,6 @@ public class RepoTest {
 
     @Test
     public void filesAreNotIncludedInIds() throws Exception {
-        assertEquals(Collections.singletonList(appId), sut.ids(false));
+        assertEquals(Arrays.asList(appId, filterId), sut.ids(false));
     }
 }

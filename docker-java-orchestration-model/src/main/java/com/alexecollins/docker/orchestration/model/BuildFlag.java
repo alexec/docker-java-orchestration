@@ -5,5 +5,6 @@ package com.alexecollins.docker.orchestration.model;
  */
 public enum BuildFlag {
     NO_CACHE,
-    REMOVE_INTERMEDIATE_IMAGES
+    REMOVE_INTERMEDIATE_IMAGES,
+    QUIET
 }
