@@ -33,7 +33,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DockerOrchestratorUTest {
+public class DockerOrchestratorTest {
 
     private static final String IMAGE_NAME = "theImage";
     private static final String IMAGE_ID = "imageId";
