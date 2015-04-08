@@ -415,7 +415,8 @@ public class DockerOrchestrator {
 		for (Id id : ids()) {
 			try {
 				if (!repo.imageExists(id)) {
-					build(id);
+                    logger.info("image does not exist, building");
+                    build(id);
 				}
 			} catch (DockerException e) {
 				throw new OrchestrationException(e);
