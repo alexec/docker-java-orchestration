@@ -1,4 +1,4 @@
-FROM ${foo}:${foo}
+FROM ${foo}/${foo}:${foo}
 MAINTAINER ${foo}
 EXPOSE ${foo}
 USER ${foo}
