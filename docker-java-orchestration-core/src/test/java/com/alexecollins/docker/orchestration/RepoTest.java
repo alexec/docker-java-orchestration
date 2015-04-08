@@ -9,12 +9,13 @@ import org.junit.Test;
 import java.io.File;
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 
 public class RepoTest {
 
     private static final String PROJECT_VERSION = "1.0";
+    private final Id appId = new Id("app");
     private Repo sut;
 
     @Before
@@ -77,6 +78,11 @@ public class RepoTest {
 
     @Test
     public void testPropertiesReplaced() throws Exception {
-        assertEquals("example-" + PROJECT_VERSION + ".jar", sut.conf(new Id("app")).getPackaging().getAdd().get(0).getPath());
+        assertEquals("example-" + PROJECT_VERSION + ".jar", sut.conf(appId).getPackaging().getAdd().get(0).getPath());
+    }
+
+    @Test
+    public void filesAreNotIncludedInIds() throws Exception {
+        assertEquals(Collections.singletonList(appId), sut.ids(false));
     }
 }

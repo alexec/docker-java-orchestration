@@ -11,6 +11,7 @@ import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
+import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,8 +49,8 @@ class Repo {
         this.src = src;
 
         if (src.isDirectory()) {
-          for (File file : src.listFiles()) {
-            final File confFile = new File(file, "conf.yml");
+			for (File file : src.listFiles((FileFilter) DirectoryFileFilter.INSTANCE)) {
+				final File confFile = new File(file, "conf.yml");
                 try {
                     confs.put(new Id(file.getName()), confFile.length() > 0 ? MAPPER.readValue(confReader(confFile, properties), Conf.class) : new Conf());
                 } catch (IOException e) {
