@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
-import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
@@ -38,7 +37,10 @@ class Repo {
     @SuppressWarnings("ConstantConditions")
     Repo(DockerClient docker, String user, String project, File src, Properties properties){
         if (docker == null) {throw new IllegalArgumentException("docker is null");}
-        if (project == null) {throw new IllegalArgumentException("project is null");}
+		if (user == null) {
+			throw new IllegalArgumentException("user is null");
+		}
+		if (project == null) {throw new IllegalArgumentException("project is null");}
         if (src == null) {throw new IllegalArgumentException("src is null");}
         if (!src.isDirectory()) {throw new IllegalArgumentException("src " + src + " does not exist or is directory");}
         if (properties == null) {throw new IllegalArgumentException("properties is null");}
@@ -72,8 +74,8 @@ class Repo {
                         : imageName(id);
     }
 
-    public String imageName(Id id) {
-        return user + "/" + project + "_" + id;
+	private String imageName(Id id) {
+		return user + "/" + project + "_" + id;
     }
 
     String containerName(Id id) {
@@ -117,12 +119,7 @@ class Repo {
     }
 
 	boolean imageExists(Id id) throws DockerException {
-		try {
-			docker.inspectImageCmd(imageName(id)).exec();
-			return true;
-		} catch (NotFoundException e) {
-			return false;
-		}
+		return findImageId(id) != null;
 	}
 
 	File src() {
