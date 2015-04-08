@@ -107,8 +107,8 @@ public class DockerOrchestrator {
 			throw new IllegalArgumentException("id is null");
 		}
 		stop(id);
-		logger.info("Clean " + id);
-		for (Container container : repo.findContainers(id, true)) {
+        logger.info("Cleaning " + id);
+        for (Container container : repo.findContainers(id, true)) {
 			logger.info("Removing container " + container.getId());
 			try {
 				docker.removeContainerCmd(container.getId()).withForce().exec();
@@ -161,7 +161,7 @@ public class DockerOrchestrator {
         if (id == null) {
 			throw new IllegalArgumentException("id is null");
 		}
-        logger.info("Prepare " + id);
+        logger.info("Preparing " + id);
         return fileOrchestrator.prepare(id, repo.src(id), conf(id));
     }
 
@@ -184,7 +184,7 @@ public class DockerOrchestrator {
             }
             String tag = repo.tag(id);
             build = build.withTag(tag);
-            logger.info("Build " + id + " (" + tag + ")");
+            logger.info("Building " + id + " (" + tag + ")");
             throwExceptionIfThereIsAnError(build.exec());
 
             for (String otherTag : repo.conf(id).getTags()) {
@@ -208,6 +208,17 @@ public class DockerOrchestrator {
             throw new IllegalArgumentException("id is null");
         }
 
+        logger.info("Starting " + id);
+
+        try {
+            if (!repo.imageExists(id)) {
+                logger.info("Image does not exist, so building it");
+                build(id);
+            }
+        } catch (DockerException e) {
+            throw new OrchestrationException(e);
+        }
+
         try {
             Container existingContainer = repo.findContainer(id);
 
@@ -222,17 +233,31 @@ public class DockerOrchestrator {
                 startContainer(createNewContainer(id), id);
 
             } else if(isRunning(id)) {
-                logger.info("Container " + id + " already running");
+                logger.info("Container already running");
 
             } else {
                 logger.info("Starting existing container " + existingContainer.getId());
                 startContainer(existingContainer.getId(), id);
             }
 
+            for (Plugin plugin : plugins) {
+                plugin.started(id, conf(id));
+            }
+
         } catch (DockerException e) {
             throw new OrchestrationException(e);
         }
         healthCheck(id);
+
+        snooze();
+    }
+
+    private void snooze() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            throw new OrchestrationException(e);
+        }
     }
 
     private boolean isImageIdFromContainerMatchingProvidedImageId(String containerId, final Id id) {
@@ -259,15 +284,10 @@ public class DockerOrchestrator {
 
     private void startContainer(String idOfContainerToStart, final Id id) {
         try {
-            logger.info("Starting " + id);
             StartContainerCmd start = docker.startContainerCmd(idOfContainerToStart);
 
             prepareHostConfig(id, start);
             start.exec();
-
-            for (Plugin plugin : plugins) {
-                plugin.started(id, conf(id));
-            }
 
         } catch (DockerException e) {
             logger.error("Unable to start container " + idOfContainerToStart, e);
@@ -280,7 +300,6 @@ public class DockerOrchestrator {
     }
 
     private String createNewContainer(Id id) throws DockerException {
-        logger.info("Creating " + id);
         Conf conf = conf(id);
         CreateContainerCmd createCmd = docker.createContainerCmd(repo.findImageId(id));
         createCmd.withName(repo.containerName(id));
@@ -386,16 +405,19 @@ public class DockerOrchestrator {
 		if (id == null) {
 			throw new IllegalArgumentException("id is null");
 		}
-		for (Container container : repo.findContainers(id, false)) {
-			logger.info("Stopping " + Arrays.toString(container.getNames()));
-			try {
+
+        logger.info("Stopping " + id);
+
+        for (Container container : repo.findContainers(id, false)) {
+            logger.info("Stopping container " + Arrays.toString(container.getNames()));
+            try {
 				docker.stopContainerCmd(container.getId()).withTimeout(1).exec();
 			} catch (DockerException e) {
 				throw new OrchestrationException(e);
 			}
-            for (Plugin plugin : plugins) {
-                plugin.stopped(id, conf(id));
-            }
+        }
+        for (Plugin plugin : plugins) {
+            plugin.stopped(id, conf(id));
         }
     }
 
@@ -420,14 +442,6 @@ public class DockerOrchestrator {
 
 	public void start() {
 		for (Id id : ids()) {
-			try {
-				if (!repo.imageExists(id)) {
-                    logger.info("image does not exist, building");
-                    build(id);
-				}
-			} catch (DockerException e) {
-				throw new OrchestrationException(e);
-			}
 			start(id);
 		}
 	}
@@ -464,7 +478,7 @@ public class DockerOrchestrator {
 	private void push(Id id) {
 		try {
             PushImageCmd pushImageCmd = docker.pushImageCmd(repo(id)).withAuthConfig(docker.authConfig());
-            logger.info("Push " + id + " (" + pushImageCmd.getName() + ")");
+            logger.info("Pushing " + id + " (" + pushImageCmd.getName() + ")");
             InputStream inputStream = pushImageCmd.exec();
             throwExceptionIfThereIsAnError(inputStream);
         } catch (DockerException e) {
