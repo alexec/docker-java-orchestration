@@ -1,5 +1,6 @@
 package com.alexecollins.docker.orchestration;
 
+import com.alexecollins.docker.orchestration.model.BuildFlag;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
@@ -13,6 +14,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Properties;
 
@@ -58,6 +60,7 @@ public class DockerOrchestratorIT {
                 .user("registry")
                 .properties(properties())
                 .project("docker-java-orchestrator")
+                .buildFlags(EnumSet.of(BuildFlag.REMOVE_INTERMEDIATE_IMAGES))
                 .build();
     }
 
