@@ -23,6 +23,8 @@ public class Conf {
     @JsonProperty
     private List<String> ports = new ArrayList<String>();
     @JsonProperty
+    private int sleep = 0;
+    @JsonProperty
     private List<Id> volumesFrom = new ArrayList<Id>();
     @JsonProperty
     private HealthChecks healthChecks = new HealthChecks();
@@ -88,5 +90,13 @@ public class Conf {
 
     public Map<String, String> getVolumes() {
         return volumes;
+    }
+
+    public int getSleep() {
+        return sleep;
+    }
+
+    public void setSleep(int sleep) {
+        this.sleep = sleep;
     }
 }

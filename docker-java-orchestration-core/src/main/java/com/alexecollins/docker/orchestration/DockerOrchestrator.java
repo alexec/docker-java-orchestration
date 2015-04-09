@@ -248,13 +248,14 @@ public class DockerOrchestrator {
             throw new OrchestrationException(e);
         }
         healthCheck(id);
-
-        snooze();
+        sleep(id);
     }
 
-    private void snooze() {
+    private void sleep(Id id) {
         try {
-            Thread.sleep(1000);
+            int sleep = conf(id).getSleep();
+            logger.info(String.format("Sleeping for %dms", sleep));
+            Thread.sleep(sleep);
         } catch (InterruptedException e) {
             throw new OrchestrationException(e);
         }
@@ -344,7 +345,7 @@ public class DockerOrchestrator {
             } else {
                 uri = ping.getUrl();
             }
-            logger.info("Pinging " + uri);
+            logger.info(String.format("Pinging %s for pattern \"%s\"", uri, ping.getPattern()));
 
             if (!Pinger.ping(uri, ping.getPattern(), ping.getTimeout())) {
                 throw new OrchestrationException("timeout waiting for " + uri + " for " + ping.getTimeout() + " with pattern " + ping.getPattern());

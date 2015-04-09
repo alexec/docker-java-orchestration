@@ -13,7 +13,7 @@ public class Ping {
 	@JsonProperty
 	private int timeout = 30 * 1000;
 	@JsonProperty
-	private Pattern pattern;
+	private Pattern pattern = Pattern.compile(".*");
 
 	public URI getUrl() {
 		return url;
