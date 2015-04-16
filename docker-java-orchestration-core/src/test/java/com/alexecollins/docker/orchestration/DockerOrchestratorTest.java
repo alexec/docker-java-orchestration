@@ -168,7 +168,7 @@ public class DockerOrchestratorTest {
             }
         });
 
-        when(definitionFilter.test(any(Conf.class))).thenReturn(true);
+        when(definitionFilter.test(any(Id.class), any(Conf.class))).thenReturn(true);
     }
 
 
@@ -300,7 +300,7 @@ public class DockerOrchestratorTest {
 
     @Test
     public void filteredDefinitionsAreNotInvoked() throws Exception {
-        when(definitionFilter.test(any(Conf.class))).thenReturn(false);
+        when(definitionFilter.test(any(Id.class), any(Conf.class))).thenReturn(false);
 
         testObj.validate();
         testObj.clean();

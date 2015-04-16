@@ -147,7 +147,7 @@ public class DockerOrchestrator {
 	}
 
     private boolean inclusive(Id id) {
-        return definitionFilter.test(conf(id));
+        return definitionFilter.test(id, conf(id));
     }
 
     void clean(final Id id) {
