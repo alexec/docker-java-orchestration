@@ -12,7 +12,7 @@ public class ExcludeFilterTest {
 
     @Test
     public void excludeNone() throws Exception {
-        assertFalse(new ExcludeFilter().test(null, CONF));
+        assertTrue(new ExcludeFilter().test(null, CONF));
     }
 
     @Test
@@ -23,7 +23,7 @@ public class ExcludeFilterTest {
     }
 
     @Test
-    public void excludeSame() throws Exception {
+    public void excludeSome() throws Exception {
         ExcludeFilter filter = new ExcludeFilter("app", "other");
         assertFalse(filter.test(new Id("app"), CONF));
         assertFalse(filter.test(new Id("other"), CONF));

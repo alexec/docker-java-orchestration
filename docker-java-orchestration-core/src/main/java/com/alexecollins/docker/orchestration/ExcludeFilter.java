@@ -17,6 +17,6 @@ public class ExcludeFilter implements DefinitionFilter {
 
     @Override
     public boolean test(Id id, Conf conf) {
-        return ids.contains(id);
+        return !ids.contains(id);
     }
 }
