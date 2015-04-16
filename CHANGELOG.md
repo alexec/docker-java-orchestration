@@ -1,5 +1,9 @@
 Change Log
 ===
+2.6.0
+
+* Updated to docker-java 1.2.0.
+
 2.5.0
 
 * Do not treat files in `src/main/docker` as containers, only directories.
