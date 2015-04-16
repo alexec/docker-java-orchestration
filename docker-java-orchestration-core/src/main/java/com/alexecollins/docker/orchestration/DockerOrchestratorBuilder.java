@@ -24,6 +24,7 @@ public class DockerOrchestratorBuilder {
     private Set<BuildFlag> buildFlags = EnumSet.noneOf(BuildFlag.class);
     private Logger logger = LoggerFactory.getLogger(DockerOrchestrator.class);
     private DockerfileValidator dockerfileValidator = new DockerfileValidator();
+    private DefinitionFilter definitionFilter = DefinitionFilter.ANY;
 
     DockerOrchestratorBuilder() {
     }
@@ -73,6 +74,11 @@ public class DockerOrchestratorBuilder {
         return this;
     }
 
+    public DockerOrchestratorBuilder definitionFilter(DefinitionFilter definitionFilter) {
+        this.definitionFilter = definitionFilter;
+        return this;
+    }
+
     DockerOrchestratorBuilder logger(Logger logger) {
         this.logger = logger;
         return this;
@@ -85,8 +91,8 @@ public class DockerOrchestratorBuilder {
                 new FileOrchestrator(workDir, rootDir, filter, properties),
                 buildFlags,
                 logger,
-                dockerfileValidator
-
+                dockerfileValidator,
+                definitionFilter
         );
     }
 }

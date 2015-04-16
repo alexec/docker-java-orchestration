@@ -1,22 +1,50 @@
 package com.alexecollins.docker.orchestration;
 
 
-import com.alexecollins.docker.orchestration.model.*;
+import com.alexecollins.docker.orchestration.model.BuildFlag;
+import com.alexecollins.docker.orchestration.model.Conf;
+import com.alexecollins.docker.orchestration.model.HealthChecks;
+import com.alexecollins.docker.orchestration.model.Id;
+import com.alexecollins.docker.orchestration.model.Ping;
 import com.alexecollins.docker.orchestration.plugin.api.Plugin;
 import com.alexecollins.docker.orchestration.util.Pinger;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.NotFoundException;
-import com.github.dockerjava.api.command.*;
-import com.github.dockerjava.api.model.*;
+import com.github.dockerjava.api.command.BuildImageCmd;
+import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.command.PushImageCmd;
+import com.github.dockerjava.api.command.StartContainerCmd;
+import com.github.dockerjava.api.model.Bind;
+import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.InternetProtocol;
 import com.github.dockerjava.api.model.Link;
+import com.github.dockerjava.api.model.Ports;
+import com.github.dockerjava.api.model.Volume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Properties;
+import java.util.ServiceLoader;
+import java.util.Set;
 
 /**
  * Orchestrates multiple Docker containers based on
@@ -44,13 +72,14 @@ public class DockerOrchestrator {
 	private final Set<BuildFlag> buildFlags;
     private final List<Plugin> plugins = new ArrayList<Plugin>();
     private final DockerfileValidator dockerfileValidator;
+    private final DefinitionFilter definitionFilter;
 
     /**
      * @deprecated Please use builder from now on.
      */
     @Deprecated
     public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String user, String project, FileFilter filter, Properties properties) {
-        this(docker, new Repo(docker, user, project, src, properties), new FileOrchestrator(workDir, rootDir, filter, properties), EnumSet.noneOf(BuildFlag.class), DEFAULT_LOGGER, new DockerfileValidator());
+        this(docker, src, workDir, rootDir, user, project, filter, properties, EnumSet.noneOf(BuildFlag.class));
     }
 
     /**
@@ -58,10 +87,18 @@ public class DockerOrchestrator {
      */
     @Deprecated
     public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String user, String project, FileFilter filter, Properties properties, Set<BuildFlag> buildFlags) {
-        this(docker, new Repo(docker, user, project, src, properties), new FileOrchestrator(workDir, rootDir, filter, properties), buildFlags, DEFAULT_LOGGER, new DockerfileValidator());
+        this(
+                docker,
+                new Repo(docker, user, project, src, properties),
+                new FileOrchestrator(workDir, rootDir, filter, properties),
+                buildFlags,
+                DEFAULT_LOGGER,
+                new DockerfileValidator(),
+                DefinitionFilter.ANY
+        );
     }
 
-    DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Set<BuildFlag> buildFlags, Logger logger, DockerfileValidator dockerfileValidator) {
+    DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Set<BuildFlag> buildFlags, Logger logger, DockerfileValidator dockerfileValidator, DefinitionFilter definitionFilter) {
         if (docker == null) {
             throw new IllegalArgumentException("docker is null");
         }
@@ -77,6 +114,9 @@ public class DockerOrchestrator {
         if (dockerfileValidator == null) {
             throw new IllegalArgumentException("dockerfileValidator is null");
         }
+        if (definitionFilter == null) {
+            throw new IllegalArgumentException("definitionFilter is null");
+        }
 
         this.docker = docker;
         this.repo = repo;
@@ -84,6 +124,7 @@ public class DockerOrchestrator {
 	    this.buildFlags = buildFlags;
         this.logger = logger;
         this.dockerfileValidator = dockerfileValidator;
+        this.definitionFilter = definitionFilter;
 
         for (Plugin plugin : ServiceLoader.load(Plugin.class)) {
             plugins.add(plugin);
@@ -97,12 +138,19 @@ public class DockerOrchestrator {
 
     public void clean() {
         for (Id id : repo.ids(true)) {
+            if (!inclusive(id)){
+                continue;
+            }
             stop(id);
             clean(id);
         }
 	}
 
-	void clean(final Id id) {
+    private boolean inclusive(Id id) {
+        return definitionFilter.test(conf(id));
+    }
+
+    void clean(final Id id) {
 		if (id == null) {
 			throw new IllegalArgumentException("id is null");
 		}
@@ -424,6 +472,9 @@ public class DockerOrchestrator {
 
 	public void build() {
 		for (Id id : ids()) {
+            if (!inclusive(id)){
+                continue;
+            }
 			build(id);
 		}
 	}
@@ -431,6 +482,9 @@ public class DockerOrchestrator {
     public void validate() {
         Exception innerException = null;
         for (Id id : ids()) {
+            if (!inclusive(id)){
+                continue;
+            }
             try {
                 validate(id);
             } catch(Exception e) {
@@ -443,6 +497,9 @@ public class DockerOrchestrator {
 
 	public void start() {
 		for (Id id : ids()) {
+            if (!inclusive(id)){
+                continue;
+            }
 			start(id);
 		}
 	}
@@ -462,6 +519,9 @@ public class DockerOrchestrator {
 
 	public void stop() {
 		for (Id id : repo.ids(true)) {
+            if (!inclusive(id)){
+                continue;
+            }
 			stop(id);
 		}
 	}
@@ -472,6 +532,9 @@ public class DockerOrchestrator {
 
 	public void push() {
 		for (Id id : ids()) {
+            if (!inclusive(id)){
+                continue;
+            }
 			push(id);
 		}
 	}

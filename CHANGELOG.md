@@ -3,6 +3,7 @@ Change Log
 2.6.0
 
 * Updated to docker-java 1.2.0.
+* Can now filter definitions using `DefinitionFilter`, e.g. to exclude some images from creation.
 
 2.5.0
 

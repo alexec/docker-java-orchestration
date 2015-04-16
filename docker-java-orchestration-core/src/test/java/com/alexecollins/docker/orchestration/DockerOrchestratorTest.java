@@ -1,10 +1,24 @@
 package com.alexecollins.docker.orchestration;
 
 
-import com.alexecollins.docker.orchestration.model.*;
+import com.alexecollins.docker.orchestration.model.BuildFlag;
+import com.alexecollins.docker.orchestration.model.Conf;
+import com.alexecollins.docker.orchestration.model.HealthChecks;
+import com.alexecollins.docker.orchestration.model.Id;
+import com.alexecollins.docker.orchestration.model.Link;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
-import com.github.dockerjava.api.command.*;
+import com.github.dockerjava.api.command.BuildImageCmd;
+import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.InspectContainerCmd;
+import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.command.ListContainersCmd;
+import com.github.dockerjava.api.command.PushImageCmd;
+import com.github.dockerjava.api.command.RemoveContainerCmd;
+import com.github.dockerjava.api.command.StartContainerCmd;
+import com.github.dockerjava.api.command.StopContainerCmd;
+import com.github.dockerjava.api.command.TagImageCmd;
 import com.github.dockerjava.api.model.AuthConfig;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ContainerConfig;
@@ -30,7 +44,14 @@ import java.util.EnumSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DockerOrchestratorTest {
@@ -67,6 +88,8 @@ public class DockerOrchestratorTest {
     @Mock private PushImageCmd pushImageCmd;
     @Mock
     private DockerfileValidator dockerfileValidator;
+    @Mock
+    private DefinitionFilter definitionFilter;
     private DockerOrchestrator testObj;
 
     @Before
@@ -77,7 +100,8 @@ public class DockerOrchestratorTest {
                 fileOrchestratorMock,
                 EnumSet.noneOf(BuildFlag.class),
                 logger,
-                dockerfileValidator
+                dockerfileValidator,
+                definitionFilter
         );
 
         when(repoMock.src(idMock)).thenReturn(srcFileMock);
@@ -143,6 +167,8 @@ public class DockerOrchestratorTest {
                 return null;
             }
         });
+
+        when(definitionFilter.test(any(Conf.class))).thenReturn(true);
     }
 
 
@@ -269,6 +295,22 @@ public class DockerOrchestratorTest {
 
         testObj.validate();
         verify(dockerfileValidator).validate(srcFileMock);
+
+    }
+
+    @Test
+    public void filteredDefinitionsAreNotInvoked() throws Exception {
+        when(definitionFilter.test(any(Conf.class))).thenReturn(false);
+
+        testObj.validate();
+        testObj.clean();
+        testObj.build();
+        testObj.start();
+        testObj.stop();
+        testObj.push();
+
+        verifyNoMoreInteractions(dockerMock);
+
 
     }
 }
