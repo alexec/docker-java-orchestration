@@ -7,16 +7,12 @@ import com.alexecollins.docker.orchestration.model.HealthChecks;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.model.Ping;
 import com.alexecollins.docker.orchestration.plugin.api.Plugin;
+import com.alexecollins.docker.orchestration.util.Logs;
 import com.alexecollins.docker.orchestration.util.Pinger;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.NotFoundException;
-import com.github.dockerjava.api.command.BuildImageCmd;
-import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.InspectContainerResponse;
-import com.github.dockerjava.api.command.PushImageCmd;
-import com.github.dockerjava.api.command.StartContainerCmd;
+import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ExposedPort;
@@ -267,36 +263,67 @@ public class DockerOrchestrator {
             throw new OrchestrationException(e);
         }
 
+        Container existingContainer = null;
         try {
-            Container existingContainer = repo.findContainer(id);
+            try {
+                existingContainer = repo.findContainer(id);
 
-            if (existingContainer == null) {
-                logger.info("No existing container so creating and starting new one");
-                String containerId = createNewContainer(id);
-                startContainer(containerId, id);
+                if (existingContainer == null) {
+                    logger.info("No existing container so creating and starting new one");
+                    String containerId = createNewContainer(id);
+                    startContainer(containerId, id);
 
-            } else if (!isImageIdFromContainerMatchingProvidedImageId(existingContainer.getId(), id)) {
-                logger.info("Image IDs do not match, removing container and creating new one from image");
-                docker.removeContainerCmd(existingContainer.getId()).exec();
-                startContainer(createNewContainer(id), id);
+                } else if (!isImageIdFromContainerMatchingProvidedImageId(existingContainer.getId(), id)) {
+                    logger.info("Image IDs do not match, removing container and creating new one from image");
+                    docker.removeContainerCmd(existingContainer.getId()).exec();
+                    startContainer(createNewContainer(id), id);
 
-            } else if(isRunning(id)) {
-                logger.info("Container already running");
+                } else if (isRunning(id)) {
+                    logger.info("Container already running");
 
-            } else {
-                logger.info("Starting existing container " + existingContainer.getId());
-                startContainer(existingContainer.getId(), id);
+                } else {
+                    logger.info("Starting existing container " + existingContainer.getId());
+                    startContainer(existingContainer.getId(), id);
+                }
+
+                for (Plugin plugin : plugins) {
+                    plugin.started(id, conf(id));
+                }
+                healthCheck(id);
+                sleep(id);
+
+            } catch (DockerException e) {
+                throw new OrchestrationException(e);
             }
-
-            for (Plugin plugin : plugins) {
-                plugin.started(id, conf(id));
+        } catch (OrchestrationException e) {
+            if (existingContainer != null) {
+                logContainer(existingContainer, conf(id));
             }
-
-        } catch (DockerException e) {
-            throw new OrchestrationException(e);
+            throw e;
         }
-        healthCheck(id);
-        sleep(id);
+    }
+
+    private void logContainer(Container container, Conf conf) {
+        if (!conf.isLogOnFailure()) {
+            return;
+        }
+
+        try {
+            LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId()).withStdErr().withStdOut();
+
+            if (conf.getMaxLogLines() > 0) {
+                logContainerCmd.withTail(conf.getMaxLogLines());
+            }
+
+            InputStream stream = logContainerCmd.exec();
+
+            logger.info(String.format("Logs%s from stopped container %s: %n%s",
+                    (conf.getMaxLogLines() > 0) ? " (last " + conf.getMaxLogLines() + " lines)" : "",
+                    container.getId(),
+                    Logs.trimDockerLogHeaders(stream)));
+        } catch (Exception e) {
+            logger.warn("Unable to obtain logs from stopped container " + container.getId() + ", will continue: ", e);
+        }
     }
 
     private void sleep(Id id) {

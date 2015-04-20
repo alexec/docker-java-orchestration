@@ -25,6 +25,10 @@ public class Conf {
     @JsonProperty
     private int sleep = 0;
     @JsonProperty
+    private boolean logOnFailure = false;
+    @JsonProperty
+    private int maxLogLines = -1;
+    @JsonProperty
     private List<Id> volumesFrom = new ArrayList<Id>();
     @JsonProperty
     private HealthChecks healthChecks = new HealthChecks();
@@ -55,11 +59,11 @@ public class Conf {
     public void setTag(String tag) {
         setTags(Arrays.asList(tag));
     }
-    
+
     public List<String> getTags() {
       return tags;
     }
-    
+
     public void setTags(List<String> tags) {
       this.tags = tags;
     }
@@ -98,5 +102,21 @@ public class Conf {
 
     public void setSleep(int sleep) {
         this.sleep = sleep;
+    }
+
+    public boolean isLogOnFailure() {
+        return logOnFailure;
+    }
+
+    public void setLogOnFailure(boolean logOnFailure) {
+        this.logOnFailure = logOnFailure;
+    }
+
+    public int getMaxLogLines() {
+        return maxLogLines;
+    }
+
+    public void setMaxLogLines(int maxLogLines) {
+        this.maxLogLines = maxLogLines;
     }
 }
