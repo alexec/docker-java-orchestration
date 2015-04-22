@@ -1,5 +1,9 @@
 Change Log
 ===
+2.7.0
+
+* [Pull 22](https://github.com/alexec/docker-java-orchestration/pull/22) Container logs are printed on error. 
+
 2.6.0
 
 * Updated to docker-java 1.2.0.

@@ -15,5 +15,6 @@ Contributors
 * Markus Wolf
 * Olivier Adam
 * Panu Wetterstrand
+* Patrick Herrera
 * Sam Morrison
 * Vasco Figueira

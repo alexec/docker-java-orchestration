@@ -5,4 +5,7 @@ A small library to orchestrate groups of Docker containers using YAML configurat
 * [CONTRIB.md](CONTRIB.md)
 * [CHANGELOG.md](CHANGELOG.md)
 * [PLUGIN.md](PLUGIN.md)
+
+* [Maven Plugin](https://github.com/alexec/docker-maven-plugin)
+* [Gradle Plugin](https://github.com/alexec/docker-gradle-plugin)
 * [Ant Tasks](https://github.com/alexec/docker-ant-tasks)
