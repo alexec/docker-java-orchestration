@@ -8,22 +8,22 @@ import java.util.regex.Pattern;
 
 public class Ping {
 
-	@JsonProperty(required = true)
-	private URI url;
-	@JsonProperty
-	private int timeout = 30 * 1000;
-	@JsonProperty
-	private Pattern pattern = Pattern.compile(".*");
+    @JsonProperty(required = true)
+    private URI url;
+    @JsonProperty
+    private int timeout = 30 * 1000;
+    @JsonProperty
+    private Pattern pattern = Pattern.compile(".*");
 
-	public URI getUrl() {
-		return url;
-	}
+    public URI getUrl() {
+        return url;
+    }
 
-	public int getTimeout() {
-		return timeout;
-	}
+    public int getTimeout() {
+        return timeout;
+    }
 
-	public Pattern getPattern() {
-		return pattern;
-	}
+    public Pattern getPattern() {
+        return pattern;
+    }
 }

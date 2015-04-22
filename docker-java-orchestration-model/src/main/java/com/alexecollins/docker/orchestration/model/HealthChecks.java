@@ -6,10 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class HealthChecks {
-	@JsonProperty
-	private List<Ping> pings = new ArrayList<Ping>();
+    @JsonProperty
+    private List<Ping> pings = new ArrayList<Ping>();
 
-	public List<Ping> getPings() {
-		return pings;
-	}
+    public List<Ping> getPings() {
+        return pings;
+    }
 }

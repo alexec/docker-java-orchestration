@@ -66,7 +66,7 @@ public class Boot2DockerPlugin implements Plugin {
             throw new RuntimeException(e);
         }
         if (exitCode != 0) {
-            throw new RuntimeException("exit code " + exitCode + ", "  + message);
+            throw new RuntimeException("exit code " + exitCode + ", " + message);
         }
     }
 

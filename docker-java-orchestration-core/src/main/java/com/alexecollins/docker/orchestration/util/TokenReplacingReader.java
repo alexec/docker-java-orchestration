@@ -11,7 +11,7 @@ import java.nio.CharBuffer;
  * <code>${tokenName}</code>. The replacement value is provided by an
  * implementation of the interface {@link TokenResolver}.
  * </p>
- *
+ * <p/>
  * <p>
  * Origin: <a href="http://tutorials.jenkov.com/java-howto/replace-strings-in-streams-arrays-files.html">
  * http://tutorials.jenkov.com/java-howto/replace-strings-in-streams-arrays-files.html</a>

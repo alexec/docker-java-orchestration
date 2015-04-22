@@ -141,8 +141,7 @@ class DockerfileValidator {
             }
 
             if (INSTRUCTIONS_PATTERNS.containsKey(instruction)) {
-                if(instructionParams == null)
-                {
+                if (instructionParams == null) {
                     logger.error(String.format(
                             "Missing param on line [%d] of %s, found %s", lineNumber, dockerFile, currentLine));
                     isOnError = true;
@@ -158,20 +157,20 @@ class DockerfileValidator {
                     if ("FROM".equalsIgnoreCase(instruction)) {
                         curMatcher = instructionPattern.matcher(instructionParams);
 
-                         if(curMatcher.find()){
-                             String version = "";
-                             if(curMatcher.groupCount() >= 1)
+                        if (curMatcher.find()) {
+                            String version = "";
+                            if (curMatcher.groupCount() >= 1)
                                 version = curMatcher.group(1);
-                             
-                             if(version.length() == 0) {
+
+                            if (version.length() == 0) {
                                 logger.warn(String.format(
                                         "Provide a version and don't use latest version in FROM on line [%d] of %s, found %s", lineNumber, dockerFile, currentLine));
-                             } else if(version.equals(":latest")) {
+                            } else if (version.equals(":latest")) {
                                 logger.warn(String.format(
                                         "Don't use latest version in FROM on line [%d] of %s, found %s", lineNumber, dockerFile, currentLine));
-                                
-                             }
-                                
+
+                            }
+
                         }
 
                     }

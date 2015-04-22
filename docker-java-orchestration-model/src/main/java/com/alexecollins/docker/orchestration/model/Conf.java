@@ -3,11 +3,7 @@ package com.alexecollins.docker.orchestration.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @SuppressWarnings("CanBeFinal")
 public class Conf {
@@ -46,7 +42,7 @@ public class Conf {
     }
 
     public boolean hasTag() {
-      return tags != null && !tags.isEmpty();
+        return tags != null && !tags.isEmpty();
     }
 
     /**
@@ -61,11 +57,11 @@ public class Conf {
     }
 
     public List<String> getTags() {
-      return tags;
+        return tags;
     }
 
     public void setTags(List<String> tags) {
-      this.tags = tags;
+        this.tags = tags;
     }
 
     public List<Link> getLinks() {
