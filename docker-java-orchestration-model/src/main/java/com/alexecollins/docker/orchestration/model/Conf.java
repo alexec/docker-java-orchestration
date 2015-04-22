@@ -21,9 +21,9 @@ public class Conf {
     @JsonProperty
     private int sleep = 0;
     @JsonProperty
-    private boolean logOnFailure = false;
+    private boolean logOnFailure = true;
     @JsonProperty
-    private int maxLogLines = -1;
+    private int maxLogLines = 10; // same as unix tail command
     @JsonProperty
     private List<Id> volumesFrom = new ArrayList<Id>();
     @JsonProperty
