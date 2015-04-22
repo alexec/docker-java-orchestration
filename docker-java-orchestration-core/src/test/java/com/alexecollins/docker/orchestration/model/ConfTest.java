@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.junit.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 public class ConfTest {
@@ -21,5 +22,8 @@ public class ConfTest {
         assertNotNull(conf.getVolumesFrom());
 
         assertEquals(new Link("foo:bar"), conf.getLinks().get(0));
+
+        assertThat(conf.isLogOnFailure(), is(true));
+        assertThat(conf.getMaxLogLines(), is(123));
     }
 }

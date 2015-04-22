@@ -9,3 +9,5 @@ volumesFrom:
   - noop
 links:
   - foo:bar
+logOnFailure: true
+maxLogLines: 123

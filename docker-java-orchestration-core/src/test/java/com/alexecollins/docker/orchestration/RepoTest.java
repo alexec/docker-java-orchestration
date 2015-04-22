@@ -9,7 +9,9 @@ import org.junit.Test;
 import java.io.File;
 import java.util.*;
 
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 
 public class RepoTest {
@@ -84,6 +86,8 @@ public class RepoTest {
 
     @Test
     public void filesAreNotIncludedInIds() throws Exception {
-        assertEquals(Arrays.asList(appId, filterId), sut.ids(false));
+        List<Id> identifiers = sut.ids(false);
+        assertEquals(identifiers.size(), 2);
+        assertThat(identifiers, hasItems(appId, filterId));
     }
 }

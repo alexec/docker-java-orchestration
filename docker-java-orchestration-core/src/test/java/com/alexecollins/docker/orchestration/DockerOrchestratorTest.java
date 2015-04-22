@@ -1,24 +1,19 @@
 package com.alexecollins.docker.orchestration;
 
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Appender;
 import com.alexecollins.docker.orchestration.model.BuildFlag;
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.HealthChecks;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.model.Link;
+import com.alexecollins.docker.orchestration.util.Logs;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
-import com.github.dockerjava.api.command.BuildImageCmd;
-import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.InspectContainerCmd;
-import com.github.dockerjava.api.command.InspectContainerResponse;
-import com.github.dockerjava.api.command.ListContainersCmd;
-import com.github.dockerjava.api.command.PushImageCmd;
-import com.github.dockerjava.api.command.RemoveContainerCmd;
-import com.github.dockerjava.api.command.StartContainerCmd;
-import com.github.dockerjava.api.command.StopContainerCmd;
-import com.github.dockerjava.api.command.TagImageCmd;
+import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.AuthConfig;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ContainerConfig;
@@ -26,32 +21,27 @@ import com.github.dockerjava.api.model.PushEventStreamItem;
 import com.github.dockerjava.jaxrs.BuildImageCmdExec;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.client.ClientResponse;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.EnumSet;
+import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
+import static org.junit.matchers.JUnitMatchers.hasItem;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DockerOrchestratorTest {
@@ -64,42 +54,72 @@ public class DockerOrchestratorTest {
 
     private static final String TAG_NAME = "test-tag";
 
-    private final Logger logger = mock(Logger.class);
-    @Mock private DockerClient dockerMock;
-    @Mock private Repo repoMock;
-    @Mock private File fileMock;
-    @Mock private File srcFileMock;
-    @Mock private Id idMock;
-    @Mock private FileOrchestrator fileOrchestratorMock;
-    @Mock private ClientResponse clientResponseMock;
-    @Mock private Conf confMock;
-    @Mock private CreateContainerResponse createContainerResponse;
-    @Mock private ContainerConfig containerConfigMock;
-    @Mock private Container containerMock;
-    @Mock private InspectContainerResponse containerInspectResponseMock;
-    @Mock private BuildImageCmd buildImageCmdMock;
-    @Mock private CreateContainerCmd createContainerCmdMock;
-    @Mock private StartContainerCmd startContainerCmdMock;
-    @Mock private InspectContainerCmd inspectContainerCmdMock;
-    @Mock private ListContainersCmd listContainersCmdMockOnlyRunning;
-    @Mock private RemoveContainerCmd removeContainerCmdMock;
-    @Mock private StopContainerCmd stopContainerCmdMock;
-    @Mock private TagImageCmd tagImageCmdMock;
-    @Mock private PushImageCmd pushImageCmd;
+    @Mock
+    private DockerClient dockerMock;
+    @Mock
+    private Repo repoMock;
+    @Mock
+    private File fileMock;
+    @Mock
+    private File srcFileMock;
+    @Mock
+    private Id idMock;
+    @Mock
+    private FileOrchestrator fileOrchestratorMock;
+    @Mock
+    private ClientResponse clientResponseMock;
+    @Mock
+    private Conf confMock;
+    @Mock
+    private CreateContainerResponse createContainerResponse;
+    @Mock
+    private ContainerConfig containerConfigMock;
+    @Mock
+    private Container containerMock;
+    @Mock
+    private InspectContainerResponse containerInspectResponseMock;
+    @Mock
+    private BuildImageCmd buildImageCmdMock;
+    @Mock
+    private CreateContainerCmd createContainerCmdMock;
+    @Mock
+    private StartContainerCmd startContainerCmdMock;
+    @Mock
+    private InspectContainerCmd inspectContainerCmdMock;
+    @Mock
+    private ListContainersCmd listContainersCmdMockOnlyRunning;
+    @Mock
+    private RemoveContainerCmd removeContainerCmdMock;
+    @Mock
+    private StopContainerCmd stopContainerCmdMock;
+    @Mock
+    private TagImageCmd tagImageCmdMock;
+    @Mock
+    private PushImageCmd pushImageCmd;
     @Mock
     private DockerfileValidator dockerfileValidator;
     @Mock
     private DefinitionFilter definitionFilter;
     private DockerOrchestrator testObj;
 
+    @SuppressWarnings("unchecked")
+    private final Appender<ILoggingEvent> appender = mock(Appender.class);
+    private final ArgumentCaptor<ILoggingEvent> captor = ArgumentCaptor.forClass(ILoggingEvent.class);
+
+    private final static Logger LOGGER = (Logger) LoggerFactory.getLogger(DockerOrchestrator.class);
+
     @Before
-    public void setup () throws DockerException, IOException {
+    public void setup() throws DockerException, IOException {
+        ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)).setLevel(Level.INFO);
+        LOGGER.setLevel(Level.INFO);
+        LOGGER.addAppender(appender);
+
         testObj = new DockerOrchestrator(
                 dockerMock,
                 repoMock,
                 fileOrchestratorMock,
                 EnumSet.noneOf(BuildFlag.class),
-                logger,
+                LOGGER,
                 dockerfileValidator,
                 definitionFilter
         );
@@ -184,6 +204,40 @@ public class DockerOrchestratorTest {
     }
 
     @Test
+    public void logsDockerOutputWhenStartContainerFails() throws DockerException, IOException {
+        Container myContainer = mock(Container.class);
+        when(myContainer.getId()).thenReturn("Not Exist");
+
+        when(repoMock.imageExists(idMock)).thenReturn(true);
+        when(repoMock.findContainer(idMock)).thenReturn(myContainer);
+
+        when(confMock.isLogOnFailure()).thenReturn(true);
+
+        when(dockerMock.inspectContainerCmd(anyString())).thenThrow(new DockerException("something wrong", 404));
+
+        LogContainerCmd logContainerCmd = mock(LogContainerCmd.class);
+        when(dockerMock.logContainerCmd(anyString())).thenReturn(logContainerCmd);
+        when(logContainerCmd.withStdErr()).thenReturn(logContainerCmd);
+        when(logContainerCmd.withStdOut()).thenReturn(logContainerCmd);
+
+        byte[] bytes = new byte[]{Logs.BytePrefix.StdOut.getHeaderByte(), 0, 0, 0, 0, 0, 0, 0, 'b', 'l', 'a', 'h', ' ', 'b', 'l', 'a', 'h', '\n',
+                Logs.BytePrefix.StdErr.getHeaderByte(), 0, 0, 0, 0, 0, 0, 0, 'b', 'l', 'a', 'h', '2', ' ', 'b', 'l', 'a', 'h', '2'};
+        InputStream stream = new ByteArrayInputStream(bytes);
+        when(logContainerCmd.exec()).thenReturn(stream);
+
+        try {
+            testObj.start();
+        } catch (OrchestrationException e) {
+            verify(appender, atLeastOnce()).doAppend(captor.capture());
+            List<ILoggingEvent> logging = captor.getAllValues();
+            assertThat(logging, CoreMatchers.hasItem(loggedMessage("STDOUT: blah blah")));
+            assertThat(logging, CoreMatchers.hasItem(loggedMessage("STDERR: blah2 blah2")));
+        } catch (Exception e) {
+            fail("Expected OrchestrationException");
+        }
+    }
+
+    @Test
     public void startExistingContainerAsImageIdsMatch() throws DockerException, IOException {
         when(repoMock.imageExists(idMock)).thenReturn(true);
         when(listContainersCmdMockOnlyRunning.exec()).thenReturn(Collections.<Container>emptyList());
@@ -227,7 +281,9 @@ public class DockerOrchestratorTest {
 
     @Test
     public void logsLoadedPlugin() throws Exception {
-        verify(logger).info("Loaded " + TestPlugin.class + " plugin");
+        verify(appender, atLeastOnce()).doAppend(captor.capture());
+        List<ILoggingEvent> logging = captor.getAllValues();
+        assertThat(logging, hasItem(loggedMessage("Loaded " + TestPlugin.class + " plugin")));
     }
 
     @Test
@@ -312,5 +368,19 @@ public class DockerOrchestratorTest {
         verifyNoMoreInteractions(dockerMock);
 
 
+    }
+
+    private static TypeSafeMatcher<ILoggingEvent> loggedMessage(final String message) {
+        return new TypeSafeMatcher<ILoggingEvent>() {
+            @Override
+            protected boolean matchesSafely(ILoggingEvent event) {
+                return event.getFormattedMessage().contains(message);
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText(String.format("message = <%s>", message));
+            }
+        };
     }
 }
