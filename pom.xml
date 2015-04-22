@@ -76,10 +76,11 @@
             <version>4.12</version>
             <scope>test</scope>
         </dependency>
+        <!-- Using Logback in testing for log output capture (see DockerOrchestratorTest) -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>${slf4j.version}</version>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.1.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

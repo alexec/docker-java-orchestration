@@ -8,14 +8,48 @@ import java.io.InputStream;
 import java.util.Arrays;
 
 public class Logs {
+    public enum BytePrefix {
+        StdOut(1, "STDOUT"),
+        StdErr(2, "STDERR");
 
-    public static final Byte STDOUT_BYTE = new Byte("0001");
-    public static final Byte STDERR_BYTE = new Byte("0002");
+        private final Byte headerByte;
+        private final String prefix;
+
+        BytePrefix(int headerByte, String prefix) {
+            this.headerByte = (byte) headerByte;
+            this.prefix = prefix;
+        }
+
+        public Byte getHeaderByte() {
+            return headerByte;
+        }
+
+        public String getPrefix() {
+            return prefix;
+        }
+
+        public static BytePrefix findFor(Byte bytes) {
+            for (BytePrefix prefix : values())
+                if (bytes.equals(prefix.headerByte))
+                    return prefix;
+
+            return BytePrefix.StdOut;
+        }
+
+        public static boolean isPrefix(Byte bytes) {
+            for (BytePrefix prefix : values())
+                if (bytes.equals(prefix.headerByte))
+                    return true;
+
+            return false;
+        }
+    }
 
     /**
      * Parse Docker container logs.
-     *
+     * <p>
      * See: http://docs.docker.com/v1.6/reference/api/docker_remote_api_v1.13/#attach-to-a-container
+     *
      * @param stream
      * @return
      * @throws IOException
@@ -30,8 +64,8 @@ public class Logs {
                 continue;
             }
 
-            if (STDERR_BYTE.equals(stringAsBytes[0]) || STDOUT_BYTE.equals(stringAsBytes[0])) {
-                String prefix = "\t" + (STDERR_BYTE.equals(stringAsBytes[0]) ? "STDERR: " : "STDOUT: ");
+            if (BytePrefix.isPrefix(stringAsBytes[0])) {
+                String prefix = String.format("\t%s: ", BytePrefix.findFor(stringAsBytes[0]).getPrefix());
                 dockerContainerLog[i] = prefix + new String(Arrays.copyOfRange(stringAsBytes, 8, stringAsBytes.length));
             }
         }

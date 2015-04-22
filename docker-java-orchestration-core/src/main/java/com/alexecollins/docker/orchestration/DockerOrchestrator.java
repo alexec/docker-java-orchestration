@@ -52,20 +52,20 @@ public class DockerOrchestrator {
     @Deprecated
     @SuppressWarnings("unused")
     public static final FileFilter DEFAULT_FILTER = new FileFilter() {
-		@Override
-		public boolean accept(File pathname) {
-			return false;
-		}
-	};
+        @Override
+        public boolean accept(File pathname) {
+            return false;
+        }
+    };
     private static final Logger DEFAULT_LOGGER = LoggerFactory.getLogger(DockerOrchestrator.class);
     private static final String CONTAINER_IP_PATTERN = "__CONTAINER.IP__";
 
     private final Logger logger;
-	private final DockerClient docker;
-	private final Repo repo;
+    private final DockerClient docker;
+    private final Repo repo;
 
     private final FileOrchestrator fileOrchestrator;
-	private final Set<BuildFlag> buildFlags;
+    private final Set<BuildFlag> buildFlags;
     private final List<Plugin> plugins = new ArrayList<Plugin>();
     private final DockerfileValidator dockerfileValidator;
     private final DefinitionFilter definitionFilter;
@@ -117,7 +117,7 @@ public class DockerOrchestrator {
         this.docker = docker;
         this.repo = repo;
         this.fileOrchestrator = fileOrchestrator;
-	    this.buildFlags = buildFlags;
+        this.buildFlags = buildFlags;
         this.logger = logger;
         this.dockerfileValidator = dockerfileValidator;
         this.definitionFilter = definitionFilter;
@@ -134,59 +134,59 @@ public class DockerOrchestrator {
 
     public void clean() {
         for (Id id : repo.ids(true)) {
-            if (!inclusive(id)){
+            if (!inclusive(id)) {
                 continue;
             }
             stop(id);
             clean(id);
         }
-	}
+    }
 
     private boolean inclusive(Id id) {
         return definitionFilter.test(id, conf(id));
     }
 
     void clean(final Id id) {
-		if (id == null) {
-			throw new IllegalArgumentException("id is null");
-		}
-		stop(id);
+        if (id == null) {
+            throw new IllegalArgumentException("id is null");
+        }
+        stop(id);
         logger.info("Cleaning " + id);
         for (Container container : repo.findContainers(id, true)) {
-			logger.info("Removing container " + container.getId());
-			try {
-				docker.removeContainerCmd(container.getId()).withForce().exec();
-			} catch (DockerException e) {
-				throw new OrchestrationException(e);
-			}
-		}
-		String imageId = null;
-		try {
+            logger.info("Removing container " + container.getId());
+            try {
+                docker.removeContainerCmd(container.getId()).withForce().exec();
+            } catch (DockerException e) {
+                throw new OrchestrationException(e);
+            }
+        }
+        String imageId = null;
+        try {
             imageId = repo.findImageId(id);
         } catch (NotFoundException e) {
-			logger.warn("Image " + id + " not found");
-		} catch (DockerException e) {
-			throw new OrchestrationException(e);
-		}
-		if (imageId != null) {
+            logger.warn("Image " + id + " not found");
+        } catch (DockerException e) {
+            throw new OrchestrationException(e);
+        }
+        if (imageId != null) {
             logger.info("Removing image " + imageId);
             try {
                 docker.removeImageCmd(imageId).withForce().exec();
             } catch (DockerException e) {
-				logger.warn(e.getMessage());
-			}
-		}
+                logger.warn(e.getMessage());
+            }
+        }
     }
 
-	void build(final Id id) {
-		if (id == null) {
-			throw new IllegalArgumentException("id is null");
-		}
-		try {
-			build(prepare(id), id);
-		} catch (IOException e) {
-			throw new OrchestrationException(e);
-		}
+    void build(final Id id) {
+        if (id == null) {
+            throw new IllegalArgumentException("id is null");
+        }
+        try {
+            build(prepare(id), id);
+        } catch (IOException e) {
+            throw new OrchestrationException(e);
+        }
 
     }
 
@@ -203,8 +203,8 @@ public class DockerOrchestrator {
 
     private File prepare(Id id) throws IOException {
         if (id == null) {
-			throw new IllegalArgumentException("id is null");
-		}
+            throw new IllegalArgumentException("id is null");
+        }
         logger.info("Preparing " + id);
         return fileOrchestrator.prepare(id, repo.src(id), conf(id));
     }
@@ -213,8 +213,8 @@ public class DockerOrchestrator {
     private void build(File dockerFolder, Id id) {
         try {
             BuildImageCmd build = docker.buildImageCmd(dockerFolder).withRemove(false);
-            for(BuildFlag f : buildFlags){
-                switch (f){
+            for (BuildFlag f : buildFlags) {
+                switch (f) {
                     case NO_CACHE:
                         build = build.withNoCache();
                         break;
@@ -263,52 +263,63 @@ public class DockerOrchestrator {
             throw new OrchestrationException(e);
         }
 
-        Container existingContainer = null;
+        boolean failed = false;
         try {
-            try {
-                existingContainer = repo.findContainer(id);
+            Container existingContainer = repo.findContainer(id);
 
-                if (existingContainer == null) {
-                    logger.info("No existing container so creating and starting new one");
-                    String containerId = createNewContainer(id);
-                    startContainer(containerId, id);
+            if (existingContainer == null) {
+                logger.info("No existing container so creating and starting new one");
+                startContainer(createNewContainer(id), id);
 
-                } else if (!isImageIdFromContainerMatchingProvidedImageId(existingContainer.getId(), id)) {
-                    logger.info("Image IDs do not match, removing container and creating new one from image");
-                    docker.removeContainerCmd(existingContainer.getId()).exec();
-                    startContainer(createNewContainer(id), id);
+            } else if (!isImageIdFromContainerMatchingProvidedImageId(existingContainer.getId(), id)) {
+                logger.info("Image IDs do not match, removing container and creating new one from image");
+                docker.removeContainerCmd(existingContainer.getId()).exec();
+                startContainer(createNewContainer(id), id);
 
-                } else if (isRunning(id)) {
-                    logger.info("Container already running");
+            } else if (isRunning(id)) {
+                logger.info("Container already running");
 
-                } else {
-                    logger.info("Starting existing container " + existingContainer.getId());
-                    startContainer(existingContainer.getId(), id);
-                }
-
-                for (Plugin plugin : plugins) {
-                    plugin.started(id, conf(id));
-                }
-                healthCheck(id);
-                sleep(id);
-
-            } catch (DockerException e) {
-                throw new OrchestrationException(e);
+            } else {
+                logger.info("Starting existing container " + existingContainer.getId());
+                startContainer(existingContainer.getId(), id);
             }
+
+            for (Plugin plugin : plugins) {
+                plugin.started(id, conf(id));
+            }
+
+            healthCheck(id);
+            sleep(id);
+        } catch (DockerException e) {
+            failed = true;
+            throw new OrchestrationException(e);
         } catch (OrchestrationException e) {
-            if (existingContainer != null) {
-                logContainer(existingContainer, conf(id));
-            }
+            failed = true;
             throw e;
+        } finally {
+            if (failed)
+                outputContainerLog(id);
         }
     }
 
-    private void logContainer(Container container, Conf conf) {
-        if (!conf.isLogOnFailure()) {
-            return;
+    private void outputContainerLog(final Id id) {
+        Container container;
+        try {
+             container = repo.findContainer(id);
+        } catch (DockerException e){
+            throw new OrchestrationException(e);
         }
 
+        if (container == null)
+            return;
+
         try {
+            Conf conf = conf(id);
+
+            if (!conf.isLogOnFailure()) {
+                return;
+            }
+
             LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId()).withStdErr().withStdOut();
 
             if (conf.getMaxLogLines() > 0) {
@@ -317,12 +328,12 @@ public class DockerOrchestrator {
 
             InputStream stream = logContainerCmd.exec();
 
-            logger.info(String.format("Logs%s from stopped container %s: %n%s",
-                    (conf.getMaxLogLines() > 0) ? " (last " + conf.getMaxLogLines() + " lines)" : "",
+            logger.info(String.format("Logs%s from container %s: %n%s",
+                    (conf.getMaxLogLines() > 0) ? " (max last " + conf.getMaxLogLines() + " lines)" : "",
                     container.getId(),
                     Logs.trimDockerLogHeaders(stream)));
         } catch (Exception e) {
-            logger.warn("Unable to obtain logs from stopped container " + container.getId() + ", will continue: ", e);
+            logger.warn("Unable to obtain logs from container " + container.getId() + ", will continue: ", e);
         }
     }
 
@@ -383,7 +394,7 @@ public class DockerOrchestrator {
         createCmd.withEnv(asEnvList(conf.getEnv()));
         CreateContainerResponse response = createCmd.exec();
         return response.getId();
-	}
+    }
 
     /**
      * Converts String to String map to list of
@@ -391,21 +402,23 @@ public class DockerOrchestrator {
      */
     private String[] asEnvList(Map<String, String> env) {
         ArrayList<String> list = new ArrayList<String>();
-        for(Map.Entry<String,String> entry : env.entrySet()){
-            list.add(entry.getKey()+"="+entry.getValue());
+        for (Map.Entry<String, String> entry : env.entrySet()) {
+            list.add(entry.getKey() + "=" + entry.getValue());
         }
         return list.toArray(new String[list.size()]);
     }
 
     private boolean isRunning(Id id) {
-		if (id == null) {throw new IllegalArgumentException("id is null");}
-		boolean running = false;
+        if (id == null) {
+            throw new IllegalArgumentException("id is null");
+        }
+        boolean running = false;
         final Container candidate = repo.findContainer(id);
-		for (Container container : docker.listContainersCmd().withShowAll(false).exec()) {
-			running |= candidate != null && candidate.getId().equals(container.getId());
-		}
-		return running;
-	}
+        for (Container container : docker.listContainersCmd().withShowAll(false).exec()) {
+            running |= candidate != null && candidate.getId().equals(container.getId());
+        }
+        return running;
+    }
 
     private void healthCheck(Id id) {
         final HealthChecks healthChecks = conf(id).getHealthChecks();
@@ -428,24 +441,24 @@ public class DockerOrchestrator {
         }
     }
 
-	private void prepareHostConfig(Id id, StartContainerCmd config) {
-		config.withPublishAllPorts(true);
+    private void prepareHostConfig(Id id, StartContainerCmd config) {
+        config.withPublishAllPorts(true);
 
         Link[] links = links(id);
         logger.info(" - links " + conf(id).getLinks());
         config.withLinks(links);
 
-		final Ports portBindings = new Ports();
-		for (String e : conf(id).getPorts()) {
+        final Ports portBindings = new Ports();
+        for (String e : conf(id).getPorts()) {
 
-			final String[] split = e.split(" ");
+            final String[] split = e.split(" ");
 
-			assert split.length == 1 || split.length == 2;
+            assert split.length == 1 || split.length == 2;
 
-			final int a = Integer.parseInt(split[0]);
-			final int b = split.length == 2 ? Integer.parseInt(split[1]) : a;
+            final int a = Integer.parseInt(split[0]);
+            final int b = split.length == 2 ? Integer.parseInt(split[1]) : a;
 
-			logger.info(" - port " + e);
+            logger.info(" - port " + e);
             portBindings.bind(new ExposedPort(a, InternetProtocol.TCP), new Ports.Binding(b));
         }
         config.withPortBindings(portBindings);
@@ -453,7 +466,7 @@ public class DockerOrchestrator {
         logger.info(" - volumes " + conf(id).getVolumes());
 
         final List<Bind> binds = new ArrayList<Bind>();
-        for (Map.Entry<String,String> entry : conf(id).getVolumes().entrySet()) {
+        for (Map.Entry<String, String> entry : conf(id).getVolumes().entrySet()) {
             String volumePath = entry.getKey();
             String hostPath = entry.getValue();
             File file = new File(hostPath);
@@ -462,74 +475,74 @@ public class DockerOrchestrator {
             binds.add(new Bind(path, new Volume(volumePath)));
         }
 
-		config.withBinds(binds.toArray(new Bind[binds.size()]));
-	}
+        config.withBinds(binds.toArray(new Bind[binds.size()]));
+    }
 
-	private Link[] links(Id id) {
+    private Link[] links(Id id) {
         final List<com.alexecollins.docker.orchestration.model.Link> links = conf(id).getLinks();
         final Link[] out = new Link[links.size()];
-		for (int i = 0; i < links.size(); i++) {
+        for (int i = 0; i < links.size(); i++) {
             com.alexecollins.docker.orchestration.model.Link link = links.get(i);
             final String name = com.alexecollins.docker.orchestration.util.Links.name(repo.findContainer(link.getId()).getNames());
             final String alias = link.getAlias();
             out[i] = new Link(name, alias);
         }
-		return out;
-	}
+        return out;
+    }
 
-	private void stop(final Id id) {
-		if (id == null) {
-			throw new IllegalArgumentException("id is null");
-		}
+    private void stop(final Id id) {
+        if (id == null) {
+            throw new IllegalArgumentException("id is null");
+        }
 
         logger.info("Stopping " + id);
 
         for (Container container : repo.findContainers(id, false)) {
             logger.info("Stopping container " + Arrays.toString(container.getNames()));
             try {
-				docker.stopContainerCmd(container.getId()).withTimeout(1).exec();
-			} catch (DockerException e) {
-				throw new OrchestrationException(e);
-			}
+                docker.stopContainerCmd(container.getId()).withTimeout(1).exec();
+            } catch (DockerException e) {
+                throw new OrchestrationException(e);
+            }
         }
         for (Plugin plugin : plugins) {
             plugin.stopped(id, conf(id));
         }
     }
 
-	public void build() {
-		for (Id id : ids()) {
-            if (!inclusive(id)){
+    public void build() {
+        for (Id id : ids()) {
+            if (!inclusive(id)) {
                 continue;
             }
-			build(id);
-		}
-	}
+            build(id);
+        }
+    }
 
     public void validate() {
         Exception innerException = null;
         for (Id id : ids()) {
-            if (!inclusive(id)){
+            if (!inclusive(id)) {
                 continue;
             }
             try {
                 validate(id);
-            } catch(Exception e) {
+            } catch (Exception e) {
                 innerException = e;
             }
         }
-        if(innerException != null)
+        if (innerException != null)
             throw new OrchestrationException(innerException);
     }
 
-	public void start() {
-		for (Id id : ids()) {
-            if (!inclusive(id)){
+    public void start() {
+        for (Id id : ids()) {
+            if (!inclusive(id)) {
                 continue;
             }
-			start(id);
-		}
-	}
+            start(id);
+        }
+    }
 
     public Map<String, String> getIPAddresses() {
         Map<String, String> idToIpAddressMap = new HashMap<String, String>();
@@ -544,38 +557,38 @@ public class DockerOrchestrator {
         return idToIpAddressMap;
     }
 
-	public void stop() {
-		for (Id id : repo.ids(true)) {
-            if (!inclusive(id)){
+    public void stop() {
+        for (Id id : repo.ids(true)) {
+            if (!inclusive(id)) {
                 continue;
             }
-			stop(id);
-		}
-	}
+            stop(id);
+        }
+    }
 
-	public List<Id> ids() {
-		return repo.ids(false);
-	}
+    public List<Id> ids() {
+        return repo.ids(false);
+    }
 
-	public void push() {
-		for (Id id : ids()) {
-            if (!inclusive(id)){
+    public void push() {
+        for (Id id : ids()) {
+            if (!inclusive(id)) {
                 continue;
             }
-			push(id);
-		}
-	}
+            push(id);
+        }
+    }
 
-	private void push(Id id) {
-		try {
+    private void push(Id id) {
+        try {
             PushImageCmd pushImageCmd = docker.pushImageCmd(repo(id)).withAuthConfig(docker.authConfig());
             logger.info("Pushing " + id + " (" + pushImageCmd.getName() + ")");
             InputStream inputStream = pushImageCmd.exec();
             throwExceptionIfThereIsAnError(inputStream);
         } catch (DockerException e) {
-			throw new OrchestrationException(e);
-		} catch (IOException e) {
-			throw new OrchestrationException(e);
+            throw new OrchestrationException(e);
+        } catch (IOException e) {
+            throw new OrchestrationException(e);
         }
     }
 
@@ -600,19 +613,19 @@ public class DockerOrchestrator {
     }
 
     public boolean isRunning() {
-		for (Id id : ids()) {
-			if (!isRunning(id)) {
-				return false;
-			}
-		}
-		return true;
-	}
+        for (Id id : ids()) {
+            if (!isRunning(id)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     @SuppressWarnings("unchecked")
     <P extends Plugin> P getPlugin(Class<P> pluginClass) {
         for (Plugin plugin : plugins) {
             if (plugin.getClass().equals(pluginClass)) {
-                return (P)plugin;
+                return (P) plugin;
             }
         }
         throw new NoSuchElementException("plugin " + pluginClass + " is not loaded");
