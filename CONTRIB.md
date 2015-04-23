@@ -9,7 +9,9 @@ Contributors
 * Dan Jasek
 * Emir Dizdarevic
 * Jacob Bay Hansen
+* James Camidge
 * Guillaume Dufour
+* Karl Chu
 * Lachlan Coote
 * Laurie Hallowes
 * Markus Wolf
@@ -18,3 +20,4 @@ Contributors
 * Patrick Herrera
 * Sam Morrison
 * Vasco Figueira
+* Wade Pearce
