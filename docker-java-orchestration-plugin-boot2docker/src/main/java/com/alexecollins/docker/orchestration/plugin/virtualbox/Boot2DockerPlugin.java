@@ -14,7 +14,7 @@ public class Boot2DockerPlugin implements Plugin {
     private static final Logger LOGGER = LoggerFactory.getLogger(Boot2DockerPlugin.class);
     private static final boolean IS_UNIX = isUnix();
     private final boolean skip = IS_UNIX;
-    private String skipReason = "host is a Unix like";
+    private String skipReason = "host is Unix like";
 
     private static boolean isUnix() {
         String os = System.getProperty("os.name");
