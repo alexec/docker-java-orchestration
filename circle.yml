@@ -14,5 +14,5 @@ dependencies:
   - mvn install -DskipTests
 test:
  override:
-  - service mysql stop
+  - sudo service mysql stop
   - mvn install -Prun-its
