@@ -21,4 +21,5 @@ test:
   - mvn deploy -Prun-its -s settings.xml
   - ./circle.sh start_build docker-maven-plugin
  post:
-  - cp -v $(find . -path '.*/target/*-reports/TEST-*.xml') $CIRCLE_TEST_REPORTS/
+  - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+  - find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
