@@ -7,11 +7,14 @@ import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.core.command.FrameReader;
 import org.slf4j.Logger;
 
+import javax.ws.rs.ProcessingException;
+import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 
-class Tail extends Thread {
-    private final FrameReader frameReader;
+class Tail extends Thread implements AutoCloseable {
     private final Logger logger;
+    private final InputStream inputStream;
     private int numLines = 0;
     private int maxLines = Integer.MAX_VALUE;
     private volatile boolean cancelled;
@@ -25,7 +28,7 @@ class Tail extends Thread {
                 .withFollowStream()
                 .withTail(10);
 
-        frameReader = new FrameReader(logContainerCmd.exec());
+        inputStream = logContainerCmd.exec();
     }
 
     void setMaxLines(int maxLines) {
@@ -35,18 +38,26 @@ class Tail extends Thread {
     @Override
     public void run() {
         Frame l;
-        try {
+        try (FrameReader frameReader = new FrameReader(inputStream)) {
             while (numLines < maxLines && !cancelled && (l = frameReader.readFrame()) != null) {
                 logger.info(l.toString());
                 numLines++;
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            // silently swallow this message
+            if (!e.getMessage().equals("Stream closed")) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
-    public void cancel() throws InterruptedException {
+    @Override
+    public void close() throws IOException, InterruptedException {
         cancelled = true;
-        join();
+        try {
+            inputStream.close();
+        } catch (ProcessingException ignore) {
+            // something strang happens here, but as we are done with the stream, silently swallow it
+        }
     }
 }

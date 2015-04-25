@@ -3,7 +3,6 @@ package com.alexecollins.docker.orchestration;
 
 import com.alexecollins.docker.orchestration.model.*;
 import com.alexecollins.docker.orchestration.plugin.api.Plugin;
-import com.alexecollins.docker.orchestration.util.Logs;
 import com.alexecollins.docker.orchestration.util.Pinger;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
@@ -39,11 +38,12 @@ public class DockerOrchestrator {
 
     private final Logger logger;
     private final DockerClient docker;
+    private final TailFactory tailFactory;
     private final Repo repo;
 
     private final FileOrchestrator fileOrchestrator;
     private final Set<BuildFlag> buildFlags;
-    private final List<Plugin> plugins = new ArrayList<Plugin>();
+    private final List<Plugin> plugins = new ArrayList<>();
     private final DockerfileValidator dockerfileValidator;
     private final DefinitionFilter definitionFilter;
 
@@ -66,12 +66,13 @@ public class DockerOrchestrator {
                 new FileOrchestrator(workDir, rootDir, filter, properties),
                 buildFlags,
                 DEFAULT_LOGGER,
+                TailFactory.DEFAULT,
                 new DockerfileValidator(),
                 DefinitionFilter.ANY
         );
     }
 
-    DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Set<BuildFlag> buildFlags, Logger logger, DockerfileValidator dockerfileValidator, DefinitionFilter definitionFilter) {
+    DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Set<BuildFlag> buildFlags, Logger logger, TailFactory tailFactory, DockerfileValidator dockerfileValidator, DefinitionFilter definitionFilter) {
         if (docker == null) {
             throw new IllegalArgumentException("docker is null");
         }
@@ -92,6 +93,7 @@ public class DockerOrchestrator {
         }
 
         this.docker = docker;
+        this.tailFactory = tailFactory;
         this.repo = repo;
         this.fileOrchestrator = fileOrchestrator;
         this.buildFlags = buildFlags;
@@ -240,7 +242,6 @@ public class DockerOrchestrator {
             throw new OrchestrationException(e);
         }
 
-        boolean failed = false;
         try {
             Container existingContainer = repo.findContainer(id);
 
@@ -250,7 +251,7 @@ public class DockerOrchestrator {
 
             } else if (!isImageIdFromContainerMatchingProvidedImageId(existingContainer.getId(), id)) {
                 logger.info("Image IDs do not match, removing container and creating new one from image");
-                docker.removeContainerCmd(existingContainer.getId()).exec();
+                docker.removeContainerCmd(existingContainer.getId()).withForce().exec();
                 startContainer(createNewContainer(id), id);
 
             } else if (isRunning(id)) {
@@ -261,56 +262,21 @@ public class DockerOrchestrator {
                 startContainer(existingContainer.getId(), id);
             }
 
-            for (Plugin plugin : plugins) {
-                plugin.started(id, conf(id));
-            }
+            try (Tail tail = tailFactory.newTail(docker, repo.findContainer(id), logger)) {
+                tail.start();
 
-            healthCheck(id);
-            sleep(id);
-        } catch (DockerException e) {
-            failed = true;
+                for (Plugin plugin : plugins) {
+                    plugin.started(id, conf(id));
+                }
+
+                healthCheck(id);
+
+                sleep(id);
+
+                tail.setMaxLines(conf(id).getMaxLogLines());
+            }
+        } catch (DockerException | InterruptedException | IOException e) {
             throw new OrchestrationException(e);
-        } catch (OrchestrationException e) {
-            failed = true;
-            throw e;
-        } finally {
-            if (failed)
-                outputContainerLog(id);
-        }
-    }
-
-    private void outputContainerLog(final Id id) {
-        Container container;
-        try {
-            container = repo.findContainer(id);
-        } catch (DockerException e) {
-            throw new OrchestrationException(e);
-        }
-
-        if (container == null)
-            return;
-
-        try {
-            Conf conf = conf(id);
-
-            if (!conf.isLogOnFailure()) {
-                return;
-            }
-
-            LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId()).withStdErr().withStdOut();
-
-            if (conf.getMaxLogLines() > 0) {
-                logContainerCmd.withTail(conf.getMaxLogLines());
-            }
-
-            InputStream stream = logContainerCmd.exec();
-
-            logger.info(String.format("Logs%s from container %s: %n%s",
-                    (conf.getMaxLogLines() > 0) ? " (max last " + conf.getMaxLogLines() + " lines)" : "",
-                    container.getId(),
-                    Logs.trimDockerLogHeaders(stream)));
-        } catch (Exception e) {
-            logger.warn("Unable to obtain logs from container " + container.getId() + ", will continue: ", e);
         }
     }
 

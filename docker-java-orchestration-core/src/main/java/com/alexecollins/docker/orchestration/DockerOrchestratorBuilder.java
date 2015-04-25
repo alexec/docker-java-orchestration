@@ -13,6 +13,7 @@ import java.util.Properties;
 import java.util.Set;
 
 public class DockerOrchestratorBuilder {
+    private final TailFactory tailFactory = TailFactory.DEFAULT;
     private DockerClient docker;
     private File src;
     private File workDir;
@@ -91,6 +92,7 @@ public class DockerOrchestratorBuilder {
                 new FileOrchestrator(workDir, rootDir, filter, properties),
                 buildFlags,
                 logger,
+                tailFactory,
                 dockerfileValidator,
                 definitionFilter
         );
