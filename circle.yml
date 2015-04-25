@@ -17,3 +17,5 @@ test:
   - sudo service mysql stop
   - whoami
   - mvn install -Prun-its
+ post:
+  - cp -v $(find . -path '.*/target/*-reports/TEST-*.xml') $CIRCLE_TEST_REPORTS/
