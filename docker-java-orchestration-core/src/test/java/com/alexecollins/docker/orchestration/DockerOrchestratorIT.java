@@ -39,6 +39,7 @@ public class DockerOrchestratorIT {
     @After
     public void tearDown() throws Exception {
         if (orchestrator != null) {
+            Thread.sleep(3000);
             try {
                 orchestrator.clean();
             } catch (Exception e) {
