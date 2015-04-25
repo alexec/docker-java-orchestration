@@ -1,8 +1,8 @@
 machine:
  pre:
-  - wget https://github.com/alexec/circleci/archive/1.0.5.tar.gz
-  - tar -xvf 1.0.5.tar.gz
-  - ./circleci-1.0.5/install.sh $CIRCLE_PROJECT_REPONAME
+  - wget https://github.com/alexec/circleci/archive/1.0.6.tar.gz
+  - tar -xvf 1.0.6.tar.gz
+  - ./circleci-1.0.6/install.sh $CIRCLE_PROJECT_REPONAME
   - $CIRCLE_PROJECT_REPONAME/circle.sh pre_machine
  post:
   - $CIRCLE_PROJECT_REPONAME/circle.sh post_machine
@@ -18,7 +18,7 @@ dependencies:
 test:
  override:
   - sudo service mysql stop
-  - whoami
-  - mvn install -Prun-its -s settings.xml
+  - mvn deploy -Prun-its -s settings.xml
+  - ./circle.sh start_build docker-maven-plugin
  post:
   - cp -v $(find . -path '.*/target/*-reports/TEST-*.xml') $CIRCLE_TEST_REPORTS/
