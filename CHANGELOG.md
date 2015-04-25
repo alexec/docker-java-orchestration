@@ -1,5 +1,9 @@
 Change Log
 ===
+2.8.0
+
+* Skip boot2docker if Unix.
+
 2.7.0
                                                                                                                                                Java
 * Java 1.7

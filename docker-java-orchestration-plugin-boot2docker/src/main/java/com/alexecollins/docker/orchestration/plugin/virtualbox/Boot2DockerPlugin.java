@@ -12,6 +12,14 @@ import java.io.InputStreamReader;
 
 public class Boot2DockerPlugin implements Plugin {
     private static final Logger LOGGER = LoggerFactory.getLogger(Boot2DockerPlugin.class);
+    private static final boolean IS_UNIX = isUnix();
+    private final boolean skip = IS_UNIX;
+    private String skipReason = "host is a Unix like";
+
+    private static boolean isUnix() {
+        String os = System.getProperty("os.name");
+        return os.contains("nix") || os.contains("nux") || os.contains("aix");
+    }
 
     private static int hostPort(String stringPort) {
         return Integer.parseInt(stringPort.split(" ")[0]);
@@ -19,6 +27,10 @@ public class Boot2DockerPlugin implements Plugin {
 
     @Override
     public void started(Id id, Conf conf) {
+        if (skip) {
+            LOGGER.info("skipping because " + skipReason);
+            return;
+        }
         for (String stringPort : conf.getPorts()) {
             int port = hostPort(stringPort);
             quietlyDeletePortForward(port);
@@ -29,6 +41,10 @@ public class Boot2DockerPlugin implements Plugin {
 
     @Override
     public void stopped(Id id, Conf conf) {
+        if (skip) {
+            LOGGER.info("skipping because " + skipReason);
+            return;
+        }
         for (String stringPort : conf.getPorts()) {
             int port = hostPort(stringPort);
             quietlyDeletePortForward(port);
