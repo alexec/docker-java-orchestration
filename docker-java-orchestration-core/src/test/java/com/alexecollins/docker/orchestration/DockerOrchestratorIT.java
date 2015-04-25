@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 
 public class DockerOrchestratorIT {
@@ -92,11 +93,14 @@ public class DockerOrchestratorIT {
         final List<Container> expectedContainers = docker.listContainersCmd().withShowAll(true).exec();
 
         orchestrator.build(new Id("busybox"));
-        orchestrator.clean(new Id("busybox"));
+        try {
+            orchestrator.clean(new Id("busybox"));
+        } catch (OrchestrationException e) {
+            assertTrue(runningOnCircleCi());
+            return;
+        }
 
-        int expected = expectedContainers.size() + (runningOnCircleCi() ? 1 : 0);
-
-        assertEquals(expected, docker.listContainersCmd().withShowAll(true).exec().size());
+        assertEquals(expectedContainers.size(), docker.listContainersCmd().withShowAll(true).exec().size());
     }
 
     @Test
