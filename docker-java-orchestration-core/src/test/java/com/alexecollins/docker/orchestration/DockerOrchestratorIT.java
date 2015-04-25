@@ -36,6 +36,10 @@ public class DockerOrchestratorIT {
         return properties;
     }
 
+    private static boolean runningOnCircleCi() {
+        return System.getProperty("user.name").equals("ubuntu");
+    }
+
     @After
     public void tearDown() throws Exception {
         if (orchestrator != null) {
@@ -77,7 +81,13 @@ public class DockerOrchestratorIT {
         orchestrator.build(new Id("busybox"));
         orchestrator.clean(new Id("busybox"));
 
-        assertEquals(expectedImages.size(), docker.listImagesCmd().exec().size());
+        int expected = expectedImages.size();
+
+        if (runningOnCircleCi()) {
+            expected--;
+        }
+
+        assertEquals(expected, docker.listImagesCmd().exec().size());
     }
 
     @Test
