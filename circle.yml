@@ -6,4 +6,4 @@ dependencies:
   - mvn install -DskipTests
 test:
  override:
-  - mvn install -Prun-its
+  - mvn install -Prun-its -Ddocker.io.url=http://localhost:2376
