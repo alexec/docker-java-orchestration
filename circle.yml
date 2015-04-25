@@ -3,6 +3,7 @@ machine:
   - $CIRCLE_PROJECT_REPONAME/circle.sh pre_machine
  post:
   - $CIRCLE_PROJECT_REPONAME/circle.sh post_machine
+  - service mysql stop
  services:
   - docker
  environment:
