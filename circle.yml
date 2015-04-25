@@ -15,4 +15,5 @@ dependencies:
 test:
  override:
   - sudo service mysql stop
+  - whoami
   - mvn install -Prun-its
