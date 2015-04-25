@@ -3,4 +3,4 @@ machine:
   - docker
 dependencies:
  override: 
-  - /usr/bin/true
+  - mvn install -DskipTests
