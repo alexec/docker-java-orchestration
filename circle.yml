@@ -3,4 +3,4 @@ machine:
   - docker
 dependencies:
  override: 
-  - mvn initialize
+  - /usr/bin/true
