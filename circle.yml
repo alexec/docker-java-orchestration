@@ -1,5 +1,8 @@
 machine:
  pre:
+  - wget https://github.com/alexec/circleci/archive/1.0.5.tar.gz
+  - tar -xvf 1.0.5.tar.gz
+  - ./circleci-1.0.5/install.sh .
   - $CIRCLE_PROJECT_REPONAME/circle.sh pre_machine
  post:
   - $CIRCLE_PROJECT_REPONAME/circle.sh post_machine
@@ -11,11 +14,11 @@ machine:
   DOCKER_TLS_VERIFY: 1
 dependencies:
  override: 
-  - mvn install -DskipTests
+  - mvn install -DskipTests -s settings.xml
 test:
  override:
   - sudo service mysql stop
   - whoami
-  - mvn install -Prun-its
+  - mvn install -Prun-its -s settings.xml
  post:
   - cp -v $(find . -path '.*/target/*-reports/TEST-*.xml') $CIRCLE_TEST_REPORTS/
