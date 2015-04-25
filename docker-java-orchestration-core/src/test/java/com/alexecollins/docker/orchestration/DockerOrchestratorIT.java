@@ -84,7 +84,7 @@ public class DockerOrchestratorIT {
         int expected = expectedImages.size();
 
         if (runningOnCircleCi()) {
-            expected--;
+            expected++;
         }
 
         assertEquals(expected, docker.listImagesCmd().exec().size());
