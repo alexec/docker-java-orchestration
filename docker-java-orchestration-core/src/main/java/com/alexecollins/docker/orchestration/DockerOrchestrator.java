@@ -289,7 +289,9 @@ public class DockerOrchestrator {
         try {
             docker.removeContainerCmd(existingContainer.getId()).withForce().exec();
         } catch (InternalServerErrorException e) {
-            if (!isPermissionErrorTolerant() || !isPermissionError(e)) {
+            if (isPermissionErrorTolerant() && isPermissionError(e)) {
+                logger.warn(String.format("ignoring %s when removing container as we are configured to be permission error tolerant", e));
+            } else {
                 throw e;
             }
         }
