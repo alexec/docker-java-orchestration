@@ -56,10 +56,6 @@ public class DockerOrchestratorTest {
     @Mock
     private DockerClient dockerMock;
     @Mock
-    private TailFactory tailFactory;
-    @Mock
-    private Tail tail;
-    @Mock
     private Repo repoMock;
     @Mock
     private File fileMock;
@@ -202,7 +198,6 @@ public class DockerOrchestratorTest {
         });
 
         when(definitionFilter.test(any(Id.class), any(Conf.class))).thenReturn(true);
-        when(tailFactory.newTail(any(DockerClient.class), any(Container.class), any(Logger.class))).thenReturn(tail);
     }
 
     @Test
