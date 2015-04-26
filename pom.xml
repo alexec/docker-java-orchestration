@@ -133,7 +133,7 @@
 		<inherited>false</inherited>
                 <configuration>
                     <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                    <serverId>ossrh-releases</serverId>
+                    <serverId>sonatype-nexus-staging</serverId>
 			<stagingProfileId>231c24906836a4</stagingProfileId>
                 </configuration>
             </plugin>
