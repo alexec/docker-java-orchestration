@@ -44,7 +44,7 @@ public class DockerOrchestrator {
 
     private final FileOrchestrator fileOrchestrator;
     private final Set<BuildFlag> buildFlags;
-    private final List<Plugin> plugins = new ArrayList<Plugin>();
+    private final List<Plugin> plugins = new ArrayList<>();
     private final DockerfileValidator dockerfileValidator;
     private final DefinitionFilter definitionFilter;
     private final boolean permissionErrorTolerant;
@@ -75,8 +75,7 @@ public class DockerOrchestrator {
                 false);
     }
 
-    DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Set<BuildFlag> buildFlags, Logger logger, DockerfileValidator dockerfileValidator, DefinitionFilter definitionFilter, boolean permissionErrorTolerant) {
-    DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Set<BuildFlag> buildFlags, Logger logger, TailFactory tailFactory, DockerfileValidator dockerfileValidator, DefinitionFilter definitionFilter) {
+    DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Set<BuildFlag> buildFlags, Logger logger, TailFactory tailFactory, DockerfileValidator dockerfileValidator, DefinitionFilter definitionFilter, boolean permissionErrorTolerant) {
         if (docker == null) {
             throw new IllegalArgumentException("docker is null");
         }
@@ -291,7 +290,7 @@ public class DockerOrchestrator {
         try {
             docker.removeContainerCmd(existingContainer.getId()).withForce().exec();
         } catch (InternalServerErrorException e) {
-            if (isPermissionErrorTolerant() && isPermissionError(e)) {
+            if (permissionErrorTolerant && isPermissionError(e)) {
                 logger.warn(String.format("ignoring %s when removing container as we are configured to be permission error tolerant", e));
             } else {
                 throw e;
@@ -594,4 +593,5 @@ public class DockerOrchestrator {
         }
         throw new NoSuchElementException("plugin " + pluginClass + " is not loaded");
     }
+
 }

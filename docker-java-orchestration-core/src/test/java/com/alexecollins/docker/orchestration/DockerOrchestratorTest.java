@@ -131,7 +131,7 @@ public class DockerOrchestratorTest {
                 fileOrchestratorMock,
                 EnumSet.noneOf(BuildFlag.class),
                 LOGGER,
-                // tailFactory,
+                tailFactory,
                 dockerfileValidator,
                 definitionFilter,
                 false);
