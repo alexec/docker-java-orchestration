@@ -7,6 +7,7 @@ import com.alexecollins.docker.orchestration.util.Logs;
 import com.alexecollins.docker.orchestration.util.Pinger;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
+import com.github.dockerjava.api.InternalServerErrorException;
 import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.*;
@@ -109,6 +110,10 @@ public class DockerOrchestrator {
         return new DockerOrchestratorBuilder();
     }
 
+    private static boolean isBtrfsPermissionError(InternalServerErrorException e) {
+        return e.getMessage().contains("Failed to destroy btrfs snapshot: operation not permitted");
+    }
+
     public void clean() {
         for (Id id : repo.ids(true)) {
             if (!inclusive(id)) {
@@ -132,7 +137,7 @@ public class DockerOrchestrator {
         for (Container container : repo.findContainers(id, true)) {
             logger.info("Removing container " + container.getId());
             try {
-                docker.removeContainerCmd(container.getId()).withForce().exec();
+                removeContainer(container);
             } catch (DockerException e) {
                 throw new OrchestrationException(e);
             }
@@ -250,7 +255,7 @@ public class DockerOrchestrator {
 
             } else if (!isImageIdFromContainerMatchingProvidedImageId(existingContainer.getId(), id)) {
                 logger.info("Image IDs do not match, removing container and creating new one from image");
-                docker.removeContainerCmd(existingContainer.getId()).exec();
+                removeContainer(existingContainer);
                 startContainer(createNewContainer(id), id);
 
             } else if (isRunning(id)) {
@@ -276,6 +281,16 @@ public class DockerOrchestrator {
         } finally {
             if (failed)
                 outputContainerLog(id);
+        }
+    }
+
+    private void removeContainer(Container existingContainer) {
+        try {
+            docker.removeContainerCmd(existingContainer.getId()).withForce().exec();
+        } catch (InternalServerErrorException e) {
+            if (!isBtrfsPermissionError(e)) {
+                throw e;
+            }
         }
     }
 
