@@ -16,6 +16,7 @@ import com.github.dockerjava.api.model.PushEventStreamItem;
 import com.github.dockerjava.jaxrs.BuildImageCmdExec;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.client.ClientResponse;
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
@@ -29,10 +30,12 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
 
 import static org.junit.Assert.*;
-import static org.junit.matchers.JUnitMatchers.hasItem;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -130,8 +133,8 @@ public class DockerOrchestratorTest {
                 LOGGER,
                 // tailFactory,
                 dockerfileValidator,
-                definitionFilter
-        );
+                definitionFilter,
+                false);
 
         when(repoMock.src(idMock)).thenReturn(srcFileMock);
         when(repoMock.conf(idMock)).thenReturn(confMock);
@@ -141,7 +144,7 @@ public class DockerOrchestratorTest {
 
         when(confMock.getLinks()).thenReturn(new ArrayList<Link>());
         when(confMock.getHealthChecks()).thenReturn(new HealthChecks());
-        when(confMock.getTags()).thenReturn(Arrays.asList(IMAGE_NAME + ":" + TAG_NAME));
+        when(confMock.getTags()).thenReturn(Collections.singletonList(IMAGE_NAME + ":" + TAG_NAME));
 
         when(repoMock.findImageId(idMock)).thenReturn(IMAGE_ID);
         when(repoMock.findContainer(idMock)).thenReturn(containerMock);
@@ -149,8 +152,8 @@ public class DockerOrchestratorTest {
 
         when(fileOrchestratorMock.prepare(idMock, srcFileMock, confMock)).thenReturn(fileMock);
 
-        when(repoMock.ids(false)).thenReturn(Arrays.asList(idMock));
-        when(repoMock.ids(true)).thenReturn(Arrays.asList(idMock));
+        when(repoMock.ids(false)).thenReturn(Collections.singletonList(idMock));
+        when(repoMock.ids(true)).thenReturn(Collections.singletonList(idMock));
         when(repoMock.tag(any(Id.class))).thenReturn(IMAGE_NAME + ":" + TAG_NAME);
 
         when(dockerMock.buildImageCmd(eq(fileMock))).thenReturn(buildImageCmdMock);
@@ -226,7 +229,7 @@ public class DockerOrchestratorTest {
 
     @Test
     public void containerIsAlreadyRunning() throws DockerException, IOException {
-        when(listContainersCmdMockOnlyRunning.exec()).thenReturn(Arrays.asList(containerMock));
+        when(listContainersCmdMockOnlyRunning.exec()).thenReturn(Collections.singletonList(containerMock));
 
         testObj.start();
 
@@ -247,7 +250,7 @@ public class DockerOrchestratorTest {
 
     @Test
     public void stopARunningContainer() {
-        when(repoMock.findContainers(idMock, false)).thenReturn(Arrays.asList(containerMock));
+        when(repoMock.findContainers(idMock, false)).thenReturn(Collections.singletonList(containerMock));
         when(stopContainerCmdMock.withTimeout(1)).thenReturn(stopContainerCmdMock);
 
         testObj.stop();
@@ -259,7 +262,7 @@ public class DockerOrchestratorTest {
     public void logsLoadedPlugin() throws Exception {
         verify(appender, atLeastOnce()).doAppend(captor.capture());
         List<ILoggingEvent> logging = captor.getAllValues();
-        assertThat(logging, hasItem(loggedMessage("Loaded " + TestPlugin.class + " plugin")));
+        assertThat(logging, CoreMatchers.hasItem((loggedMessage("Loaded " + TestPlugin.class + " plugin"))));
     }
 
     @Test
@@ -275,7 +278,7 @@ public class DockerOrchestratorTest {
 
     @Test
     public void pluginStopped() throws Exception {
-        when(repoMock.findContainers(idMock, false)).thenReturn(Arrays.asList(containerMock));
+        when(repoMock.findContainers(idMock, false)).thenReturn(Collections.singletonList(containerMock));
         TestPlugin testObjPlugin = testObj.getPlugin(TestPlugin.class);
 
         assertNull(testObjPlugin.lastStopped());
@@ -296,7 +299,7 @@ public class DockerOrchestratorTest {
     public void buildImageWithRegistryAndPort() {
         String repositoryWithRegistryAndPort = "my.registry.com:5000/mynamespace/myrepository";
 
-        when(confMock.getTags()).thenReturn(Arrays.asList(repositoryWithRegistryAndPort + ":" + TAG_NAME));
+        when(confMock.getTags()).thenReturn(Collections.singletonList(repositoryWithRegistryAndPort + ":" + TAG_NAME));
         when(tagImageCmdMock.withForce()).thenReturn(tagImageCmdMock);
 
         testObj.build(idMock);

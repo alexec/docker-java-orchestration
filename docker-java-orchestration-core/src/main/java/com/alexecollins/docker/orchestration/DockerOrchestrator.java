@@ -44,15 +44,17 @@ public class DockerOrchestrator {
 
     private final FileOrchestrator fileOrchestrator;
     private final Set<BuildFlag> buildFlags;
-    private final List<Plugin> plugins = new ArrayList<Plugin>();
+    private final List<Plugin> plugins = new ArrayList<>();
     private final DockerfileValidator dockerfileValidator;
     private final DefinitionFilter definitionFilter;
+    private final boolean permissionErrorTolerant;
 
     /**
      * @deprecated Please use builder from now on.
      */
     @Deprecated
     public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String user, String project, FileFilter filter, Properties properties) {
+        //noinspection deprecation
         this(docker, src, workDir, rootDir, user, project, filter, properties, EnumSet.noneOf(BuildFlag.class));
     }
 
@@ -68,11 +70,11 @@ public class DockerOrchestrator {
                 buildFlags,
                 DEFAULT_LOGGER,
                 new DockerfileValidator(),
-                DefinitionFilter.ANY
-        );
+                DefinitionFilter.ANY,
+                false);
     }
 
-    DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Set<BuildFlag> buildFlags, Logger logger, DockerfileValidator dockerfileValidator, DefinitionFilter definitionFilter) {
+    DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Set<BuildFlag> buildFlags, Logger logger, DockerfileValidator dockerfileValidator, DefinitionFilter definitionFilter, boolean permissionErrorTolerant) {
         if (docker == null) {
             throw new IllegalArgumentException("docker is null");
         }
@@ -99,6 +101,7 @@ public class DockerOrchestrator {
         this.logger = logger;
         this.dockerfileValidator = dockerfileValidator;
         this.definitionFilter = definitionFilter;
+        this.permissionErrorTolerant = permissionErrorTolerant;
 
         for (Plugin plugin : ServiceLoader.load(Plugin.class)) {
             plugins.add(plugin);
@@ -110,8 +113,8 @@ public class DockerOrchestrator {
         return new DockerOrchestratorBuilder();
     }
 
-    private static boolean isBtrfsPermissionError(InternalServerErrorException e) {
-        return e.getMessage().contains("Failed to destroy btrfs snapshot: operation not permitted");
+    private static boolean isPermissionError(InternalServerErrorException e) {
+        return e.getMessage().contains("operation not permitted");
     }
 
     public void clean() {
@@ -221,9 +224,7 @@ public class DockerOrchestrator {
                     docker.tagImageCmd(repo.findImageId(id), repositoryName, tagName).withForce().exec();
                 }
             }
-        } catch (DockerException e) {
-            throw new OrchestrationException(e);
-        } catch (IOException e) {
+        } catch (DockerException | IOException e) {
             throw new OrchestrationException(e);
         }
 
@@ -288,10 +289,14 @@ public class DockerOrchestrator {
         try {
             docker.removeContainerCmd(existingContainer.getId()).withForce().exec();
         } catch (InternalServerErrorException e) {
-            if (!isBtrfsPermissionError(e)) {
+            if (!isPermissionErrorTolerant() || !isPermissionError(e)) {
                 throw e;
             }
         }
+    }
+
+    private boolean isPermissionErrorTolerant() {
+        return permissionErrorTolerant;
     }
 
     private void outputContainerLog(final Id id) {
@@ -393,7 +398,7 @@ public class DockerOrchestrator {
      * key=value strings.
      */
     private String[] asEnvList(Map<String, String> env) {
-        ArrayList<String> list = new ArrayList<String>();
+        ArrayList<String> list = new ArrayList<>();
         for (Map.Entry<String, String> entry : env.entrySet()) {
             list.add(entry.getKey() + "=" + entry.getValue());
         }
@@ -434,10 +439,12 @@ public class DockerOrchestrator {
     }
 
     private void prepareHostConfig(Id id, StartContainerCmd config) {
+        //noinspection deprecation
         config.withPublishAllPorts(true);
 
         Link[] links = links(id);
         logger.info(" - links " + conf(id).getLinks());
+        //noinspection deprecation
         config.withLinks(links);
 
         final Ports portBindings = new Ports();
@@ -453,11 +460,12 @@ public class DockerOrchestrator {
             logger.info(" - port " + e);
             portBindings.bind(new ExposedPort(a, InternetProtocol.TCP), new Ports.Binding(b));
         }
+        //noinspection deprecation
         config.withPortBindings(portBindings);
 
         logger.info(" - volumes " + conf(id).getVolumes());
 
-        final List<Bind> binds = new ArrayList<Bind>();
+        final List<Bind> binds = new ArrayList<>();
         for (Map.Entry<String, String> entry : conf(id).getVolumes().entrySet()) {
             String volumePath = entry.getKey();
             String hostPath = entry.getValue();
@@ -467,6 +475,7 @@ public class DockerOrchestrator {
             binds.add(new Bind(path, new Volume(volumePath)));
         }
 
+        //noinspection deprecation
         config.withBinds(binds.toArray(new Bind[binds.size()]));
     }
 
@@ -537,7 +546,7 @@ public class DockerOrchestrator {
     }
 
     public Map<String, String> getIPAddresses() {
-        Map<String, String> idToIpAddressMap = new HashMap<String, String>();
+        Map<String, String> idToIpAddressMap = new HashMap<>();
         for (Id id : ids()) {
             Conf conf = repo.conf(id);
             if (conf.isExposeContainerIp()) {
@@ -577,9 +586,7 @@ public class DockerOrchestrator {
             logger.info("Pushing " + id + " (" + pushImageCmd.getName() + ")");
             InputStream inputStream = pushImageCmd.exec();
             throwExceptionIfThereIsAnError(inputStream);
-        } catch (DockerException e) {
-            throw new OrchestrationException(e);
-        } catch (IOException e) {
+        } catch (DockerException | IOException e) {
             throw new OrchestrationException(e);
         }
     }

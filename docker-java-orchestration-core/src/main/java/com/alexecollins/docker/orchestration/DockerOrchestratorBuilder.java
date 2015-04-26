@@ -25,6 +25,7 @@ public class DockerOrchestratorBuilder {
     private Logger logger = LoggerFactory.getLogger(DockerOrchestrator.class);
     private DockerfileValidator dockerfileValidator = new DockerfileValidator();
     private DefinitionFilter definitionFilter = DefinitionFilter.ANY;
+    private boolean permissionErrorTolerant;
 
     DockerOrchestratorBuilder() {
     }
@@ -84,6 +85,11 @@ public class DockerOrchestratorBuilder {
         return this;
     }
 
+    public DockerOrchestratorBuilder permissionErrorTolerant(boolean permissionErrorTolerant) {
+        this.permissionErrorTolerant = permissionErrorTolerant;
+        return this;
+    }
+
     public DockerOrchestrator build() {
         return new DockerOrchestrator(
                 docker,
@@ -92,7 +98,7 @@ public class DockerOrchestratorBuilder {
                 buildFlags,
                 logger,
                 dockerfileValidator,
-                definitionFilter
-        );
+                definitionFilter,
+                permissionErrorTolerant);
     }
 }
