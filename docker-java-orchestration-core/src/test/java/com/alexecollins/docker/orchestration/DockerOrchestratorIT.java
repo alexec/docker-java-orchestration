@@ -66,6 +66,7 @@ public class DockerOrchestratorIT {
                 .properties(properties())
                 .project("docker-java-orchestrator")
                 .buildFlags(EnumSet.of(BuildFlag.REMOVE_INTERMEDIATE_IMAGES))
+                .permissionErrorTolerant(true)
                 .build();
     }
 
