@@ -4,6 +4,7 @@ Change Log
 
 * Skip boot2docker if Unix.
 * Added `permissionErrorTolerant` flag to deal with CircleCI btrfs errors.
+* Migrated to CircleCI.
 
 2.7.0
                                                                                                                                                Java

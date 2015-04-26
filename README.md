@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/alexec/docker-java-orchestration.svg?branch=master)](https://travis-ci.org/alexec/docker-java-orchestration)
+[![Circle CI](https://circleci.com/gh/alexec/docker-java-orchestration.svg?style=svg)](https://circleci.com/gh/alexec/docker-java-orchestration)
 
 A small library to orchestrate groups of Docker containers using YAML configuration.
 
