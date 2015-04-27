@@ -551,7 +551,7 @@ public class DockerOrchestrator {
         Map<String, String> idToIpAddressMap = new HashMap<>();
         for (Id id : ids()) {
             Conf conf = repo.conf(id);
-            if (conf.isExposeContainerIp()) {
+            if (inclusive(id) && conf.isExposeContainerIp()) {
                 String containerName = repo.containerName(id);
                 InspectContainerResponse containerInspectResponse = docker.inspectContainerCmd(containerName).exec();
                 idToIpAddressMap.put(id.toString(), containerInspectResponse.getNetworkSettings().getIpAddress());
