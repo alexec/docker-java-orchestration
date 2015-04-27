@@ -19,7 +19,11 @@ test:
  override:
   - sudo service mysql stop
   - mvn deploy -Prun-its -s settings.xml
-  - ./circle.sh start_build docker-maven-plugin
  post:
   - mkdir -p $CIRCLE_TEST_REPORTS/junit/
   - find . -type f -regex ".*/target/.*-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
+deployment:
+ staging:
+   branch: master
+   commands:
+     - ./circle.sh start_build docker-maven-plugin
