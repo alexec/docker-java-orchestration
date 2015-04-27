@@ -27,3 +27,5 @@ deployment:
    branch: master
    commands:
      - ./circle.sh start_build docker-maven-plugin
+     - ./circle.sh start_build docker-ant-tasks
+     - ./circle.sh start_build docker-gradle-plugin
