@@ -584,7 +584,7 @@ public class DockerOrchestrator {
 
     private void push(Id id) {
         try {
-            PushImageCmd pushImageCmd = docker.pushImageCmd(repo(id)).withAuthConfig(docker.authConfig());
+            PushImageCmd pushImageCmd = docker.pushImageCmd(repo(id));
             logger.info("Pushing " + id + " (" + pushImageCmd.getName() + ")");
             InputStream inputStream = pushImageCmd.exec();
             throwExceptionIfThereIsAnError(inputStream);
