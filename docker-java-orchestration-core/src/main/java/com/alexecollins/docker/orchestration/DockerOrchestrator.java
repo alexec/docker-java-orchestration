@@ -372,7 +372,6 @@ public class DockerOrchestrator {
         try {
             StartContainerCmd start = docker.startContainerCmd(idOfContainerToStart);
 
-            prepareHostConfig(id, start);
             start.exec();
 
         } catch (DockerException e) {
@@ -386,13 +385,53 @@ public class DockerOrchestrator {
     }
 
     private String createNewContainer(Id id) throws DockerException {
+
+        CreateContainerCmd cmd = docker.createContainerCmd(repo.findImageId(id));
+
         Conf conf = conf(id);
-        CreateContainerCmd createCmd = docker.createContainerCmd(repo.findImageId(id));
-        createCmd.withName(repo.containerName(id));
+
+        cmd.withPublishAllPorts(true);
+
+        Link[] links = links(id);
+
+        logger.info(" - links " + conf.getLinks());
+        cmd.withLinks(links);
+
+        List<PortBinding> portBindings = new ArrayList<>();
+        for (String e : conf.getPorts()) {
+
+            final String[] split = e.split(" ");
+
+            assert split.length == 1 || split.length == 2;
+
+            final int hostPort = Integer.parseInt(split[0]);
+            final int containerPort = split.length == 2 ? Integer.parseInt(split[1]) : hostPort;
+
+            logger.info(" - port " + hostPort + "->" + containerPort);
+            portBindings.add(new PortBinding(new Ports.Binding(hostPort),
+                    new ExposedPort(containerPort, InternetProtocol.TCP)));
+        }
+        cmd.withPortBindings(portBindings.toArray(new PortBinding[portBindings.size()]));
+
+        logger.info(" - volumes " + conf.getVolumes());
+
+        final List<Bind> binds = new ArrayList<>();
+        for (Map.Entry<String, String> entry : conf.getVolumes().entrySet()) {
+            String volumePath = entry.getKey();
+            String hostPath = entry.getValue();
+            File file = new File(hostPath);
+            String path = file.getAbsolutePath();
+            logger.info(" - volumes " + volumePath + " <- " + path);
+            binds.add(new Bind(path, new Volume(volumePath)));
+        }
+
+        cmd.withBinds(binds.toArray(new Bind[binds.size()]));
+
+        cmd.withName(repo.containerName(id));
         logger.info(" - env " + conf.getEnv());
-        createCmd.withEnv(asEnvList(conf.getEnv()));
-        CreateContainerResponse response = createCmd.exec();
-        return response.getId();
+        cmd.withEnv(asEnvList(conf.getEnv()));
+
+        return cmd.exec().getId();
     }
 
     /**
@@ -440,35 +479,38 @@ public class DockerOrchestrator {
         }
     }
 
-    private void prepareHostConfig(Id id, StartContainerCmd config) {
-        //noinspection deprecation
+    private CreateContainerCmd prepareHostConfig(Id id) {
+        CreateContainerCmd config = docker.createContainerCmd(repo.findImageId(id));
+
+        Conf conf = conf(id);
+
         config.withPublishAllPorts(true);
 
         Link[] links = links(id);
-        logger.info(" - links " + conf(id).getLinks());
-        //noinspection deprecation
+
+        logger.info(" - links " + conf.getLinks());
         config.withLinks(links);
 
-        final Ports portBindings = new Ports();
-        for (String e : conf(id).getPorts()) {
+        List<PortBinding> portBindings = new ArrayList<>();
+        for (String e : conf.getPorts()) {
 
             final String[] split = e.split(" ");
 
             assert split.length == 1 || split.length == 2;
 
-            final int a = Integer.parseInt(split[0]);
-            final int b = split.length == 2 ? Integer.parseInt(split[1]) : a;
+            final int hostPort = Integer.parseInt(split[0]);
+            final int containerPort = split.length == 2 ? Integer.parseInt(split[1]) : hostPort;
 
-            logger.info(" - port " + e);
-            portBindings.bind(new ExposedPort(a, InternetProtocol.TCP), new Ports.Binding(b));
+            logger.info(" - port " + hostPort + "->" + containerPort);
+            portBindings.add(new PortBinding(new Ports.Binding(hostPort),
+                    new ExposedPort(containerPort, InternetProtocol.TCP)));
         }
-        //noinspection deprecation
-        config.withPortBindings(portBindings);
+        config.withPortBindings(portBindings.toArray(new PortBinding[portBindings.size()]));
 
-        logger.info(" - volumes " + conf(id).getVolumes());
+        logger.info(" - volumes " + conf.getVolumes());
 
         final List<Bind> binds = new ArrayList<>();
-        for (Map.Entry<String, String> entry : conf(id).getVolumes().entrySet()) {
+        for (Map.Entry<String, String> entry : conf.getVolumes().entrySet()) {
             String volumePath = entry.getKey();
             String hostPath = entry.getValue();
             File file = new File(hostPath);
@@ -477,8 +519,13 @@ public class DockerOrchestrator {
             binds.add(new Bind(path, new Volume(volumePath)));
         }
 
-        //noinspection deprecation
         config.withBinds(binds.toArray(new Bind[binds.size()]));
+
+        config.withName(repo.containerName(id));
+        logger.info(" - env " + conf.getEnv());
+        config.withEnv(asEnvList(conf.getEnv()));
+
+        return config;
     }
 
     private Link[] links(Id id) {
