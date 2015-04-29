@@ -17,5 +17,5 @@ public interface DefinitionFilter {
      * @param conf Not null.
      * @return If we should include in actions.
      */
-    boolean test(Id id, Conf conf);
+    boolean test(Id id, @SuppressWarnings("UnusedParameters") Conf conf);
 }

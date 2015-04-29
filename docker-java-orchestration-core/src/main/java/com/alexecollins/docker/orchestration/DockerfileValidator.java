@@ -27,11 +27,11 @@ class DockerfileValidator {
     // http://stackoverflow.com/a/3809435/1216976
     // http://stackoverflow.com/a/6949914/1216976
     private final static Map<String, Pattern> INSTRUCTIONS_PATTERNS = instructionsPatterns();
-    private static Logger logger = LoggerFactory.getLogger(DockerfileValidator.class);
+    private static final Logger logger = LoggerFactory.getLogger(DockerfileValidator.class);
 
     private static Map<String, Pattern> instructionsPatterns() {
         Pattern addPattern = Pattern.compile("^(~?[${}A-z0-9\\/_.-]+|https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*))\\s~?[A-z0-9\\/_.-]+$");
-        Map<String, Pattern> instructionPatterns = new HashMap<String, Pattern>();
+        Map<String, Pattern> instructionPatterns = new HashMap<>();
         instructionPatterns.put("FROM", Pattern.compile("^[${}a-z0-9./_-]+((:[${}a-z0-9._-]+)?)$", Pattern.MULTILINE));
         instructionPatterns.put("MAINTAINER", Pattern.compile(".+"));
         instructionPatterns.put("EXPOSE", Pattern.compile("^[${A-z0-9]+([${}A-z0-9\\s]+)?$"));

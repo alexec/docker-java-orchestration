@@ -1,5 +1,5 @@
 package com.alexecollins.docker.orchestration.util;
 
-public interface TokenResolver {
+interface TokenResolver {
     String resolveToken(String tokenName);
 }

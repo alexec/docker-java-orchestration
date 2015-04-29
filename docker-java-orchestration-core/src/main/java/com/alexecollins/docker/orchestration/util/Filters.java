@@ -34,17 +34,11 @@ public final class Filters {
             }
         } else if (fileFilter.accept(file)) {
             final File outFile = new File(file + ".tmp");
-            final TokenReplacingReader in = new TokenReplacingReader(new BufferedReader(new FileReader(file)),
-                    new PropertiesTokenResolver(properties));
-            try {
-                final FileWriter out = new FileWriter(outFile);
-                try {
+            try (TokenReplacingReader in = new TokenReplacingReader(new BufferedReader(new FileReader(file)),
+                    new PropertiesTokenResolver(properties))) {
+                try (FileWriter out = new FileWriter(outFile)) {
                     IOUtils.copy(in, out);
-                } finally {
-                    out.close();
                 }
-            } finally {
-                in.close();
             }
 
             move(outFile, file);
@@ -63,6 +57,7 @@ public final class Filters {
 
     private static void move(File from, File to) throws IOException {
         //renaming over an existing file fails under Windows.
+        //noinspection ResultOfMethodCallIgnored
         to.delete();
         if (!from.renameTo(to)) {
             throw new IOException("failed to move " + from + " to " + to);
@@ -70,7 +65,7 @@ public final class Filters {
     }
 
     static int maxKeyLength(Properties properties) {
-        final TreeSet<Object> t = new TreeSet<Object>(new Comparator<Object>() {
+        final TreeSet<Object> t = new TreeSet<>(new Comparator<Object>() {
 
             @Override
             public int compare(Object o1, Object o2) {

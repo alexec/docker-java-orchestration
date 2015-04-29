@@ -13,6 +13,7 @@ import java.util.Properties;
 import java.util.Set;
 
 public class DockerOrchestratorBuilder {
+    private final DockerfileValidator dockerfileValidator = new DockerfileValidator();
     private DockerClient docker;
     private File src;
     private File workDir;
@@ -23,7 +24,6 @@ public class DockerOrchestratorBuilder {
     private Properties properties = new Properties();
     private Set<BuildFlag> buildFlags = EnumSet.noneOf(BuildFlag.class);
     private Logger logger = LoggerFactory.getLogger(DockerOrchestrator.class);
-    private DockerfileValidator dockerfileValidator = new DockerfileValidator();
     private DefinitionFilter definitionFilter = DefinitionFilter.ANY;
     private boolean permissionErrorTolerant;
 

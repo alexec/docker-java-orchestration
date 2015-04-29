@@ -12,10 +12,6 @@ public class Logs {
      * Parse Docker container logs.
      * <p/>
      * See: http://docs.docker.com/v1.6/reference/api/docker_remote_api_v1.13/#attach-to-a-container
-     *
-     * @param stream
-     * @return
-     * @throws IOException
      */
     public static String trimDockerLogHeaders(InputStream stream) throws IOException {
         String[] dockerContainerLog = IOUtils.toString(stream).split(System.lineSeparator());

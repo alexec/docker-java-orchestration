@@ -252,19 +252,19 @@ public class DockerOrchestrator {
 
             if (existingContainer == null) {
                 logger.info("No existing container so creating and starting new one");
-                startContainer(createNewContainer(id), id);
+                startContainer(createNewContainer(id));
 
             } else if (!isImageIdFromContainerMatchingProvidedImageId(existingContainer.getId(), id)) {
                 logger.info("Image IDs do not match, removing container and creating new one from image");
                 removeContainer(existingContainer);
-                startContainer(createNewContainer(id), id);
+                startContainer(createNewContainer(id));
 
             } else if (isRunning(id)) {
                 logger.info("Container already running");
 
             } else {
                 logger.info("Starting existing container " + existingContainer.getId());
-                startContainer(existingContainer.getId(), id);
+                startContainer(existingContainer.getId());
             }
 
             for (Plugin plugin : plugins) {
@@ -368,12 +368,9 @@ public class DockerOrchestrator {
         }
     }
 
-    private void startContainer(String idOfContainerToStart, final Id id) {
+    private void startContainer(String idOfContainerToStart) {
         try {
-            StartContainerCmd start = docker.startContainerCmd(idOfContainerToStart);
-
-            start.exec();
-
+            docker.startContainerCmd(idOfContainerToStart).exec();
         } catch (DockerException e) {
             logger.error("Unable to start container " + idOfContainerToStart, e);
             throw new OrchestrationException(e);

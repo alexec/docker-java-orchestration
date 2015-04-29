@@ -29,7 +29,7 @@ class Repo {
     private final String user;
     private final String project;
     private final File src;
-    private final Map<Id, Conf> confs = new HashMap<Id, Conf>();
+    private final Map<Id, Conf> confs = new HashMap<>();
 
     /**
      * @param user Name of the repo use. Maybe null.
@@ -93,7 +93,7 @@ class Repo {
     }
 
     List<Container> findContainers(Id id, boolean allContainers) {
-        final List<Container> strings = new ArrayList<Container>();
+        final List<Container> strings = new ArrayList<>();
         for (Container container : docker.listContainersCmd().withShowAll(allContainers).exec()) {
             if (container.getImage().equals(imageName(id)) || asList(container.getNames()).contains(containerName(id))) {
                 strings.add(container);
@@ -132,7 +132,7 @@ class Repo {
         return findImageId(id) != null;
     }
 
-    File src() {
+    private File src() {
         return src;
     }
 
@@ -143,9 +143,9 @@ class Repo {
 
     List<Id> ids(boolean reverse) {
 
-        final List<Id> in = new LinkedList<Id>(confs.keySet());
+        final List<Id> in = new LinkedList<>(confs.keySet());
 
-        final Map<Id, List<Id>> links = new HashMap<Id, List<Id>>();
+        final Map<Id, List<Id>> links = new HashMap<>();
         for (Id id : in) {
             links.put(id, com.alexecollins.docker.orchestration.util.Links.ids(confs.get(id).getLinks()));
         }
@@ -160,8 +160,8 @@ class Repo {
     }
 
     List<Id> sort(final Map<Id, List<Id>> links) {
-        final List<Id> in = new LinkedList<Id>(links.keySet());
-        final List<Id> out = new LinkedList<Id>();
+        final List<Id> in = new LinkedList<>(links.keySet());
+        final List<Id> out = new LinkedList<>();
 
         while (!in.isEmpty()) {
             boolean hit = false;
