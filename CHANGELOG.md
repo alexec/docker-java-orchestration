@@ -1,6 +1,12 @@
 Change Log
 ===
-2.8.0
+2.9.0
+
+* Bug fixed: container port ordering was reversed.
+* Enhancement: ability to set container name.
+* Other: removed un-needed code.
+
+2.8.3
 
 * Skip boot2docker if Unix.
 * Added `permissionErrorTolerant` flag to deal with CircleCI btrfs errors.
