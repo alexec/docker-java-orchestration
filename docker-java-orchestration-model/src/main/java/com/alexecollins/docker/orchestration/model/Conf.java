@@ -8,16 +8,21 @@ import java.util.*;
 @SuppressWarnings("CanBeFinal")
 public class Conf {
     @JsonProperty
-    private List<String> tags = new ArrayList<String>();
+    private List<String> tags = new ArrayList<>();
+    /**
+     * Information about the container. This is intended to provide a place for container only properties.
+     */
     @JsonProperty
-    private List<Link> links = new ArrayList<Link>();
+    private ContainerConf container = new ContainerConf();
+    @JsonProperty
+    private List<Link> links = new ArrayList<>();
     @JsonProperty
     private Packaging packaging = new Packaging();
     /**
      * E.g. "8080" or "8080 8080" where the former is the exposed port and the latter the container port.
      */
     @JsonProperty
-    private List<String> ports = new ArrayList<String>();
+    private List<String> ports = new ArrayList<>();
     @JsonProperty
     private int sleep = 0;
     @JsonProperty
@@ -25,14 +30,14 @@ public class Conf {
     @JsonProperty
     private int maxLogLines = 10; // same as unix tail command
     @JsonProperty
-    private List<Id> volumesFrom = new ArrayList<Id>();
+    private List<Id> volumesFrom = new ArrayList<>();
     @JsonProperty
     private HealthChecks healthChecks = new HealthChecks();
     @JsonProperty
-    private Map<String, String> env = new HashMap<String, String>();
+    private Map<String, String> env = new HashMap<>();
 
     @JsonProperty
-    private Map<String, String> volumes = new HashMap<String, String>();
+    private Map<String, String> volumes = new HashMap<>();
 
     @JsonProperty
     private boolean exposeContainerIp = true;
@@ -53,7 +58,7 @@ public class Conf {
     }
 
     public void setTag(String tag) {
-        setTags(Arrays.asList(tag));
+        setTags(Collections.singletonList(tag));
     }
 
     public List<String> getTags() {
@@ -114,5 +119,13 @@ public class Conf {
 
     public void setMaxLogLines(int maxLogLines) {
         this.maxLogLines = maxLogLines;
+    }
+
+    public ContainerConf getContainer() {
+        return container;
+    }
+
+    public void setContainer(ContainerConf container) {
+        this.container = container;
     }
 }

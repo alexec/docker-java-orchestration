@@ -1,6 +1,7 @@
 package com.alexecollins.docker.orchestration;
 
 import com.alexecollins.docker.orchestration.model.Conf;
+import com.alexecollins.docker.orchestration.model.ContainerConf;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.util.PropertiesTokenResolver;
 import com.alexecollins.docker.orchestration.util.TokenReplacingReader;
@@ -89,6 +90,11 @@ class Repo {
     }
 
     String containerName(Id id) {
+        ContainerConf container = confs.get(id).getContainer();
+        return container.hasName() ? container.getName() : defaultContainerName(id);
+    }
+
+    private String defaultContainerName(Id id) {
         return "/" + project + "_" + id;
     }
 
