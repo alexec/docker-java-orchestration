@@ -3,10 +3,7 @@ package com.alexecollins.docker.orchestration;
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.ContainerConf;
 import com.alexecollins.docker.orchestration.model.Id;
-import com.alexecollins.docker.orchestration.util.PropertiesTokenResolver;
-import com.alexecollins.docker.orchestration.util.TokenReplacingReader;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.MapLikeType;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
@@ -18,10 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -75,24 +69,33 @@ class Repo {
         this.src = src;
 
         if (src.isDirectory()) {
+            readDockerConf(src, properties);
+            ensureEmptyFolderConfs(src);
+            readChildConfs(src, properties);
+        }
+    }
 
-            // prioritise the docker.yml, especially for ordering
-            File dockerConf = new File(src, "docker.yml");
-            if (dockerConf.exists()) {
-                LOG.info("reading " + dockerConf);
-                try {
-                    confs.putAll(readDockerConf(dockerConf, properties));
-                } catch (IOException e) {
-                    throw new OrchestrationException(e);
-                }
+    private static Conf readConfFile(File confFile, Properties properties) throws IOException {
+        return confFile.length() > 0 ? MAPPER.readValue(Confs.replacingReader(confFile, properties), Conf.class) : new Conf();
+    }
+
+    private void readDockerConf(File src, Properties properties) {
+        // prioritise the docker.yml, especially for ordering
+        File dockerConf = new File(src, "docker.yml");
+        if (dockerConf.exists()) {
+            LOG.info("reading " + dockerConf);
+            try {
+                confs.putAll(Confs.read(dockerConf, properties));
+            } catch (IOException e) {
+                throw new OrchestrationException(e);
             }
+        }
+    }
 
-            for (File file : src.listFiles((FileFilter) DirectoryFileFilter.INSTANCE)) {
-                confs.put(new Id(file.getName()), new Conf());
-            }
-
-            for (Id id : confs.keySet()) {
-                File confFile = new File(src, id + "/conf.yml");
+    private void readChildConfs(File src, Properties properties) {
+        for (Id id : confs.keySet()) {
+            File confFile = new File(src, id + "/conf.yml");
+            if (confFile.exists()) {
                 LOG.info("reading " + confFile);
                 try {
                     confs.put(id, readConfFile(confFile, properties));
@@ -103,17 +106,13 @@ class Repo {
         }
     }
 
-    private static Map<Id, Conf> readDockerConf(File dockerConf, Properties properties) throws IOException {
-        MapLikeType mapLikeType = MAPPER.getTypeFactory().constructMapLikeType(LinkedHashMap.class, Id.class, Conf.class);
-        return MAPPER.readValue(replacingReader(dockerConf, properties), mapLikeType);
-    }
-
-    private static Conf readConfFile(File confFile, Properties properties) throws IOException {
-        return confFile.length() > 0 ? MAPPER.readValue(replacingReader(confFile, properties), Conf.class) : new Conf();
-    }
-
-    private static Reader replacingReader(File confFile, Properties properties) throws FileNotFoundException {
-        return new TokenReplacingReader(new FileReader(confFile), new PropertiesTokenResolver(properties));
+    private void ensureEmptyFolderConfs(File src) {
+        for (File file : src.listFiles((FileFilter) DirectoryFileFilter.INSTANCE)) {
+            Id id = new Id(file.getName());
+            if (!confs.containsKey(id)) {
+                confs.put(id, new Conf());
+            }
+        }
     }
 
     public String tag(Id id) {
@@ -190,6 +189,7 @@ class Repo {
 
         final List<Id> in = new LinkedList<>(confs.keySet());
 
+        // keep in order
         final Map<Id, List<Id>> links = new LinkedHashMap<>();
         for (Id id : in) {
             links.put(id, com.alexecollins.docker.orchestration.util.Links.ids(confs.get(id).getLinks()));

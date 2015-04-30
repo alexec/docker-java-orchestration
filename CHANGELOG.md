@@ -5,6 +5,7 @@ Change Log
 * [DMP Issue 50](https://github.com/alexec/docker-maven-plugin/issues/50) Container port ordering was reversed.
 * [DMP Issue 51](https://github.com/alexec/docker-maven-plugin/issues/51) Enhancement: ability to set container name.
 * [DMP Issue 54](https://github.com/alexec/docker-maven-plugin/issues/54) Problems with port forwarding on Windows.
+* [DJO Pull 25](https://github.com/alexec/docker-java-orchestration/pull/25) Added support for `src/main/docker/docker.yml` as a single global configuration file.
 * Other: removed un-needed code.
 
 2.8.3
