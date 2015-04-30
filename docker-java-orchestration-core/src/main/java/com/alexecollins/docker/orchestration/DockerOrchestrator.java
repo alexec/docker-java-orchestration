@@ -1,7 +1,11 @@
 package com.alexecollins.docker.orchestration;
 
 
-import com.alexecollins.docker.orchestration.model.*;
+import com.alexecollins.docker.orchestration.model.BuildFlag;
+import com.alexecollins.docker.orchestration.model.Conf;
+import com.alexecollins.docker.orchestration.model.HealthChecks;
+import com.alexecollins.docker.orchestration.model.Id;
+import com.alexecollins.docker.orchestration.model.Ping;
 import com.alexecollins.docker.orchestration.plugin.api.Plugin;
 import com.alexecollins.docker.orchestration.util.Logs;
 import com.alexecollins.docker.orchestration.util.Pinger;
@@ -9,16 +13,40 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.InternalServerErrorException;
 import com.github.dockerjava.api.NotFoundException;
-import com.github.dockerjava.api.command.*;
-import com.github.dockerjava.api.model.*;
+import com.github.dockerjava.api.command.BuildImageCmd;
+import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.command.LogContainerCmd;
+import com.github.dockerjava.api.command.PushImageCmd;
+import com.github.dockerjava.api.model.Bind;
+import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.InternetProtocol;
 import com.github.dockerjava.api.model.Link;
+import com.github.dockerjava.api.model.PortBinding;
+import com.github.dockerjava.api.model.Ports;
+import com.github.dockerjava.api.model.Volume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Properties;
+import java.util.ServiceLoader;
+import java.util.Set;
 
 /**
  * Orchestrates multiple Docker containers based on
@@ -474,55 +502,6 @@ public class DockerOrchestrator {
                 throw new OrchestrationException("timeout waiting for " + uri + " for " + ping.getTimeout() + " with pattern " + ping.getPattern());
             }
         }
-    }
-
-    private CreateContainerCmd prepareHostConfig(Id id) {
-        CreateContainerCmd config = docker.createContainerCmd(repo.findImageId(id));
-
-        Conf conf = conf(id);
-
-        config.withPublishAllPorts(true);
-
-        Link[] links = links(id);
-
-        logger.info(" - links " + conf.getLinks());
-        config.withLinks(links);
-
-        List<PortBinding> portBindings = new ArrayList<>();
-        for (String e : conf.getPorts()) {
-
-            final String[] split = e.split(" ");
-
-            assert split.length == 1 || split.length == 2;
-
-            final int hostPort = Integer.parseInt(split[0]);
-            final int containerPort = split.length == 2 ? Integer.parseInt(split[1]) : hostPort;
-
-            logger.info(" - port " + hostPort + "->" + containerPort);
-            portBindings.add(new PortBinding(new Ports.Binding(hostPort),
-                    new ExposedPort(containerPort, InternetProtocol.TCP)));
-        }
-        config.withPortBindings(portBindings.toArray(new PortBinding[portBindings.size()]));
-
-        logger.info(" - volumes " + conf.getVolumes());
-
-        final List<Bind> binds = new ArrayList<>();
-        for (Map.Entry<String, String> entry : conf.getVolumes().entrySet()) {
-            String volumePath = entry.getKey();
-            String hostPath = entry.getValue();
-            File file = new File(hostPath);
-            String path = file.getAbsolutePath();
-            logger.info(" - volumes " + volumePath + " <- " + path);
-            binds.add(new Bind(path, new Volume(volumePath)));
-        }
-
-        config.withBinds(binds.toArray(new Bind[binds.size()]));
-
-        config.withName(repo.containerName(id));
-        logger.info(" - env " + conf.getEnv());
-        config.withEnv(asEnvList(conf.getEnv()));
-
-        return config;
     }
 
     private Link[] links(Id id) {
