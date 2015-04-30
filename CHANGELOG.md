@@ -2,8 +2,9 @@ Change Log
 ===
 2.9.0
 
-* Bug fixed: container port ordering was reversed.
-* Enhancement: ability to set container name.
+* [DMP Issue 50](https://github.com/alexec/docker-maven-plugin/issues/50) Container port ordering was reversed.
+* [DMP Issue 51](https://github.com/alexec/docker-maven-plugin/issues/51) Enhancement: ability to set container name.
+* [DMP Issue 54](https://github.com/alexec/docker-maven-plugin/issues/54) Problems with port forwarding on Windows.
 * Other: removed un-needed code.
 
 2.8.3
@@ -13,7 +14,7 @@ Change Log
 * Migrated to CircleCI.
 
 2.7.0
-                                                                                                                                               Java
+
 * Java 1.7
 * [DJO Pull 22](https://github.com/alexec/docker-java-orchestration/pull/22) Container logs are printed on error.
 
