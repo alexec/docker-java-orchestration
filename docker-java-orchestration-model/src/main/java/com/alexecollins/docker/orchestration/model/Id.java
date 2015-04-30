@@ -1,6 +1,6 @@
 package com.alexecollins.docker.orchestration.model;
 
-public class Id {
+public class Id implements Comparable<Id> {
     private final String value;
 
     public Id(String value) {
@@ -26,5 +26,10 @@ public class Id {
     @Override
     public int hashCode() {
         return value.hashCode();
+    }
+
+    @Override
+    public int compareTo(@SuppressWarnings("NullableProblems") Id o) {
+        return value.compareTo(o.value);
     }
 }

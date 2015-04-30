@@ -3,7 +3,11 @@ package com.alexecollins.docker.orchestration.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @SuppressWarnings("CanBeFinal")
 public class Conf {
@@ -41,6 +45,16 @@ public class Conf {
 
     @JsonProperty
     private boolean exposeContainerIp = true;
+
+    public Conf() {
+    }
+
+    @SuppressWarnings("UnusedParameters")
+    public Conf(String ignored) {
+        if (!ignored.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+    }
 
     public boolean isExposeContainerIp() {
         return exposeContainerIp;

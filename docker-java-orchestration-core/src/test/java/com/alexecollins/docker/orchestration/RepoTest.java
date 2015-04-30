@@ -1,32 +1,55 @@
 package com.alexecollins.docker.orchestration;
 
+import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.Id;
+import com.alexecollins.docker.orchestration.model.Packaging;
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.core.DockerClientBuilder;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 
 
+@RunWith(Parameterized.class)
 public class RepoTest {
 
     private static final String PROJECT_VERSION = "1.0";
     private final Id appId = new Id("app");
     private final Id filterId = new Id("filter");
-    private Repo sut;
+    private final Repo sut;
 
-    @Before
-    public void setUp() throws Exception {
-        DockerClient client = DockerClientBuilder.getInstance("http://localhost:4240").build();
+    public RepoTest(String child) {
         Properties properties = new Properties();
         properties.setProperty("project.version", PROJECT_VERSION);
-        sut = new Repo(client, "test", "test", new File("src/test/docker-repo"), properties);
+        this.sut = new Repo(mock(DockerClient.class), "test", "test", new File("src/test", child), properties);
+    }
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+                {"docker-repo-v1"},
+                {"docker-repo-v2"},
+        });
+    }
+
+    @Test
+    public void explicitStartOrder() throws Exception {
+        assertEquals(Arrays.asList(filterId, appId), sut.ids(false));
     }
 
     @Test
@@ -80,8 +103,17 @@ public class RepoTest {
     }
 
     @Test
+    public void appHasPacking() throws Exception {
+        Conf conf = sut.conf(appId);
+        Packaging packaging = conf.getPackaging();
+        assertNotNull(packaging.getAdd().get(0));
+    }
+
+    @Test
     public void testPropertiesReplaced() throws Exception {
-        assertEquals("example-" + PROJECT_VERSION + ".jar", sut.conf(appId).getPackaging().getAdd().get(0).getPath());
+
+        Packaging packaging = sut.conf(appId).getPackaging();
+        assertEquals("example-" + PROJECT_VERSION + ".jar", packaging.getAdd().get(0).getPath());
     }
 
     @Test
