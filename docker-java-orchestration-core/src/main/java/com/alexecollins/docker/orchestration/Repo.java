@@ -5,6 +5,7 @@ import com.alexecollins.docker.orchestration.model.ContainerConf;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.util.PropertiesTokenResolver;
 import com.alexecollins.docker.orchestration.util.TokenReplacingReader;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.dockerjava.api.DockerClient;
@@ -25,7 +26,8 @@ class Repo {
 
     private static final Logger LOG = LoggerFactory.getLogger(Repo.class);
 
-    private static ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
+    private static ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory())
+            .configure(JsonGenerator.Feature.IGNORE_UNKNOWN, true);
     private final DockerClient docker;
     private final String user;
     private final String project;

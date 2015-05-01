@@ -39,4 +39,9 @@ public class ConfTest {
         assertTrue(container.hasName());
         assertEquals("theName", container.getName());
     }
+
+    @Test
+    public void enabled() throws Exception {
+        assertEquals(true, conf.isEnabled());
+    }
 }
