@@ -198,22 +198,24 @@ public class DockerOrchestrator {
     private void build(File dockerFolder, Id id) {
         try {
             BuildImageCmd build = docker.buildImageCmd(dockerFolder).withRemove(false);
-            for (BuildFlag f : buildFlags) {
-                switch (f) {
-                    case NO_CACHE:
-                        build = build.withNoCache();
-                        break;
-                    case REMOVE_INTERMEDIATE_IMAGES:
-                        build = build.withRemove(true);
-                        break;
-                    case QUIET:
-                        build = build.withQuiet();
-                        break;
-                }
-            }
+
             String tag = repo.tag(id);
-            build = build.withTag(tag);
             logger.info("Building " + id + " (" + tag + ")");
+
+            final boolean noCache = buildNoCache();
+            logger.info(" - no cache: " + noCache);
+            build = build.withNoCache(noCache);
+
+            final boolean removeIntermediateImages = buildRemoveIntermediateImages();
+            logger.info(" - remove intermediate images: " + removeIntermediateImages);
+            build = build.withRemove(removeIntermediateImages);
+
+            final boolean quiet = buildQuiet();
+            logger.info(" - quiet: " + quiet);
+            build = build.withQuiet(quiet);
+
+            build = build.withTag(tag);
+
             throwExceptionIfThereIsAnError(build.exec());
 
             for (String otherTag : repo.conf(id).getTags()) {
@@ -228,6 +230,22 @@ public class DockerOrchestrator {
             throw new OrchestrationException(e);
         }
 
+    }
+
+    private boolean buildQuiet() {
+        return haveBuildFlag(BuildFlag.QUIET);
+    }
+
+    private boolean buildRemoveIntermediateImages() {
+        return haveBuildFlag(BuildFlag.REMOVE_INTERMEDIATE_IMAGES);
+    }
+
+    private boolean buildNoCache() {
+        return haveBuildFlag(BuildFlag.NO_CACHE);
+    }
+
+    private boolean haveBuildFlag(BuildFlag flag) {
+        return buildFlags.contains(flag);
     }
 
     private void start(final Id id) {
