@@ -128,7 +128,16 @@ public class DockerOrchestrator {
     }
 
     private boolean inclusive(Id id) {
-        return definitionFilter.test(id, conf(id));
+        Conf conf = conf(id);
+        if (!definitionFilter.test(id, conf)) {
+            logger.info("not including " + id + ", filtered out");
+            return false;
+        }
+        if (!conf.isEnabled()) {
+            logger.info("not including " + id + ", not enabled");
+            return false;
+        }
+        return true;
     }
 
     void clean(final Id id) {

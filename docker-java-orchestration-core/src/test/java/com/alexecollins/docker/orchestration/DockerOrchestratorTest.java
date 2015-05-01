@@ -140,6 +140,7 @@ public class DockerOrchestratorTest {
         when(confMock.getLinks()).thenReturn(new ArrayList<Link>());
         when(confMock.getHealthChecks()).thenReturn(new HealthChecks());
         when(confMock.getTags()).thenReturn(Collections.singletonList(IMAGE_NAME + ":" + TAG_NAME));
+        when(confMock.isEnabled()).thenReturn(true);
 
         when(repoMock.findImageId(idMock)).thenReturn(IMAGE_ID);
         when(repoMock.findContainer(idMock)).thenReturn(containerMock);
@@ -342,6 +343,21 @@ public class DockerOrchestratorTest {
 
         verifyNoMoreInteractions(dockerMock);
 
+
+    }
+
+    @Test
+    public void disabledContainerResultsInNoInteraction() throws Exception {
+        when(confMock.isEnabled()).thenReturn(false);
+
+        testObj.validate();
+        testObj.clean();
+        testObj.build();
+        testObj.start();
+        testObj.stop();
+        testObj.push();
+
+        verifyNoMoreInteractions(dockerMock);
 
     }
 }

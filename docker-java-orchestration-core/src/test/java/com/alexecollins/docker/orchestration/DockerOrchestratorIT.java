@@ -14,10 +14,14 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Properties;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsCollectionContaining.hasItem;
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -71,8 +75,8 @@ public class DockerOrchestratorIT {
     }
 
     @Test
-    public void testList() throws Exception {
-        assertEquals(3, orchestrator.ids().size());
+    public void listsAllDefinintions() throws Exception {
+        assertEquals(Arrays.asList(new Id("busybox"), new Id("disabled"), new Id("mysql"), new Id("app")), orchestrator.ids());
     }
 
     @Test
@@ -110,8 +114,10 @@ public class DockerOrchestratorIT {
     }
 
     @Test
-    public void testStart() throws Exception {
+    public void startingSmokesAndDoesNotStartDisabledContainer() throws Exception {
         orchestrator.start();
+
+        assertThat(orchestrator.getPlugin(TestPlugin.class).getStarted(), not(hasItem(new Id("disabled"))));
     }
 
     @Test

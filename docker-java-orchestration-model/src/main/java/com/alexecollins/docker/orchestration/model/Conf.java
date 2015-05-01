@@ -38,6 +38,8 @@ public class Conf {
 
     @JsonProperty
     private Map<String, String> volumes = new HashMap<>();
+    @JsonProperty
+    private boolean enabled = true;
 
     @JsonProperty
     private boolean exposeContainerIp = true;
@@ -111,7 +113,7 @@ public class Conf {
 
     public void setLogOnFailure(boolean logOnFailure) {
         this.logOnFailure = logOnFailure;
-    }
+    }   
 
     public int getMaxLogLines() {
         return maxLogLines;
@@ -127,5 +129,13 @@ public class Conf {
 
     public void setContainer(ContainerConf container) {
         this.container = container;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }
