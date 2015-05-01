@@ -113,7 +113,7 @@ public class DockerOrchestratorIT {
     }
 
     @Test
-    public void startingSmokesAndDoesNotStardDisabledContainer() throws Exception {
+    public void startingSmokesAndDoesNotStartDisabledContainer() throws Exception {
         orchestrator.start();
 
         assertThat(orchestrator.getPlugin(TestPlugin.class).getStarted(), not(hasItem(new Id("disabled"))));

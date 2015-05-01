@@ -2,9 +2,10 @@ Change Log
 ===
 2.9.0
 
-* [DMP Issue 50](https://github.com/alexec/docker-maven-plugin/issues/50) Container port ordering was reversed.
+* [DMP Issue 50](https://github.com/alexec/docker-maven-plugin/issues/50) Bug: Container port ordering was reversed.
 * [DMP Issue 51](https://github.com/alexec/docker-maven-plugin/issues/51) Enhancement: ability to set container name.
-* [DMP Issue 54](https://github.com/alexec/docker-maven-plugin/issues/54) Problems with port forwarding on Windows.
+* [DMP Issue 54](https://github.com/alexec/docker-maven-plugin/issues/54) Bug: Problems with port forwarding on Windows.
+* [DJO Pull 26](https://github.com/alexec/docker-java-orchestration/pull/26) Enhancement: Added test for a new configuration property `enable` which allows you to disabled/enabled containers.
 * Other: removed un-needed code.
 
 2.8.3
