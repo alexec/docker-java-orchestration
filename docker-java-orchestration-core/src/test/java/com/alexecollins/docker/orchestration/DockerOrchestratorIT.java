@@ -18,6 +18,9 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Properties;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsCollectionContaining.hasItem;
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -110,8 +113,10 @@ public class DockerOrchestratorIT {
     }
 
     @Test
-    public void testStart() throws Exception {
+    public void startingSmokesAndDoesNotStardDisabledContainer() throws Exception {
         orchestrator.start();
+
+        assertThat(orchestrator.getPlugin(TestPlugin.class).getStarted(), not(hasItem(new Id("disabled"))));
     }
 
     @Test
