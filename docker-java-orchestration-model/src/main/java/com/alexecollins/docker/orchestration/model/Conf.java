@@ -113,7 +113,7 @@ public class Conf {
 
     public void setLogOnFailure(boolean logOnFailure) {
         this.logOnFailure = logOnFailure;
-    }
+    }   
 
     public int getMaxLogLines() {
         return maxLogLines;
