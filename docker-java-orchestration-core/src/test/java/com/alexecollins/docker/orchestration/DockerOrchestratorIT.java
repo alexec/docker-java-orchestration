@@ -14,6 +14,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Properties;
@@ -74,8 +75,8 @@ public class DockerOrchestratorIT {
     }
 
     @Test
-    public void testList() throws Exception {
-        assertEquals(3, orchestrator.ids().size());
+    public void listsAllDefinintions() throws Exception {
+        assertEquals(Arrays.asList(new Id("app"), new Id("busybox"), new Id("disabled"), new Id("mysql")), orchestrator.ids());
     }
 
     @Test
