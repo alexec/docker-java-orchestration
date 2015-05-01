@@ -152,8 +152,10 @@ public class DockerOrchestratorTest {
         when(repoMock.tag(any(Id.class))).thenReturn(IMAGE_NAME + ":" + TAG_NAME);
 
         when(dockerMock.buildImageCmd(eq(fileMock))).thenReturn(buildImageCmdMock);
-        when(buildImageCmdMock.withRemove(false)).thenReturn(buildImageCmdMock);
+        when(buildImageCmdMock.withRemove(anyBoolean())).thenReturn(buildImageCmdMock);
         when(buildImageCmdMock.withTag(any(String.class))).thenReturn(buildImageCmdMock);
+        when(buildImageCmdMock.withNoCache(anyBoolean())).thenReturn(buildImageCmdMock);
+        when(buildImageCmdMock.withQuiet(anyBoolean())).thenReturn(buildImageCmdMock);
         when(buildImageCmdMock.exec()).thenReturn(new BuildImageCmdExec.ResponseImpl(IOUtils.toInputStream("Successfully built")));
 
         when(dockerMock.createContainerCmd(IMAGE_ID)).thenReturn(createContainerCmdMock);
