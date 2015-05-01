@@ -19,6 +19,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Properties;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsCollectionContaining.hasItem;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertEquals;
