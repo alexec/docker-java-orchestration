@@ -93,6 +93,12 @@ class Repo {
                 }
             }
         }
+        for (Map.Entry<Id, Conf> entry : confs.entrySet()) {
+            Id id = entry.getKey();
+            if (!(entry.getValue().hasImage()) ^ dockerfileExists(id)) {
+                throw new IllegalStateException("invalid repo, both image name and Dockerfile defined for " + id);
+            }
+        }
     }
 
     private void ensureEmptyFolderConfs(File src) {
@@ -102,6 +108,10 @@ class Repo {
                 confs.put(id, new Conf());
             }
         }
+    }
+
+    private boolean dockerfileExists(Id id) {
+        return new File(src, id + "/Dockerfile").exists();
     }
 
     public String tag(Id id) {
