@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ExcludeFilter implements DefinitionFilter {
-    private final List<Id> ids = new ArrayList<Id>();
+    private final List<Id> ids = new ArrayList<>();
 
     public ExcludeFilter(String... ids) {
         for (String id : ids) {

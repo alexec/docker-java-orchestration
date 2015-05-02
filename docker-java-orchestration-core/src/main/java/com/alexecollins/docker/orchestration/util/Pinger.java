@@ -32,7 +32,7 @@ public final class Pinger {
         return ping(uri, null, timeout);
     }
 
-    public static boolean ping(URI uri, Pattern pattern) {
+    private static boolean ping(URI uri, Pattern pattern) {
         try {
             final HttpURLConnection c = (HttpURLConnection) uri.toURL().openConnection();
             c.setRequestProperty("Accept", "*/*");

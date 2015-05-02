@@ -26,16 +26,16 @@ public class RepoTest {
         DockerClient client = DockerClientBuilder.getInstance("http://localhost:4240").build();
         Properties properties = new Properties();
         properties.setProperty("project.version", PROJECT_VERSION);
-        sut = new Repo(client, "test", "test", new File("src/test/docker-repo"), properties);
+        sut = new Repo("test", "test", new File("src/test/docker-repo"), properties);
     }
 
     @Test
     public void testSingleDependencies() throws Exception {
-        final Map<Id, List<Id>> links = new HashMap<Id, List<Id>>();
+        final Map<Id, List<Id>> links = new HashMap<>();
         final Id a = new Id("a"), b = new Id("b");
         links.put(b, Collections.singletonList(a));
         links.put(a, Collections.<Id>emptyList());
-        final ArrayList<Id> expected = new ArrayList<Id>();
+        final ArrayList<Id> expected = new ArrayList<>();
         expected.add(a);
         expected.add(b);
         assertEquals(
@@ -45,12 +45,12 @@ public class RepoTest {
 
     @Test
     public void testDoubleDependencies() throws Exception {
-        final Map<Id, List<Id>> links = new HashMap<Id, List<Id>>();
+        final Map<Id, List<Id>> links = new HashMap<>();
         final Id a = new Id("a"), b = new Id("b"), c = new Id("c");
         links.put(c, Collections.singletonList(b));
         links.put(b, Collections.singletonList(a));
         links.put(a, Collections.<Id>emptyList());
-        final ArrayList<Id> expected = new ArrayList<Id>();
+        final ArrayList<Id> expected = new ArrayList<>();
         expected.add(a);
         expected.add(b);
         expected.add(c);
@@ -61,7 +61,7 @@ public class RepoTest {
 
     @Test(expected = IllegalStateException.class)
     public void testCircularDependencies() throws Exception {
-        final Map<Id, List<Id>> links = new HashMap<Id, List<Id>>();
+        final Map<Id, List<Id>> links = new HashMap<>();
         final Id a = new Id("a"), b = new Id("b"), c = new Id("c"), d = new Id("d"), e = new Id("e");
         links.put(c, Collections.singletonList(b));
         links.put(b, Collections.singletonList(a));
@@ -73,7 +73,7 @@ public class RepoTest {
 
     @Test(expected = IllegalStateException.class)
     public void testSelfCircularDependencies() throws Exception {
-        final Map<Id, List<Id>> links = new HashMap<Id, List<Id>>();
+        final Map<Id, List<Id>> links = new HashMap<>();
         final Id a = new Id("a");
         links.put(a, Collections.singletonList(a));
         sut.sort(links);

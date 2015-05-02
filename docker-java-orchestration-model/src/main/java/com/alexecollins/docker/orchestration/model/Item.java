@@ -1,11 +1,10 @@
 package com.alexecollins.docker.orchestration.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
 
+@Data
 public class Item {
-    @JsonProperty(required = true)
     private String path;
-    @JsonProperty
     private boolean filter = true;
 
     public Item() {

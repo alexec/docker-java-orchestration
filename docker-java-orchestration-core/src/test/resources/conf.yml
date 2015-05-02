@@ -11,3 +11,5 @@ links:
   - foo:bar
 logOnFailure: true
 maxLogLines: 123
+container:
+  name: theName

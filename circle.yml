@@ -14,14 +14,18 @@ machine:
   DOCKER_TLS_VERIFY: 1
 dependencies:
  override: 
-  - mvn install -DskipAdeTests -s settings.xml
- cache_directories:
-  - ~/.m2/repository
+  - mvn install -DskipTests -s settings.xml
 test:
  override:
   - sudo service mysql stop
   - mvn deploy -Prun-its -s settings.xml
-  - ./circle.sh start_build docker-maven-plugin
  post:
   - mkdir -p $CIRCLE_TEST_REPORTS/junit/
   - find . -type f -regex ".*/target/.*-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
+deployment:
+ staging:
+   branch: master
+   commands:
+     - ./circle.sh start_build docker-maven-plugin
+     - ./circle.sh start_build docker-ant-tasks
+     - ./circle.sh start_build docker-gradle-plugin

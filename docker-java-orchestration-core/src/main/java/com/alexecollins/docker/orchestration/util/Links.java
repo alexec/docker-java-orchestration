@@ -27,7 +27,7 @@ public final class Links {
     }
 
     public static List<Id> ids(List<Link> links) {
-        List<Id> ids = new ArrayList<Id>();
+        List<Id> ids = new ArrayList<>();
         for (Link link : links) {
             ids.add(link.getId());
         }

@@ -9,7 +9,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class TextFileFilterTest {
-    File dir = new File(System.getProperty("java.io.tmpdir"));
+    private final File dir = new File(System.getProperty("java.io.tmpdir"));
 
     @Test
     public void testTxtFile() throws Exception {

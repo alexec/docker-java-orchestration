@@ -20,18 +20,18 @@ import java.nio.CharBuffer;
  * @author Jakob Jenkov
  */
 public class TokenReplacingReader extends Reader {
-    protected PushbackReader pushbackReader = null;
-    protected TokenResolver tokenResolver = null;
-    protected StringBuilder tokenNameBuffer = new StringBuilder();
-    protected String tokenValue = null;
-    protected int tokenValueIndex = 0;
+    private final StringBuilder tokenNameBuffer = new StringBuilder();
+    private PushbackReader pushbackReader = null;
+    private TokenResolver tokenResolver = null;
+    private String tokenValue = null;
+    private int tokenValueIndex = 0;
 
     public TokenReplacingReader(Reader source, TokenResolver resolver) {
         this.pushbackReader = new PushbackReader(source, 2);
         this.tokenResolver = resolver;
     }
 
-    public int read(CharBuffer target) throws IOException {
+    public int read(@SuppressWarnings("NullableProblems") CharBuffer target) throws IOException {
         throw new RuntimeException("Operation Not Supported");
     }
 
@@ -76,11 +76,11 @@ public class TokenReplacingReader extends Reader {
 
     }
 
-    public int read(char cbuf[]) throws IOException {
+    public int read(@SuppressWarnings("NullableProblems") char cbuf[]) throws IOException {
         return read(cbuf, 0, cbuf.length);
     }
 
-    public int read(char cbuf[], int off, int len) throws IOException {
+    public int read(@SuppressWarnings("NullableProblems") char cbuf[], int off, int len) throws IOException {
         int charsRead = 0;
         for (int i = 0; i < len; i++) {
             int nextChar = read();

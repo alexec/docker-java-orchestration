@@ -1,15 +1,12 @@
 package com.alexecollins.docker.orchestration.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Data
 public class HealthChecks {
-    @JsonProperty
-    private List<Ping> pings = new ArrayList<Ping>();
 
-    public List<Ping> getPings() {
-        return pings;
-    }
+    private List<Ping> pings = new ArrayList<>();
 }
