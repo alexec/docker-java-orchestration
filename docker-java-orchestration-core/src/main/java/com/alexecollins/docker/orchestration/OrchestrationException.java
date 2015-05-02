@@ -6,6 +6,10 @@ class OrchestrationException extends RuntimeException {
         super(message);
     }
 
+    OrchestrationException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
     OrchestrationException(Throwable cause) {
         super(cause);
     }
