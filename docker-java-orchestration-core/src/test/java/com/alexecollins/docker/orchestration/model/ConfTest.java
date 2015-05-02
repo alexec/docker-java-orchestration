@@ -54,4 +54,9 @@ public class ConfTest {
     public void volumes() throws Exception {
         assertEquals(Collections.singletonMap("foo", "bar"), conf.getVolumes());
     }
+
+    @Test
+    public void imageName() throws Exception {
+        assertEquals("theImage", conf.getImage());
+    }
 }

@@ -3,6 +3,7 @@ package com.alexecollins.docker.orchestration;
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.model.Packaging;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

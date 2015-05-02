@@ -32,6 +32,7 @@ public class Conf {
     private Map<String, String> volumes = new HashMap<>();
     private boolean enabled = true;
     private boolean exposeContainerIp = true;
+    private String image;
     private List<String> extraHosts = new ArrayList<>();
     private boolean privileged;
     private String waitForLine;
@@ -48,6 +49,10 @@ public class Conf {
 
     public boolean hasTag() {
         return tags != null && !tags.isEmpty();
+    }
+
+    public boolean hasImage() {
+        return image != null;
     }
 
     /**
