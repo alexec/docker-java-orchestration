@@ -245,6 +245,7 @@ public class DockerOrchestratorTest {
         when(tagImageCmdMock.withForce()).thenReturn(tagImageCmdMock);
 
         when(dockerMock.pullImageCmd(anyString())).thenReturn(pullImageCmdMock);
+        when(pullImageCmdMock.exec()).thenReturn(IOUtils.toInputStream(""));
 
         when(dockerMock.pushImageCmd(anyString())).thenReturn(pushImageCmd);
         when(pushImageCmd.withAuthConfig(any(AuthConfig.class))).thenReturn(pushImageCmd);
