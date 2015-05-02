@@ -370,7 +370,7 @@ public class DockerOrchestrator {
         List<Image> images = docker.listImagesCmd().exec();
         for (Image i : images) {
             for (String tag : i.getRepoTags()) {
-                if (tag.startsWith(imageTag)) {
+                if (tag.startsWith(imageTag) || TagMatcher.matches(tag, conf(id))) {
                     logger.debug("Using {} ({}) for {}. It matches (enough) to {}.", new Object[]{
                             i.getId(),
                             tag,
@@ -383,6 +383,7 @@ public class DockerOrchestrator {
         logger.debug("could not find image ID for \"" + id + "\" (tag \"" + imageTag + "\")");
         return null;
     }
+
 
     private boolean buildQuiet() {
         return haveBuildFlag(BuildFlag.QUIET);
@@ -542,6 +543,13 @@ public class DockerOrchestrator {
                     }
                 }
                 throw new OrchestrationException("Container log ended before line appeared in output");
+            }
+
+            try (InputStream stream = logContainerCmd.exec()) {
+                logger.info(String.format("Logs%s from container %s: %n%s",
+                        (conf.getMaxLogLines() > 0) ? " (max last " + conf.getMaxLogLines() + " lines)" : "",
+                        container.getId(),
+                        Logs.trimDockerLogHeaders(stream)));
             }
         } catch (Exception e) {
             logger.warn("Unable to obtain logs from container " + container.getId() + ", will continue without waiting: ", e);
@@ -796,8 +804,9 @@ public class DockerOrchestrator {
         try {
             PushImageCmd pushImageCmd = docker.pushImageCmd(repo(id));
             logger.info("Pushing " + id + " (" + pushImageCmd.getName() + ")");
-            InputStream inputStream = pushImageCmd.exec();
-            throwExceptionIfThereIsAnError(inputStream);
+            try (InputStream inputStream = pushImageCmd.exec()) {
+                throwExceptionIfThereIsAnError(inputStream);
+            }
         } catch (DockerException | IOException e) {
             throw new OrchestrationException(e);
         }
