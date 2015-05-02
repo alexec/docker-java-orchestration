@@ -132,6 +132,8 @@ public class DockerOrchestratorTest {
     @Mock
     private TagImageCmd tagImageCmdMock;
     @Mock
+    private PullImageCmd pullImageCmdMock;
+    @Mock
     private PushImageCmd pushImageCmd;
     @Mock
     private ListImagesCmd listImagesCmdMock;
@@ -191,6 +193,7 @@ public class DockerOrchestratorTest {
         final List<String> extraHosts = new ArrayList<>();
         extraHosts.add(EXTRA_HOST);
         when(confMock.getExtraHosts()).thenReturn(extraHosts);
+        when(confMock.getImage()).thenReturn(IMAGE_NAME);
 
         when(containerMock.getId()).thenReturn(CONTAINER_ID);
         when(containerMock.getNames()).thenReturn(new String[0]);
@@ -241,6 +244,8 @@ public class DockerOrchestratorTest {
         when(dockerMock.tagImageCmd(anyString(), anyString(), anyString())).thenReturn(tagImageCmdMock);
         when(tagImageCmdMock.withForce()).thenReturn(tagImageCmdMock);
 
+        when(dockerMock.pullImageCmd(anyString())).thenReturn(pullImageCmdMock);
+
         when(dockerMock.pushImageCmd(anyString())).thenReturn(pushImageCmd);
         when(pushImageCmd.withAuthConfig(any(AuthConfig.class))).thenReturn(pushImageCmd);
         when(pushImageCmd.exec()).thenReturn(new PushImageCmd.Response() {
@@ -271,6 +276,18 @@ public class DockerOrchestratorTest {
         verify(createContainerCmdMock).exec();
         verify(createContainerCmdMock).withExtraHosts(EXTRA_HOST);
         verify(startContainerCmdMock).exec();
+    }
+
+    @Test
+    public void buildPullsImageIfConfigured() throws Exception {
+
+        when(repoMock.dockerfileExists(idMock)).thenReturn(false);
+        when(confMock.hasImage()).thenReturn(true);
+
+        testObj.build();
+
+        verify(pullImageCmdMock).exec();
+
     }
 
     @Test
