@@ -87,6 +87,8 @@ public class DockerOrchestratorTest {
     @Mock
     private ListContainersCmd listContainersCmdMockOnlyRunning;
     @Mock
+    private ListContainersCmd listContainersCmdMock;
+    @Mock
     private RemoveContainerCmd removeContainerCmdMock;
     @Mock
     private StopContainerCmd stopContainerCmdMock;
@@ -136,22 +138,23 @@ public class DockerOrchestratorTest {
         when(repoMock.tag(idMock)).thenReturn(IMAGE_NAME);
         when(repoMock.findImageId(idMock)).thenReturn(IMAGE_ID);
         when(repoMock.containerName(idMock)).thenReturn(CONTAINER_NAME);
+        when(repoMock.imageName(idMock)).thenReturn(IMAGE_NAME);
 
         when(confMock.getLinks()).thenReturn(new ArrayList<Link>());
+        when(confMock.getContainer()).thenReturn(new ContainerConf());
         when(confMock.getHealthChecks()).thenReturn(new HealthChecks());
         when(confMock.getTags()).thenReturn(Collections.singletonList(IMAGE_NAME + ":" + TAG_NAME));
         when(confMock.isEnabled()).thenReturn(true);
 
         when(repoMock.findImageId(idMock)).thenReturn(IMAGE_ID);
         when(containerMock.getId()).thenReturn(CONTAINER_ID);
+        when(containerMock.getNames()).thenReturn(new String[0]);
 
         when(fileOrchestratorMock.prepare(idMock, srcFileMock, confMock)).thenReturn(fileMock);
 
         when(repoMock.ids(false)).thenReturn(Collections.singletonList(idMock));
         when(repoMock.ids(true)).thenReturn(Collections.singletonList(idMock));
         when(repoMock.tag(any(Id.class))).thenReturn(IMAGE_NAME + ":" + TAG_NAME);
-        when(repoMock.findContainers(idMock, true)).thenReturn(Collections.singletonList(containerMock));
-        when(repoMock.findContainers(idMock, false)).thenReturn(Collections.singletonList(containerMock));
 
         when(dockerMock.buildImageCmd(eq(fileMock))).thenReturn(buildImageCmdMock);
         when(buildImageCmdMock.withRemove(anyBoolean())).thenReturn(buildImageCmdMock);
@@ -171,9 +174,12 @@ public class DockerOrchestratorTest {
         when(dockerMock.removeContainerCmd(CONTAINER_ID)).thenReturn(removeContainerCmdMock);
         when(removeContainerCmdMock.withForce()).thenReturn(removeContainerCmdMock);
 
-        when(dockerMock.listContainersCmd()).thenReturn(listContainersCmdMockOnlyRunning);
-        when(listContainersCmdMockOnlyRunning.withShowAll(false)).thenReturn(listContainersCmdMockOnlyRunning);
-        when(listContainersCmdMockOnlyRunning.exec()).thenReturn(Collections.<Container>emptyList());
+        when(dockerMock.listContainersCmd()).thenReturn(listContainersCmdMock);
+        when(listContainersCmdMock.withShowAll(true)).thenReturn(listContainersCmdMock);
+        when(listContainersCmdMock.withShowAll(false)).thenReturn(listContainersCmdMockOnlyRunning);
+        when(listContainersCmdMock.exec()).thenReturn(Collections.singletonList(containerMock));
+        when(listContainersCmdMockOnlyRunning.exec()).thenReturn(Collections.singletonList(containerMock));
+        when(containerMock.getImage()).thenReturn(DockerOrchestratorTest.IMAGE_NAME);
 
         when(stopContainerCmdMock.withTimeout(anyInt())).thenReturn(stopContainerCmdMock);
 
@@ -205,7 +211,8 @@ public class DockerOrchestratorTest {
 
     @Test
     public void createAndStartNewContainer() throws DockerException, IOException {
-        when(repoMock.findContainers(idMock, true)).thenReturn(Collections.<Container>emptyList());
+
+        when(listContainersCmdMock.exec()).thenReturn(Collections.<Container>emptyList());
 
         testObj.start();
 
@@ -216,7 +223,6 @@ public class DockerOrchestratorTest {
     @Test
     public void startExistingContainerAsImageIdsMatch() throws DockerException, IOException {
         when(listContainersCmdMockOnlyRunning.exec()).thenReturn(Collections.<Container>emptyList());
-
         testObj.start();
 
         verify(createContainerCmdMock, times(0)).exec();
@@ -225,7 +231,7 @@ public class DockerOrchestratorTest {
 
     @Test
     public void containerIsAlreadyRunning() throws DockerException, IOException {
-        when(listContainersCmdMockOnlyRunning.exec()).thenReturn(Collections.singletonList(containerMock));
+        when(listContainersCmdMock.exec()).thenReturn(Collections.singletonList(containerMock));
 
         testObj.start();
 
@@ -246,6 +252,7 @@ public class DockerOrchestratorTest {
 
     @Test
     public void stopARunningContainer() {
+        when(listContainersCmdMock.exec()).thenReturn(Collections.singletonList(containerMock));
         when(stopContainerCmdMock.withTimeout(1)).thenReturn(stopContainerCmdMock);
 
         testObj.stop();

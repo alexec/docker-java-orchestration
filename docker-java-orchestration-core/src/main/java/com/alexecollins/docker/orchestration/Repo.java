@@ -9,7 +9,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.slf4j.Logger;
@@ -17,8 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
-
-import static java.util.Arrays.asList;
 
 @SuppressWarnings("CanBeFinal")
 class Repo {
@@ -86,7 +83,7 @@ class Repo {
                         : imageName(id);
     }
 
-    private String imageName(Id id) {
+    String imageName(Id id) {
         return user + "/" + project + "_" + id;
     }
 
@@ -95,18 +92,8 @@ class Repo {
         return container.hasName() ? container.getName() : defaultContainerName(id);
     }
 
-    private String defaultContainerName(Id id) {
+    String defaultContainerName(Id id) {
         return "/" + project + "_" + id;
-    }
-
-    List<Container> findContainers(Id id, boolean allContainers) {
-        final List<Container> strings = new ArrayList<>();
-        for (Container container : docker.listContainersCmd().withShowAll(allContainers).exec()) {
-            if (container.getImage().equals(imageName(id)) || asList(container.getNames()).contains(containerName(id))) {
-                strings.add(container);
-            }
-        }
-        return strings;
     }
 
     public String findImageId(Id id) {

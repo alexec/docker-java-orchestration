@@ -20,6 +20,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 
+import static java.util.Arrays.asList;
+
 /**
  * Orchestrates multiple Docker containers based on
  */
@@ -146,7 +148,7 @@ public class DockerOrchestrator {
         }
         stop(id);
         logger.info("Cleaning " + id);
-        for (Container container : repo.findContainers(id, true)) {
+        for (Container container : findAllContainers(id)) {
             logger.info("Removing container " + container.getId());
             try {
                 removeContainer(container);
@@ -170,6 +172,31 @@ public class DockerOrchestrator {
                 logger.warn(e.getMessage());
             }
         }
+    }
+
+    private List<Container> findRunningContainers(Id id) {
+        return findContainers(id, false);
+    }
+
+    private List<Container> findAllContainers(Id id) {
+        return findContainers(id, true);
+    }
+
+    private List<Container> findContainers(Id id, boolean allContainers) {
+        final List<Container> matchingContainers = new ArrayList<>();
+        for (Container container : docker.listContainersCmd().withShowAll(allContainers).exec()) {
+            boolean imageNameMatches = container.getImage().equals(repo.imageName(id));
+            boolean containerNameMatches = asList(container.getNames()).contains(containerName(id));
+            if (imageNameMatches || containerNameMatches) {
+                matchingContainers.add(container);
+            }
+        }
+        return matchingContainers;
+    }
+
+    private String containerName(Id id) {
+        ContainerConf container = repo.conf(id).getContainer();
+        return container.hasName() ? container.getName() : repo.defaultContainerName(id);
     }
 
     void build(final Id id) {
@@ -313,7 +340,7 @@ public class DockerOrchestrator {
     }
 
     private Container findContainer(Id id) {
-        final List<Container> containerIds = repo.findContainers(id, true);
+        final List<Container> containerIds = findAllContainers(id);
         return containerIds.isEmpty() ? null : containerIds.get(0);
     }
 
@@ -531,7 +558,7 @@ public class DockerOrchestrator {
 
         logger.info("Stopping " + id);
 
-        for (Container container : repo.findContainers(id, false)) {
+        for (Container container : findRunningContainers(id)) {
             logger.info("Stopping container " + Arrays.toString(container.getNames()));
             try {
                 docker.stopContainerCmd(container.getId()).withTimeout(1).exec();
