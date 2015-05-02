@@ -5,7 +5,11 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -17,12 +21,17 @@ import static org.junit.Assert.assertTrue;
 
 public class PingerIT {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(PingerIT.class);
+
     private final int timeout = 100;
+    @Rule
+    public TestName testName = new TestName();
     private HttpServer httpServer;
     private URI httpServerAddress;
 
     @Before
     public void setUp() throws Exception {
+        log("setting up");
         httpServer = HttpServer.create(new InetSocketAddress(0), 0);
         httpServer.createContext("/", new HttpHandler() {
             @Override
@@ -36,10 +45,17 @@ public class PingerIT {
         });
         httpServer.start();
         httpServerAddress = URI.create(String.format("http://localhost:%d/", httpServer.getAddress().getPort()));
+
+        log("starting");
+    }
+
+    private void log(String starting) {
+        LOGGER.info(" --- {} {} ---", starting, testName.getMethodName());
     }
 
     @After
     public void tearDown() throws Exception {
+        log("tearing down");
         httpServer.stop(0);
     }
 
