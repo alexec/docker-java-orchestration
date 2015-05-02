@@ -6,13 +6,11 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import com.alexecollins.docker.orchestration.model.*;
+import com.alexecollins.docker.orchestration.model.Link;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.command.*;
-import com.github.dockerjava.api.model.AuthConfig;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.ContainerConfig;
-import com.github.dockerjava.api.model.PushEventStreamItem;
+import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.jaxrs.BuildImageCmdExec;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.client.ClientResponse;
@@ -75,6 +73,8 @@ public class DockerOrchestratorTest {
     @Mock
     private Container containerMock;
     @Mock
+    private Image imageMock;
+    @Mock
     private InspectContainerResponse containerInspectResponseMock;
     @Mock
     private BuildImageCmd buildImageCmdMock;
@@ -96,6 +96,8 @@ public class DockerOrchestratorTest {
     private TagImageCmd tagImageCmdMock;
     @Mock
     private PushImageCmd pushImageCmd;
+    @Mock
+    private ListImagesCmd listImagesCmdMock;
     @Mock
     private DockerfileValidator dockerfileValidator;
     @Mock
@@ -136,7 +138,6 @@ public class DockerOrchestratorTest {
         when(repoMock.src(idMock)).thenReturn(srcFileMock);
         when(repoMock.conf(idMock)).thenReturn(confMock);
         when(repoMock.tag(idMock)).thenReturn(IMAGE_NAME);
-        when(repoMock.findImageId(idMock)).thenReturn(IMAGE_ID);
         when(repoMock.containerName(idMock)).thenReturn(CONTAINER_NAME);
         when(repoMock.imageName(idMock)).thenReturn(IMAGE_NAME);
 
@@ -146,7 +147,6 @@ public class DockerOrchestratorTest {
         when(confMock.getTags()).thenReturn(Collections.singletonList(IMAGE_NAME + ":" + TAG_NAME));
         when(confMock.isEnabled()).thenReturn(true);
 
-        when(repoMock.findImageId(idMock)).thenReturn(IMAGE_ID);
         when(containerMock.getId()).thenReturn(CONTAINER_ID);
         when(containerMock.getNames()).thenReturn(new String[0]);
 
@@ -172,7 +172,13 @@ public class DockerOrchestratorTest {
         when(dockerMock.startContainerCmd(CONTAINER_ID)).thenReturn(startContainerCmdMock);
         when(dockerMock.stopContainerCmd(CONTAINER_ID)).thenReturn(stopContainerCmdMock);
         when(dockerMock.removeContainerCmd(CONTAINER_ID)).thenReturn(removeContainerCmdMock);
+        when(dockerMock.listImagesCmd()).thenReturn(listImagesCmdMock);
         when(removeContainerCmdMock.withForce()).thenReturn(removeContainerCmdMock);
+
+        when(listImagesCmdMock.exec()).thenReturn(Collections.singletonList(imageMock));
+
+        when(imageMock.getId()).thenReturn(IMAGE_ID);
+        when(imageMock.getRepoTags()).thenReturn(new String[]{IMAGE_NAME + ":" + TAG_NAME});
 
         when(dockerMock.listContainersCmd()).thenReturn(listContainersCmdMock);
         when(listContainersCmdMock.withShowAll(true)).thenReturn(listContainersCmdMock);

@@ -8,11 +8,7 @@ import com.alexecollins.docker.orchestration.util.TokenReplacingReader;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.model.Image;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
@@ -20,11 +16,8 @@ import java.util.*;
 @SuppressWarnings("CanBeFinal")
 class Repo {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Repo.class);
-
     private static ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory())
             .configure(JsonGenerator.Feature.IGNORE_UNKNOWN, true);
-    private final DockerClient docker;
     private final String user;
     private final String project;
     private final File src;
@@ -34,10 +27,7 @@ class Repo {
      * @param user Name of the repo use. Maybe null.
      */
     @SuppressWarnings("ConstantConditions")
-    Repo(DockerClient docker, String user, String project, File src, Properties properties) {
-        if (docker == null) {
-            throw new IllegalArgumentException("docker is null");
-        }
+    Repo(String user, String project, File src, Properties properties) {
         if (user == null) {
             throw new IllegalArgumentException("user is null");
         }
@@ -55,7 +45,6 @@ class Repo {
         }
 
         this.user = user;
-        this.docker = docker;
         this.project = project;
         this.src = src;
 
@@ -94,26 +83,6 @@ class Repo {
 
     String defaultContainerName(Id id) {
         return "/" + project + "_" + id;
-    }
-
-    public String findImageId(Id id) {
-        String imageTag = tag(id);
-        LOG.debug("Converting {} ({}) to image id.", id, imageTag);
-        List<Image> images = docker.listImagesCmd().exec();
-        for (Image i : images) {
-            for (String tag : i.getRepoTags()) {
-                if (tag.startsWith(imageTag)) {
-                    LOG.debug("Using {} ({}) for {}. It matches (enough) to {}.", new Object[]{
-                            i.getId(),
-                            tag,
-                            id.toString(),
-                            imageTag});
-                    return i.getId();
-                }
-            }
-        }
-        LOG.debug("could not find image ID for \"" + id + "\" (tag \"" + imageTag + "\")");
-        return null;
     }
 
     private File src() {

@@ -67,7 +67,7 @@ public class DockerOrchestrator {
     public DockerOrchestrator(DockerClient docker, File src, File workDir, File rootDir, String user, String project, FileFilter filter, Properties properties, Set<BuildFlag> buildFlags) {
         this(
                 docker,
-                new Repo(docker, user, project, src, properties),
+                new Repo(user, project, src, properties),
                 new FileOrchestrator(workDir, rootDir, filter, properties),
                 buildFlags,
                 DEFAULT_LOGGER,
@@ -158,7 +158,7 @@ public class DockerOrchestrator {
         }
         String imageId = null;
         try {
-            imageId = repo.findImageId(id);
+            imageId = findImageId(id);
         } catch (NotFoundException e) {
             logger.warn("Image " + id + " not found");
         } catch (DockerException e) {
@@ -259,13 +259,33 @@ public class DockerOrchestrator {
                 if (lastIndexOfColon > -1) {
                     String repositoryName = otherTag.substring(0, lastIndexOfColon);
                     String tagName = otherTag.substring(lastIndexOfColon + 1);
-                    docker.tagImageCmd(repo.findImageId(id), repositoryName, tagName).withForce().exec();
+                    docker.tagImageCmd(findImageId(id), repositoryName, tagName).withForce().exec();
                 }
             }
         } catch (DockerException | IOException e) {
             throw new OrchestrationException(e);
         }
 
+    }
+
+    private String findImageId(Id id) {
+        String imageTag = repo.tag(id);
+        logger.debug("Converting {} ({}) to image id.", id, imageTag);
+        List<Image> images = docker.listImagesCmd().exec();
+        for (Image i : images) {
+            for (String tag : i.getRepoTags()) {
+                if (tag.startsWith(imageTag)) {
+                    logger.debug("Using {} ({}) for {}. It matches (enough) to {}.", new Object[]{
+                            i.getId(),
+                            tag,
+                            id.toString(),
+                            imageTag});
+                    return i.getId();
+                }
+            }
+        }
+        logger.debug("could not find image ID for \"" + id + "\" (tag \"" + imageTag + "\")");
+        return null;
     }
 
     private boolean buildQuiet() {
@@ -345,7 +365,7 @@ public class DockerOrchestrator {
     }
 
     private boolean imageExists(Id id) throws DockerException {
-        return repo.findImageId(id) != null;
+        return findImageId(id) != null;
     }
 
     private void removeContainer(Container existingContainer) {
@@ -412,7 +432,7 @@ public class DockerOrchestrator {
     private boolean isImageIdFromContainerMatchingProvidedImageId(String containerId, final Id id) {
         try {
             String containerImageId = lookupImageIdFromContainer(containerId);
-            String imageId = repo.findImageId(id);
+            String imageId = findImageId(id);
             return containerImageId.equals(imageId);
         } catch (DockerException e) {
             logger.error("Unable to find image with id " + id, e);
@@ -446,7 +466,7 @@ public class DockerOrchestrator {
 
     private String createNewContainer(Id id) throws DockerException {
 
-        CreateContainerCmd cmd = docker.createContainerCmd(repo.findImageId(id));
+        CreateContainerCmd cmd = docker.createContainerCmd(findImageId(id));
 
         Conf conf = conf(id);
 
