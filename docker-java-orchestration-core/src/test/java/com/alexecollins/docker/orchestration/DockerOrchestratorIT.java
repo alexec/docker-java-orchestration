@@ -79,7 +79,7 @@ public class DockerOrchestratorIT {
 
     @Test
     public void listsAllDefinintions() throws Exception {
-        assertEquals(Arrays.asList(new Id("image-name"), new Id("busybox"), new Id("disabled"), new Id("mysql"), new Id("app")), orchestrator.ids());
+        assertEquals(Arrays.asList(new Id("image-name"), new Id("busybox"), new Id("image-name-latest"), new Id("disabled"), new Id("mysql"), new Id("app")), orchestrator.ids());
     }
 
     @Test
