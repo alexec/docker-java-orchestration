@@ -8,7 +8,10 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.InternalServerErrorException;
 import com.github.dockerjava.api.NotFoundException;
-import com.github.dockerjava.api.command.*;
+import com.github.dockerjava.api.command.BuildImageCmd;
+import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.command.PushImageCmd;
 import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.api.model.Link;
 import org.slf4j.Logger;
@@ -342,7 +345,7 @@ public class DockerOrchestrator {
                 startContainer(existingContainer.getId());
             }
 
-            try (Tail tail = tailFactory.newTail(docker, repo.findContainer(id), logger)) {
+            try (Tail tail = tailFactory.newTail(docker, findContainer(id), logger)) {
                 tail.start();
 
                 for (Plugin plugin : plugins) {
@@ -378,45 +381,6 @@ public class DockerOrchestrator {
             } else {
                 throw e;
             }
-        }
-    }
-
-    private boolean isPermissionErrorTolerant() {
-        return permissionErrorTolerant;
-    }
-
-    private void outputContainerLog(final Id id) {
-        Container container;
-        try {
-            container = findContainer(id);
-        } catch (DockerException e) {
-            throw new OrchestrationException(e);
-        }
-
-        if (container == null)
-            return;
-
-        try {
-            Conf conf = conf(id);
-
-            if (!conf.isLogOnFailure()) {
-                return;
-            }
-
-            LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId()).withStdErr().withStdOut();
-
-            if (conf.getMaxLogLines() > 0) {
-                logContainerCmd.withTail(conf.getMaxLogLines());
-            }
-
-            InputStream stream = logContainerCmd.exec();
-
-            logger.info(String.format("Logs%s from container %s: %n%s",
-                    (conf.getMaxLogLines() > 0) ? " (max last " + conf.getMaxLogLines() + " lines)" : "",
-                    container.getId(),
-                    Logs.trimDockerLogHeaders(stream)));
-        } catch (Exception e) {
-            logger.warn("Unable to obtain logs from container " + container.getId() + ", will continue: ", e);
         }
     }
 
