@@ -301,6 +301,11 @@ public class DockerOrchestrator {
 
     @SuppressWarnings(("DM_DEFAULT_ENCODING"))
     private void build(File dockerFolder, Id id) {
+
+        if (!repo.dockerfileExists(id)) {
+            throw new IllegalStateException("no Dockerfile exists for " + id);
+        }
+
         try {
 
             String tag = repo.tag(id);

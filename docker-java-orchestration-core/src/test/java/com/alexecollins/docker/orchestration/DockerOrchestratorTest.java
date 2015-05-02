@@ -181,6 +181,7 @@ public class DockerOrchestratorTest {
         when(repoMock.tag(idMock)).thenReturn(IMAGE_NAME);
         when(repoMock.containerName(idMock)).thenReturn(CONTAINER_NAME);
         when(repoMock.imageName(idMock)).thenReturn(IMAGE_NAME);
+        when(repoMock.dockerfileExists(idMock)).thenReturn(true);
 
         when(confMock.getLinks()).thenReturn(new ArrayList<Link>());
         when(confMock.getContainer()).thenReturn(new ContainerConf());
