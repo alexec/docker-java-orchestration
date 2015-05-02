@@ -291,7 +291,11 @@ public class DockerOrchestrator {
         }
         String image = conf.getImage();
         logger.info("Pulling {}", image);
-        docker.pullImageCmd(image).exec();
+        try {
+            docker.pullImageCmd(image).exec().close();
+        } catch (IOException e) {
+            throw new OrchestrationException("failed to pull " + id, e);
+        }
     }
 
     private boolean hasImage(Id id) {
