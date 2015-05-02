@@ -265,7 +265,7 @@ public class DockerOrchestrator {
         logger.info("Starting " + id);
 
         try {
-            if (!repo.imageExists(id)) {
+            if (!imageExists(id)) {
                 logger.info("Image does not exist, so building it");
                 build(id);
             }
@@ -310,6 +310,10 @@ public class DockerOrchestrator {
             if (failed)
                 outputContainerLog(id);
         }
+    }
+
+    private boolean imageExists(Id id) throws DockerException {
+        return repo.findImageId(id) != null;
     }
 
     private void removeContainer(Container existingContainer) {

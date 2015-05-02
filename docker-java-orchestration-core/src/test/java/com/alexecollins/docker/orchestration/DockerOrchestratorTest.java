@@ -204,7 +204,6 @@ public class DockerOrchestratorTest {
 
     @Test
     public void createAndStartNewContainer() throws DockerException, IOException {
-        when(repoMock.imageExists(idMock)).thenReturn(false);
         when(repoMock.findContainer(idMock)).thenReturn(null);
 
         testObj.start();
@@ -215,7 +214,6 @@ public class DockerOrchestratorTest {
 
     @Test
     public void startExistingContainerAsImageIdsMatch() throws DockerException, IOException {
-        when(repoMock.imageExists(idMock)).thenReturn(true);
         when(listContainersCmdMockOnlyRunning.exec()).thenReturn(Collections.<Container>emptyList());
 
         testObj.start();

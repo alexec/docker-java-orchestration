@@ -9,7 +9,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
@@ -134,10 +133,6 @@ class Repo {
         }
         LOG.debug("could not find image ID for \"" + id + "\" (tag \"" + imageTag + "\")");
         return null;
-    }
-
-    boolean imageExists(Id id) throws DockerException {
-        return findImageId(id) != null;
     }
 
     private File src() {
