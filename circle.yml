@@ -14,7 +14,9 @@ machine:
   DOCKER_TLS_VERIFY: 1
 dependencies:
  override: 
-  - mvn install -DskipTests -s settings.xml
+  - mvn install -DskipAdeTests -s settings.xml
+ cache_directories:
+  - ~/.m2/repository
 test:
  override:
   - sudo service mysql stop
