@@ -8,10 +8,8 @@ import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
+import org.junit.rules.TestRule;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +29,8 @@ public class DockerOrchestratorIT {
     private final File src = new File("src/test/docker");
     private final File workDir = new File("target/docker");
     private final File projDir = new File("");
+    @Rule
+    public TestRule testName = new TestLogger();
     private DockerOrchestrator orchestrator;
     private DockerClient docker;
 
