@@ -13,43 +13,8 @@
 
     <name>Docker Java Orchestration Core</name>
 
-    <description>A library for orchestrating Docker containers.</description>
-
-    <url>https://github.com/alexec/docker-java-orchestration</url>
-
-    <licenses>
-        <license>
-            <name>GNU General Public License, version 3 (GPL-3.0)</name>
-        </license>
-    </licenses>
-
-    <developers>
-        <developer>
-            <id>alex.collins</id>
-            <name>Alex Collins</name>
-            <email>alex.e.c@gmail.com</email>
-        </developer>
-    </developers>
-
-    <scm>
-        <connection>scm:git:git@github.com:alexec/docker-java-orchestration.git</connection>
-        <developerConnection>scm:git:git@github.com:alexec/docker-java-orchestration.git</developerConnection>
-        <url>git@github.com:alexec/docker-java-orchestration.git</url>
-        <tag>HEAD</tag>
-    </scm>
-
-    <issueManagement>
-        <system>GitHub</system>
-        <url>https://github.com/alexec/docker-java-orchestration/issues/</url>
-    </issueManagement>
-
-    <ciManagement>
-        <system>travis</system>
-        <url>https://travis-ci.org/alexec/docker-java-orchestration</url>
-    </ciManagement>
-
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jersey.version>2.17</jersey.version>
     </properties>
 
     <dependencies>
@@ -94,5 +59,20 @@
             </exclusions>
         </dependency>
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.glassfish.jersey.connectors</groupId>
+                <artifactId>jersey-apache-connector</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-client</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
 </project>
