@@ -275,7 +275,7 @@ public class DockerOrchestrator {
 
         boolean failed = false;
         try {
-            Container existingContainer = repo.findContainer(id);
+            Container existingContainer = findContainer(id);
 
             if (existingContainer == null) {
                 logger.info("No existing container so creating and starting new one");
@@ -312,6 +312,11 @@ public class DockerOrchestrator {
         }
     }
 
+    private Container findContainer(Id id) {
+        final List<Container> containerIds = repo.findContainers(id, true);
+        return containerIds.isEmpty() ? null : containerIds.get(0);
+    }
+
     private boolean imageExists(Id id) throws DockerException {
         return repo.findImageId(id) != null;
     }
@@ -335,7 +340,7 @@ public class DockerOrchestrator {
     private void outputContainerLog(final Id id) {
         Container container;
         try {
-            container = repo.findContainer(id);
+            container = findContainer(id);
         } catch (DockerException e) {
             throw new OrchestrationException(e);
         }
@@ -479,7 +484,7 @@ public class DockerOrchestrator {
             throw new IllegalArgumentException("id is null");
         }
         boolean running = false;
-        final Container candidate = repo.findContainer(id);
+        final Container candidate = findContainer(id);
         for (Container container : docker.listContainersCmd().withShowAll(false).exec()) {
             running |= candidate != null && candidate.getId().equals(container.getId());
         }
@@ -507,61 +512,12 @@ public class DockerOrchestrator {
         }
     }
 
-    private CreateContainerCmd prepareHostConfig(Id id) {
-        CreateContainerCmd config = docker.createContainerCmd(repo.findImageId(id));
-
-        Conf conf = conf(id);
-
-        config.withPublishAllPorts(true);
-
-        Link[] links = links(id);
-
-        logger.info(" - links " + conf.getLinks());
-        config.withLinks(links);
-
-        List<PortBinding> portBindings = new ArrayList<>();
-        for (String e : conf.getPorts()) {
-
-            final String[] split = e.split(" ");
-
-            assert split.length == 1 || split.length == 2;
-
-            final int hostPort = Integer.parseInt(split[0]);
-            final int containerPort = split.length == 2 ? Integer.parseInt(split[1]) : hostPort;
-
-            logger.info(" - port " + hostPort + "->" + containerPort);
-            portBindings.add(new PortBinding(new Ports.Binding(hostPort),
-                    new ExposedPort(containerPort, InternetProtocol.TCP)));
-        }
-        config.withPortBindings(portBindings.toArray(new PortBinding[portBindings.size()]));
-
-        logger.info(" - volumes " + conf.getVolumes());
-
-        final List<Bind> binds = new ArrayList<>();
-        for (Map.Entry<String, String> entry : conf.getVolumes().entrySet()) {
-            String volumePath = entry.getKey();
-            String hostPath = entry.getValue();
-            File file = new File(hostPath);
-            String path = file.getAbsolutePath();
-            logger.info(" - volumes " + volumePath + " <- " + path);
-            binds.add(new Bind(path, new Volume(volumePath)));
-        }
-
-        config.withBinds(binds.toArray(new Bind[binds.size()]));
-
-        config.withName(repo.containerName(id));
-        logger.info(" - env " + conf.getEnv());
-        config.withEnv(asEnvList(conf.getEnv()));
-
-        return config;
-    }
-
     private Link[] links(Id id) {
         final List<com.alexecollins.docker.orchestration.model.Link> links = conf(id).getLinks();
         final Link[] out = new Link[links.size()];
         for (int i = 0; i < links.size(); i++) {
             com.alexecollins.docker.orchestration.model.Link link = links.get(i);
-            final String name = com.alexecollins.docker.orchestration.util.Links.name(repo.findContainer(link.getId()).getNames());
+            final String name = com.alexecollins.docker.orchestration.util.Links.name(findContainer(link.getId()).getNames());
             final String alias = link.getAlias();
             out[i] = new Link(name, alias);
         }

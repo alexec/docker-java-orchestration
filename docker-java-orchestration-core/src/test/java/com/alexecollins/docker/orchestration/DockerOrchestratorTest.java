@@ -143,7 +143,6 @@ public class DockerOrchestratorTest {
         when(confMock.isEnabled()).thenReturn(true);
 
         when(repoMock.findImageId(idMock)).thenReturn(IMAGE_ID);
-        when(repoMock.findContainer(idMock)).thenReturn(containerMock);
         when(containerMock.getId()).thenReturn(CONTAINER_ID);
 
         when(fileOrchestratorMock.prepare(idMock, srcFileMock, confMock)).thenReturn(fileMock);
@@ -151,6 +150,8 @@ public class DockerOrchestratorTest {
         when(repoMock.ids(false)).thenReturn(Collections.singletonList(idMock));
         when(repoMock.ids(true)).thenReturn(Collections.singletonList(idMock));
         when(repoMock.tag(any(Id.class))).thenReturn(IMAGE_NAME + ":" + TAG_NAME);
+        when(repoMock.findContainers(idMock, true)).thenReturn(Collections.singletonList(containerMock));
+        when(repoMock.findContainers(idMock, false)).thenReturn(Collections.singletonList(containerMock));
 
         when(dockerMock.buildImageCmd(eq(fileMock))).thenReturn(buildImageCmdMock);
         when(buildImageCmdMock.withRemove(anyBoolean())).thenReturn(buildImageCmdMock);
@@ -204,7 +205,7 @@ public class DockerOrchestratorTest {
 
     @Test
     public void createAndStartNewContainer() throws DockerException, IOException {
-        when(repoMock.findContainer(idMock)).thenReturn(null);
+        when(repoMock.findContainers(idMock, true)).thenReturn(Collections.<Container>emptyList());
 
         testObj.start();
 
@@ -245,7 +246,6 @@ public class DockerOrchestratorTest {
 
     @Test
     public void stopARunningContainer() {
-        when(repoMock.findContainers(idMock, false)).thenReturn(Collections.singletonList(containerMock));
         when(stopContainerCmdMock.withTimeout(1)).thenReturn(stopContainerCmdMock);
 
         testObj.stop();
@@ -273,7 +273,6 @@ public class DockerOrchestratorTest {
 
     @Test
     public void pluginStopped() throws Exception {
-        when(repoMock.findContainers(idMock, false)).thenReturn(Collections.singletonList(containerMock));
         TestPlugin testObjPlugin = testObj.getPlugin(TestPlugin.class);
 
         assertNull(testObjPlugin.lastStopped());

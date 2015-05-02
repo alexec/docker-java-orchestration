@@ -109,12 +109,6 @@ class Repo {
         return strings;
     }
 
-    public Container findContainer(Id id) {
-        final List<Container> containerIds = findContainers(id, true);
-        return containerIds.isEmpty() ? null : containerIds.get(0);
-    }
-
-
     public String findImageId(Id id) {
         String imageTag = tag(id);
         LOG.debug("Converting {} ({}) to image id.", id, imageTag);
