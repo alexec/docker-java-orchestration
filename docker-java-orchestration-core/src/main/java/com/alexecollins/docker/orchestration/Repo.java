@@ -114,7 +114,7 @@ class Repo {
         return new File(src, id + "/Dockerfile").exists();
     }
 
-    public String tag(Id id) {
+    String tag(Id id) {
         Conf conf = conf(id);
         return
                 conf.hasTag()

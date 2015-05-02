@@ -272,6 +272,13 @@ public class DockerOrchestrator {
         if (id == null) {
             throw new IllegalArgumentException("id is null");
         }
+        Conf conf = repo.conf(id);
+        if (conf.hasImage()) {
+            String image = conf.getImage();
+            logger.info("Pulling {}", image);
+            docker.pullImageCmd(image).exec();
+            return;
+        }
         try {
             build(prepare(id), id);
         } catch (IOException e) {
