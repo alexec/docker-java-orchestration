@@ -116,10 +116,7 @@ class Repo {
 
     String tag(Id id) {
         Conf conf = conf(id);
-        return
-                conf.hasTag()
-                        ? conf.getTag()
-                        : imageName(id);
+        return conf.hasTag() ? conf.getTag() : imageName(id);
     }
 
     String imageName(Id id) {
