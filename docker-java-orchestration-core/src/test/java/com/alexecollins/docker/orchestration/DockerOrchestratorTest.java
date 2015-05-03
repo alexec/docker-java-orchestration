@@ -314,14 +314,14 @@ public class DockerOrchestratorTest {
     }
 
     @Test
-    public void buildCreatesImageIfConfigured() throws Exception {
+    public void buildDoesNothingImageIfConfigured() throws Exception {
 
         when(repoMock.dockerfileExists(idMock)).thenReturn(false);
         when(confMock.hasImage()).thenReturn(true);
 
         testObj.build();
 
-        verify(pullImageCmdMock).exec();
+        verifyNoMoreInteractions(pullImageCmdMock);
 
     }
 
