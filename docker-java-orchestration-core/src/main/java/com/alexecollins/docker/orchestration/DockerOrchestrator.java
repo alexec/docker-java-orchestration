@@ -290,14 +290,8 @@ public class DockerOrchestrator {
             throw new IllegalStateException("no image for " + id);
         }
         String image = conf.getImage();
-        logger.info("Pulling {}", image);
-        try {
-            try (InputStream inputStream = docker.pullImageCmd(image).exec()) {
-                throwExceptionIfThereIsAnError(inputStream);
-            }
-        } catch (IOException e) {
-            throw new OrchestrationException("failed to pull " + id, e);
-        }
+        logger.info("Creaing image from {}", image);
+        docker.createContainerCmd(image).exec();
     }
 
     private boolean hasImage(Id id) {
