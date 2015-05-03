@@ -292,7 +292,6 @@ public class DockerOrchestrator {
             throw new IllegalArgumentException("id is null");
         }
         if (hasImage(id)) {
-            pull(id);
             return;
         }
         try {
@@ -611,15 +610,18 @@ public class DockerOrchestrator {
 
     private String createNewContainer(Id id) throws DockerException {
 
-        String imageId = findImageId(id);
+        // if the image is not yet found, try and pull it
+        Conf conf = conf(id);
+        if (findImageId(id) == null && conf.hasImage()) {
+            pull(id);
+        }
 
+        String imageId = findImageId(id);
         if (imageId == null) {
             throw new OrchestrationException("unable to find image ID for " + id);
         }
 
         CreateContainerCmd cmd = docker.createContainerCmd(imageId);
-
-        Conf conf = conf(id);
 
         cmd.withPublishAllPorts(true);
         cmd.withPrivileged(conf.isPrivileged());
