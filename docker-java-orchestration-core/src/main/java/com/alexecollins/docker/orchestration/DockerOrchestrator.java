@@ -292,7 +292,9 @@ public class DockerOrchestrator {
         String image = conf.getImage();
         logger.info("Pulling {}", image);
         try {
-            docker.pullImageCmd(image).exec().close();
+            try (InputStream inputStream = docker.pullImageCmd(image).exec()) {
+                throwExceptionIfThereIsAnError(inputStream);
+            }
         } catch (IOException e) {
             throw new OrchestrationException("failed to pull " + id, e);
         }
@@ -369,7 +371,7 @@ public class DockerOrchestrator {
         logger.debug("Converting {} ({}) to image id.", id, imageTag);
         List<Image> images = docker.listImagesCmd().exec();
         for (Image image : images) {
-            logger.debug("Examining image {} with tags {} to see if it matches {} (who's tag is {}, image is {})",
+            logger.debug("Examining image {} with tags {} to see if it matches {} (who's tag is {})",
                     new Object[]{image.getId(), Arrays.toString(image.getRepoTags()), id, imageTag});
             for (String tag : image.getRepoTags()) {
                 if (tag.startsWith(imageTag) || TagMatcher.matches(tag, conf(id))) {
@@ -816,13 +818,12 @@ public class DockerOrchestrator {
     }
 
     private void throwExceptionIfThereIsAnError(InputStream exec) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(exec))) {
-            String l;
-            while ((l = reader.readLine()) != null) {
-                logger.info(l);
-                if (l.startsWith("{\"errorDetail")) {
-                    throw new OrchestrationException(extractMessage(l));
-                }
+        BufferedReader reader = new BufferedReader(new InputStreamReader(exec));
+        String l;
+        while ((l = reader.readLine()) != null) {
+            logger.info(l);
+            if (l.startsWith("{\"error")) {
+                throw new OrchestrationException(extractMessage(l));
             }
         }
     }
