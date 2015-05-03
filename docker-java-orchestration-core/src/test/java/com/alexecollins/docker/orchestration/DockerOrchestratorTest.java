@@ -31,6 +31,24 @@ import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.PushEventStreamItem;
+import com.github.dockerjava.api.command.BuildImageCmd;
+import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.InspectContainerCmd;
+import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.command.ListContainersCmd;
+import com.github.dockerjava.api.command.ListImagesCmd;
+import com.github.dockerjava.api.command.PullImageCmd;
+import com.github.dockerjava.api.command.PushImageCmd;
+import com.github.dockerjava.api.command.RemoveContainerCmd;
+import com.github.dockerjava.api.command.StartContainerCmd;
+import com.github.dockerjava.api.command.StopContainerCmd;
+import com.github.dockerjava.api.command.TagImageCmd;
+import com.github.dockerjava.api.model.AuthConfig;
+import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.model.ContainerConfig;
+import com.github.dockerjava.api.model.Image;
+import com.github.dockerjava.api.model.PushEventStreamItem;
 import com.github.dockerjava.jaxrs.BuildImageCmdExec;
 import com.google.common.base.Charsets;
 import org.apache.commons.io.IOUtils;
@@ -62,6 +80,20 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyInt;
@@ -289,7 +321,7 @@ public class DockerOrchestratorTest {
 
         testObj.build();
 
-        verify(createContainerCmdMock).exec();
+        verify(pullImageCmdMock).exec();
 
     }
 
