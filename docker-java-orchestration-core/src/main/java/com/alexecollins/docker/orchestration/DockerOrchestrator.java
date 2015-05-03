@@ -309,12 +309,9 @@ public class DockerOrchestrator {
             throw new IllegalStateException("no image for " + id);
         }
         String image = conf.getImage();
-        logger.info("Creaing image from {}", image);
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(docker.pullImageCmd(image).exec()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                logger.info(line);
-            }
+        logger.info("Pulling {}", image);
+        try (InputStream inputStream = docker.pullImageCmd(image).exec()) {
+            throwExceptionIfThereIsAnError(inputStream);
         } catch (IOException e) {
             throw new OrchestrationException(e);
         }
@@ -842,7 +839,7 @@ public class DockerOrchestrator {
         String l;
         while ((l = reader.readLine()) != null) {
             logger.info(l);
-            if (l.startsWith("{\"error")) {
+            if (l.startsWith("{\"error") || l.startsWith("{\"status\":\"Error")) {
                 throw new OrchestrationException(extractMessage(l));
             }
         }
