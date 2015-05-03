@@ -212,6 +212,7 @@ public class DockerOrchestratorTest {
         when(buildImageCmdMock.exec()).thenReturn(new BuildImageCmdExec.ResponseImpl(IOUtils.toInputStream("Successfully built")));
 
         when(dockerMock.createContainerCmd(IMAGE_ID)).thenReturn(createContainerCmdMock);
+        when(dockerMock.createContainerCmd(IMAGE_NAME)).thenReturn(createContainerCmdMock);
         when(createContainerCmdMock.exec()).thenReturn(createContainerResponse);
         when(createContainerCmdMock.withName(eq(CONTAINER_NAME))).thenReturn(createContainerCmdMock);
 
@@ -281,7 +282,7 @@ public class DockerOrchestratorTest {
     }
 
     @Test
-    public void buildPullsImageIfConfigured() throws Exception {
+    public void buildCreatesImageIfConfigured() throws Exception {
 
         when(repoMock.dockerfileExists(idMock)).thenReturn(false);
         when(confMock.hasImage()).thenReturn(true);
