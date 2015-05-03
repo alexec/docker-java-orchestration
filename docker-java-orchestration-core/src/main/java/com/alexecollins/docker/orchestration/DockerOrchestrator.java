@@ -369,7 +369,7 @@ public class DockerOrchestrator {
     private String findImageId(Id id) {
         String imageTag = repo.tag(id);
         logger.debug("Converting {} ({}) to image id.", id, imageTag);
-        List<Image> images = docker.listImagesCmd().exec();
+        List<Image> images = docker.listImagesCmd().withShowAll(true).exec();
         for (Image image : images) {
             logger.debug("Examining image {} with tags {} to see if it matches {} (who's tag is {})",
                     new Object[]{image.getId(), Arrays.toString(image.getRepoTags()), id, imageTag});
