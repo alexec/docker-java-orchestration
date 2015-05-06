@@ -3,7 +3,13 @@ package com.alexecollins.docker.orchestration.util;
 
 import org.apache.commons.io.IOUtils;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.Comparator;
 import java.util.Properties;
 import java.util.TreeSet;
