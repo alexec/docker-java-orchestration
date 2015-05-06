@@ -8,7 +8,11 @@ import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TestRule;
 
 import java.io.File;
@@ -79,7 +83,8 @@ public class DockerOrchestratorIT {
 
     @Test
     public void listsAllDefinitions() throws Exception {
-        assertEquals(Arrays.asList(new Id("image-name"), new Id("busybox"), new Id("image-name-latest"), new Id("disabled"), new Id("mysql"), new Id("app")), orchestrator.ids());
+        assertEquals(Arrays.asList(new Id("busybox"), new Id("disabled"), new Id("image-name"),
+                new Id("image-name-latest"), new Id("mysql"), new Id("app")), orchestrator.ids());
     }
 
     @Test
@@ -137,6 +142,7 @@ public class DockerOrchestratorIT {
 
     @Test
     public void startingSmokesAndDoesNotStartDisabledContainer() throws Exception {
+        orchestrator.build();
         orchestrator.start();
 
         assertThat(orchestrator.getPlugin(TestPlugin.class).getStarted(), not(hasItem(new Id("disabled"))));
