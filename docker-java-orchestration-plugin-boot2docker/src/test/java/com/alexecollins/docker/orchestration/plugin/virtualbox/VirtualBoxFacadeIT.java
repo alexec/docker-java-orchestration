@@ -13,7 +13,7 @@ public class VirtualBoxFacadeIT {
 
     @After
     public void tearDown() throws Exception {
-        if (!OS.isUnix()) {
+        if (OS.isNotUnix()) {
             virtualBoxFacade.deletePortForward(PORT);
         }
     }
@@ -21,7 +21,7 @@ public class VirtualBoxFacadeIT {
     @Test
     public void canCreateAndDeletePortForward() throws Exception {
 
-        if (!OS.isUnix()) {
+        if (OS.isNotUnix()) {
             virtualBoxFacade.createPortForward(PORT);
             assertTrue(virtualBoxFacade.getPortForwards().contains(PORT));
             virtualBoxFacade.recreatePortForward(PORT);

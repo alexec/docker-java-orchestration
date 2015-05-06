@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 public class Boot2DockerPlugin implements Plugin {
     private static final Logger LOGGER = LoggerFactory.getLogger(Boot2DockerPlugin.class);
-    private final boolean skip = !isEnabled();
+    private final boolean skip = isDisabled();
     private final VirtualBoxFacade virtualBoxFacade = new VirtualBoxFacade();
     private final String skipReason = "host is Unix like";
 
@@ -39,7 +39,7 @@ public class Boot2DockerPlugin implements Plugin {
         }
     }
 
-    private boolean isEnabled() {
-        return !OS.isUnix();
+    private boolean isDisabled() {
+        return !OS.isNotUnix();
     }
 }
