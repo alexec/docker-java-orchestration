@@ -1,0 +1,10 @@
+filter:
+  packaging:
+    add:
+    - ${testFile.path}
+    - path: ${testFile.path}
+      filter: false
+app:
+  packaging:
+    add:
+      - example-${project.version}.jar
