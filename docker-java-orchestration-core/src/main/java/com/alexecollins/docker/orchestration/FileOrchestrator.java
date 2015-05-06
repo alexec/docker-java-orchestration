@@ -12,7 +12,9 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.Properties;
 
-import static org.apache.commons.io.FileUtils.*;
+import static org.apache.commons.io.FileUtils.copyDirectory;
+import static org.apache.commons.io.FileUtils.copyDirectoryToDirectory;
+import static org.apache.commons.io.FileUtils.copyFileToDirectory;
 
 class FileOrchestrator {
 
