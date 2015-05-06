@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -137,15 +136,12 @@ class Repo {
 
     List<Id> ids(boolean reverse) {
 
-        final List<Id> in = new LinkedList<>(confs.keySet());
-
-        final Map<Id, List<Id>> links = new HashMap<>();
-        for (Id id : in) {
+        final Map<Id, List<Id>> links = new LinkedHashMap<>();
+        for (Id id : confs.keySet()) {
             links.put(id, com.alexecollins.docker.orchestration.util.Links.ids(confs.get(id).getLinks()));
         }
 
         final List<Id> out = sort(links);
-
         if (reverse) {
             Collections.reverse(out);
         }
