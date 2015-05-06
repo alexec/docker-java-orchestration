@@ -3,15 +3,12 @@ package com.alexecollins.docker.orchestration;
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.ContainerConf;
 import com.alexecollins.docker.orchestration.model.Id;
+import com.alexecollins.docker.orchestration.util.PropertiesTokenResolver;
+import com.alexecollins.docker.orchestration.util.TokenReplacingReader;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.DockerException;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.Image;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -25,15 +22,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static java.util.Arrays.asList;
-
 @SuppressWarnings("CanBeFinal")
 class Repo {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Repo.class);
-
-    private static ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
-    private final DockerClient docker;
+    private static ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory())
+            .configure(JsonGenerator.Feature.IGNORE_UNKNOWN, true);
     private final String user;
     private final String project;
     private final File src;
@@ -43,10 +36,7 @@ class Repo {
      * @param user Name of the repo use. Maybe null.
      */
     @SuppressWarnings("ConstantConditions")
-    Repo(DockerClient docker, String user, String project, File src, Properties properties) {
-        if (docker == null) {
-            throw new IllegalArgumentException("docker is null");
-        }
+    Repo(String user, String project, File src, Properties properties) {
         if (user == null) {
             throw new IllegalArgumentException("user is null");
         }
@@ -189,8 +179,7 @@ class Repo {
 
         final List<Id> in = new LinkedList<>(confs.keySet());
 
-        // keep in order
-        final Map<Id, List<Id>> links = new LinkedHashMap<>();
+        final Map<Id, List<Id>> links = new HashMap<>();
         for (Id id : in) {
             links.put(id, com.alexecollins.docker.orchestration.util.Links.ids(confs.get(id).getLinks()));
         }

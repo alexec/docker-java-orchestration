@@ -93,7 +93,7 @@ public class DockerOrchestratorBuilder {
     public DockerOrchestrator build() {
         return new DockerOrchestrator(
                 docker,
-                new Repo(docker, user, project, src, properties),
+                new Repo(user, project, src, properties),
                 new FileOrchestrator(workDir, rootDir, filter, properties),
                 buildFlags,
                 logger,

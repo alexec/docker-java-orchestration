@@ -36,7 +36,7 @@ public class RepoTest {
     public RepoTest(String child) {
         Properties properties = new Properties();
         properties.setProperty("project.version", PROJECT_VERSION);
-        this.sut = new Repo(mock(DockerClient.class), "test", "test", new File("src/test", child), properties);
+        sut = new Repo("test", "test", new File("src/test/docker-repo"), properties);
     }
 
     @Parameterized.Parameters(name = "{0}")
