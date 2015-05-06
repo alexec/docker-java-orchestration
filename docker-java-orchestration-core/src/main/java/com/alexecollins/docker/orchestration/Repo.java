@@ -3,18 +3,18 @@ package com.alexecollins.docker.orchestration;
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.ContainerConf;
 import com.alexecollins.docker.orchestration.model.Id;
-import com.alexecollins.docker.orchestration.util.PropertiesTokenResolver;
-import com.alexecollins.docker.orchestration.util.TokenReplacingReader;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -25,6 +25,7 @@ import java.util.Properties;
 @SuppressWarnings("CanBeFinal")
 class Repo {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Repo.class);
     private static ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory())
             .configure(JsonGenerator.Feature.IGNORE_UNKNOWN, true);
     private final String user;
@@ -54,7 +55,6 @@ class Repo {
         }
 
         this.user = user;
-        this.docker = docker;
         this.project = project;
         this.src = src;
 
@@ -113,7 +113,7 @@ class Repo {
                         : imageName(id);
     }
 
-    private String imageName(Id id) {
+    String imageName(Id id) {
         return user + "/" + project + "_" + id;
     }
 
@@ -122,48 +122,8 @@ class Repo {
         return container.hasName() ? container.getName() : defaultContainerName(id);
     }
 
-    private String defaultContainerName(Id id) {
+    String defaultContainerName(Id id) {
         return "/" + project + "_" + id;
-    }
-
-    List<Container> findContainers(Id id, boolean allContainers) {
-        final List<Container> strings = new ArrayList<>();
-        for (Container container : docker.listContainersCmd().withShowAll(allContainers).exec()) {
-            if (container.getImage().equals(imageName(id)) || asList(container.getNames()).contains(containerName(id))) {
-                strings.add(container);
-            }
-        }
-        return strings;
-    }
-
-    public Container findContainer(Id id) {
-        final List<Container> containerIds = findContainers(id, true);
-        return containerIds.isEmpty() ? null : containerIds.get(0);
-    }
-
-
-    public String findImageId(Id id) {
-        String imageTag = tag(id);
-        LOG.debug("Converting {} ({}) to image id.", id, imageTag);
-        List<Image> images = docker.listImagesCmd().exec();
-        for (Image i : images) {
-            for (String tag : i.getRepoTags()) {
-                if (tag.startsWith(imageTag)) {
-                    LOG.debug("Using {} ({}) for {}. It matches (enough) to {}.", new Object[]{
-                            i.getId(),
-                            tag,
-                            id.toString(),
-                            imageTag});
-                    return i.getId();
-                }
-            }
-        }
-        LOG.debug("could not find image ID for \"" + id + "\" (tag \"" + imageTag + "\")");
-        return null;
-    }
-
-    boolean imageExists(Id id) throws DockerException {
-        return findImageId(id) != null;
     }
 
     private File src() {
