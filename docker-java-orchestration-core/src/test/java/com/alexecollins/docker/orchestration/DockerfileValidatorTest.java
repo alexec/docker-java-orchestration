@@ -18,7 +18,7 @@ public class DockerfileValidatorTest {
 
     @Test
     public void filterAddFilePassesValidation() throws Exception {
-        validator.validate(new File("src/test/docker-repo/filter"));
+        validator.validate(new File("src/test/docker-repo-v1/filter"));
     }
 
     @Test

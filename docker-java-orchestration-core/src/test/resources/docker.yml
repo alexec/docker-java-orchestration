@@ -1,0 +1,4 @@
+app:
+  packaging:
+    add:
+    - ${test}
