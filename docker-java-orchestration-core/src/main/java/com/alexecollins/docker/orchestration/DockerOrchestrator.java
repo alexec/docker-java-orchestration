@@ -16,7 +16,6 @@ import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
-import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Container;
@@ -385,7 +384,7 @@ public class DockerOrchestrator {
 
                 tail.setMaxLines(conf(id).getMaxLogLines());
             }
-        } catch (DockerException | InterruptedException | IOException e) {
+        } catch (DockerException e) {
             throw new OrchestrationException(e);
         }
     }

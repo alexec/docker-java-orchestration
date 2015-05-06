@@ -4,6 +4,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.core.command.FrameReader;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -47,8 +48,12 @@ class Tail extends Thread implements AutoCloseable {
     }
 
     @Override
-    public void close() throws IOException, InterruptedException {
+    public void close() {
         cancelled = true;
-        inputStream.close();
+        try {
+            IOUtils.closeQuietly(inputStream);
+        } catch (IndexOutOfBoundsException ignored) {
+
+        }
     }
 }
