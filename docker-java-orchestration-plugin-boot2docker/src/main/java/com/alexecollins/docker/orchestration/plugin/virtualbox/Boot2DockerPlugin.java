@@ -20,7 +20,7 @@ public class Boot2DockerPlugin implements Plugin {
     @Override
     public void started(Id id, Conf conf) {
         if (skip) {
-            LOGGER.info("skipping Boot2Docker set-up because " + skipReason);
+            LOGGER.info("Skipping Boot2Docker set-up because " + skipReason);
             return;
         }
         for (String stringPort : conf.getPorts()) {
@@ -31,7 +31,7 @@ public class Boot2DockerPlugin implements Plugin {
     @Override
     public void stopped(Id id, Conf conf) {
         if (skip) {
-            LOGGER.info("skipping because " + skipReason);
+            LOGGER.info("Skipping Boot2Docker tear-down because " + skipReason);
             return;
         }
         for (String stringPort : conf.getPorts()) {
