@@ -3,7 +3,6 @@ package com.alexecollins.docker.orchestration;
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.model.Packaging;
-import com.github.dockerjava.api.DockerClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -22,7 +21,6 @@ import static org.hamcrest.CoreMatchers.hasItems;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
 
 
 @RunWith(Parameterized.class)
@@ -36,7 +34,7 @@ public class RepoTest {
     public RepoTest(String child) {
         Properties properties = new Properties();
         properties.setProperty("project.version", PROJECT_VERSION);
-        sut = new Repo("test", "test", new File("src/test/docker-repo"), properties);
+        sut = new Repo("test", "test", new File("src/test", child), properties);
     }
 
     @Parameterized.Parameters(name = "{0}")
