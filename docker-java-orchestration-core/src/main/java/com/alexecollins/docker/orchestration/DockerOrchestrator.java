@@ -16,6 +16,7 @@ import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Container;
@@ -26,6 +27,8 @@ import com.github.dockerjava.api.model.Link;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.Volume;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +50,8 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import static java.util.Arrays.asList;
 
@@ -346,6 +351,7 @@ public class DockerOrchestrator {
         if (id == null) {
             throw new IllegalArgumentException("id is null");
         }
+        final Pattern waitForPattern = compileWaitForPattern(id);
 
         logger.info("Starting " + id);
 
@@ -391,9 +397,25 @@ public class DockerOrchestrator {
 
                 tail.setMaxLines(conf(id).getMaxLogLines());
             }
+            waitFor(id,waitForPattern);
         } catch (DockerException e) {
             throw new OrchestrationException(e);
         }
+    }
+
+    private Pattern compileWaitForPattern(Id id) {
+        final String waitForRegex = conf(id).getWaitForLine();
+        final Pattern waitForPattern;
+        if (StringUtils.isNotBlank(waitForRegex)) {
+            try {
+                waitForPattern = Pattern.compile(waitForRegex);
+            } catch ( final PatternSyntaxException e ) {
+                throw new OrchestrationException(e);
+            }
+        } else {
+            waitForPattern = null;
+        }
+        return waitForPattern;
     }
 
     private Container findContainer(Id id) {
@@ -420,10 +442,56 @@ public class DockerOrchestrator {
     private void sleep(Id id) {
         try {
             int sleep = conf(id).getSleep();
+            if (sleep == 0) {
+                return;
+            }
             logger.info(String.format("Sleeping for %dms", sleep));
             Thread.sleep(sleep);
         } catch (InterruptedException e) {
             throw new OrchestrationException(e);
+        }
+    }
+
+    private void waitFor(Id id, Pattern pattern) {
+        if (pattern == null) {
+            return;
+        }
+
+        final StopWatch watch = new StopWatch();
+        watch.start();
+        logger.info(String.format("Waiting for '%s' to appear in output", pattern.toString()));
+
+        final Container container;
+
+        try {
+            container = findContainer(id);
+        } catch (DockerException e) {
+            throw new OrchestrationException(e);
+        }
+
+        if (container == null) {
+            logger.warn(String.format("Can not find container %s, not waiting", id));
+            return;
+        }
+
+        try {
+            final LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId()).withStdErr().withStdOut().withFollowStream().withTimestamps();
+
+            final InputStream stream = logContainerCmd.exec();
+
+            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (pattern.matcher(line).find()) {
+                        watch.stop();
+                        logger.info(String.format("Waited for %s", watch.toString()));
+                        return;
+                    }
+                }
+                throw new OrchestrationException("Container log ended before line appeared in output");
+            }
+        } catch (Exception e) {
+            logger.warn("Unable to obtain logs from container " + container.getId() + ", will continue without waiting: ", e);
         }
     }
 
