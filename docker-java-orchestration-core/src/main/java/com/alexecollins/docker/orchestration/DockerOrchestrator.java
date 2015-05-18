@@ -541,6 +541,11 @@ public class DockerOrchestrator {
         logger.info(" - env " + conf.getEnv());
         cmd.withEnv(asEnvList(conf.getEnv()));
 
+        if (!conf.getExtraHosts().isEmpty()) {
+            cmd.withExtraHosts(conf.getExtraHosts().toArray(new String[0]));
+            logger.info(" - extra hosts " + conf.getExtraHosts());
+        }
+
         return cmd.exec().getId();
     }
 
