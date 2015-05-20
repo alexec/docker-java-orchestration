@@ -6,7 +6,11 @@ Change Log
 * [DMP Issue 51](https://github.com/alexec/docker-maven-plugin/issues/51) Enhancement: ability to set container name.
 * [DMP Issue 54](https://github.com/alexec/docker-maven-plugin/issues/54) Problems with port forwarding on Windows.
 * [DJO Pull 25](https://github.com/alexec/docker-java-orchestration/pull/25) Added support for `src/main/docker/docker.yml` as a single global configuration file.
-* [DJO Pull 26](https://github.com/alexec/docker-java-orchestration/pull/26) Enhancement: Added test for a new configuration property `enable` which allows you to disabled/enabled containers.
+* [DJO Pull 27](https://github.com/alexec/docker-java-orchestration/pull/27) Enhancement: Improved logging.
+* [DJO Pull 28](https://github.com/alexec/docker-java-orchestration/pull/28) Enhancement: Enabled/disable containers.
+* [DJO Pull 33](https://github.com/alexec/docker-java-orchestration/pull/33) Enhancement: Image names. 
+* [DJO Pull 34](https://github.com/alexec/docker-java-orchestration/pull/34) Enhancement: Support extra hosts.
+* [DJO Pull 35](https://github.com/alexec/docker-java-orchestration/pull/35) Enhancement: Upgrade to docker-java:1.3.0.
 * Other: removed un-needed code.
 
 2.8.3
