@@ -68,6 +68,7 @@ public class DockerOrchestratorTest {
 
     private static final String TAG_NAME = "test-tag";
     private final static Logger LOGGER = (Logger) LoggerFactory.getLogger(DockerOrchestrator.class);
+    public static final String EXTRA_HOST = "foo:127.0.0.1";
     @SuppressWarnings("unchecked")
     private final Appender<ILoggingEvent> appender = mock(Appender.class);
     private final ArgumentCaptor<ILoggingEvent> captor = ArgumentCaptor.forClass(ILoggingEvent.class);
@@ -167,6 +168,9 @@ public class DockerOrchestratorTest {
         when(confMock.getHealthChecks()).thenReturn(new HealthChecks());
         when(confMock.getTags()).thenReturn(Collections.singletonList(IMAGE_NAME + ":" + TAG_NAME));
         when(confMock.isEnabled()).thenReturn(true);
+        final List<String> extraHosts = new ArrayList<>();
+        extraHosts.add(EXTRA_HOST);
+        when(confMock.getExtraHosts()).thenReturn(extraHosts);
 
         when(containerMock.getId()).thenReturn(CONTAINER_ID);
         when(containerMock.getNames()).thenReturn(new String[0]);
@@ -244,6 +248,7 @@ public class DockerOrchestratorTest {
         testObj.start();
 
         verify(createContainerCmdMock).exec();
+        verify(createContainerCmdMock).withExtraHosts(EXTRA_HOST);
         verify(startContainerCmdMock).exec();
     }
 
