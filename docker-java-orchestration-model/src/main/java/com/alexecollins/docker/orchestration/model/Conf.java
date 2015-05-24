@@ -32,6 +32,7 @@ public class Conf {
     private Map<String, String> volumes = new HashMap<>();
     private boolean enabled = true;
     private boolean exposeContainerIp = true;
+    private List<String> extraHosts = new ArrayList<>();
 
     public Conf() {
     }
