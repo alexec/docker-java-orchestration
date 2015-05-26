@@ -5,6 +5,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -46,5 +48,10 @@ public class ConfTest {
     @Test
     public void enabled() throws Exception {
         assertEquals(true, conf.isEnabled());
+    }
+
+    @Test
+    public void volumes() throws Exception {
+        assertEquals(Collections.singletonMap("foo", "bar"), conf.getVolumes());
     }
 }
