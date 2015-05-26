@@ -55,7 +55,17 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DockerOrchestratorTest {
@@ -340,7 +350,6 @@ public class DockerOrchestratorTest {
         verify(dockerMock).tagImageCmd(IMAGE_ID, repositoryWithRegistryAndPort, TAG_NAME);
     }
 
-
     @Test
     public void pushImage() {
         testObj.push();
@@ -349,65 +358,14 @@ public class DockerOrchestratorTest {
     }
 
     @Test
-    public void pushImageSimpleNameAndTag() {
-        String name = "myrepository";
-        String nameAndTag = name + ":" + TAG_NAME;
-
-        when(confMock.getTags()).thenReturn(Collections.singletonList(nameAndTag));
-
-        testObj.push();
-
-        verify(dockerMock).pushImageCmd(name);
-        verify(pushImageCmd).withTag(TAG_NAME);
-    }
-
-    @Test
-    public void pushImageWithoutRegistryAndPortAndTag() {
-        String repositoryWithoutRegistry = "mynamespace/myrepository";
-        String repositoryWithoutRegistryAndTag = repositoryWithoutRegistry + ":" + TAG_NAME;
-
-        when(confMock.getTags()).thenReturn(Collections.singletonList(repositoryWithoutRegistryAndTag));
-
-        testObj.push();
-
-        verify(dockerMock).pushImageCmd(repositoryWithoutRegistry);
-        verify(pushImageCmd).withTag(TAG_NAME);
-    }
-
-    @Test
-    public void pushImageWithRegistryAndPortAndTag() {
-        String repositoryWithRegistryAndPort = "my.registry.com:5000/mynamespace/myrepository";
-
-        when(confMock.getTags()).thenReturn(Collections.singletonList(repositoryWithRegistryAndPort + ":" + TAG_NAME));
-
-        testObj.push();
-
-        verify(dockerMock).pushImageCmd(repositoryWithRegistryAndPort);
-        verify(pushImageCmd).withTag(TAG_NAME);
-    }
-
-    @Test
     public void pushImageWithRegistryAndPort() {
         String repositoryWithRegistryAndPort = "my.registry.com:5000/mynamespace/myrepository";
-        when(confMock.getTags()).thenReturn(Collections.singletonList(repositoryWithRegistryAndPort));
+
+        when(repoMock.tag(idMock)).thenReturn(repositoryWithRegistryAndPort + ":" + TAG_NAME);
 
         testObj.push();
 
         verify(dockerMock).pushImageCmd(repositoryWithRegistryAndPort);
-        verify(pushImageCmd, never()).withTag(TAG_NAME);
-    }
-
-    @Test
-    public void pushImageWithRegistryAndTag() {
-        String repositoryWithRegistry = "my.registry.com/mynamespace/myrepository";
-        String repositoryWithRegistryAndTag = repositoryWithRegistry + ":" + TAG_NAME;
-
-        when(confMock.getTags()).thenReturn(Collections.singletonList(repositoryWithRegistryAndTag));
-
-        testObj.push();
-
-        verify(dockerMock).pushImageCmd(repositoryWithRegistry);
-        verify(pushImageCmd, times(1)).withTag(TAG_NAME);
     }
 
     @Test
