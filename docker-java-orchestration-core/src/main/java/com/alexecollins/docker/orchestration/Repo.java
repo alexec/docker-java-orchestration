@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -102,7 +103,9 @@ class Repo {
     }
 
     private void ensureEmptyFolderConfs(File src) {
-        for (File file : src.listFiles((FileFilter) DirectoryFileFilter.INSTANCE)) {
+        File[] files = src.listFiles((FileFilter) DirectoryFileFilter.INSTANCE);
+        Arrays.sort(files);
+        for (File file : files) {
             Id id = new Id(file.getName());
             if (!confs.containsKey(id)) {
                 confs.put(id, new Conf());
