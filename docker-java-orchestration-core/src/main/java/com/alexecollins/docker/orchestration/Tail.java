@@ -23,7 +23,6 @@ class Tail extends Thread implements AutoCloseable {
                 .logContainerCmd(container.getId())
                 .withStdErr()
                 .withStdOut()
-                .withFollowStream()
                 .withTailAll().exec();
     }
 
