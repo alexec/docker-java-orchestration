@@ -674,12 +674,13 @@ public class DockerOrchestrator {
     }
 
     private void throwExceptionIfThereIsAnError(InputStream exec) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(exec));
-        String l;
-        while ((l = reader.readLine()) != null) {
-            logger.info(l);
-            if (l.startsWith("{\"errorDetail")) {
-                throw new OrchestrationException(extractMessage(l));
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(exec))) {
+            String l;
+            while ((l = reader.readLine()) != null) {
+                logger.info(l);
+                if (l.startsWith("{\"errorDetail")) {
+                    throw new OrchestrationException(extractMessage(l));
+                }
             }
         }
     }
