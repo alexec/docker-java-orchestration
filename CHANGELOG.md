@@ -1,6 +1,6 @@
 Change Log
 ===
-2.8.3
+2.9.3
 
 * [DMP Issue 67](https://github.com/alexec/docker-maven-plugin/issues/67) Enhancement: Support privileged containers.
 
