@@ -132,6 +132,10 @@ public class DockerOrchestratorTest {
     private DockerfileValidator dockerfileValidator;
     @Mock
     private DefinitionFilter definitionFilter;
+    @Mock
+    private Tail tailMock;
+    @Mock
+    private TailFactory tailFactoryMock;
     private DockerOrchestrator testObj;
 
     private static TypeSafeMatcher<ILoggingEvent> loggedMessage(final String message) {
@@ -160,7 +164,7 @@ public class DockerOrchestratorTest {
                 fileOrchestratorMock,
                 EnumSet.noneOf(BuildFlag.class),
                 LOGGER,
-                // tailFactory,
+                tailFactoryMock,
                 dockerfileValidator,
                 definitionFilter,
                 false);
@@ -246,6 +250,7 @@ public class DockerOrchestratorTest {
         });
 
         when(definitionFilter.test(any(Id.class), any(Conf.class))).thenReturn(true);
+        when(tailFactoryMock.newTail(any(DockerClient.class), any(Container.class), any(Logger.class))).thenReturn(tailMock);
     }
 
     @Test

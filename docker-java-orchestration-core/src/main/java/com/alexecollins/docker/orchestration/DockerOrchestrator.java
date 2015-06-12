@@ -8,7 +8,6 @@ import com.alexecollins.docker.orchestration.model.HealthChecks;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.model.Ping;
 import com.alexecollins.docker.orchestration.plugin.api.Plugin;
-import com.alexecollins.docker.orchestration.util.Logs;
 import com.alexecollins.docker.orchestration.util.Pinger;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
@@ -17,7 +16,6 @@ import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
-import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Container;
@@ -72,6 +70,7 @@ public class DockerOrchestrator {
 
     private final Logger logger;
     private final DockerClient docker;
+    private final TailFactory tailFactory;
     private final Repo repo;
 
     private final FileOrchestrator fileOrchestrator;
@@ -101,12 +100,13 @@ public class DockerOrchestrator {
                 new FileOrchestrator(workDir, rootDir, filter, properties),
                 buildFlags,
                 DEFAULT_LOGGER,
+                TailFactory.DEFAULT,
                 new DockerfileValidator(),
                 DefinitionFilter.ANY,
                 false);
     }
 
-    DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Set<BuildFlag> buildFlags, Logger logger, DockerfileValidator dockerfileValidator, DefinitionFilter definitionFilter, boolean permissionErrorTolerant) {
+    DockerOrchestrator(DockerClient docker, Repo repo, FileOrchestrator fileOrchestrator, Set<BuildFlag> buildFlags, Logger logger, TailFactory tailFactory, DockerfileValidator dockerfileValidator, DefinitionFilter definitionFilter, boolean permissionErrorTolerant) {
         if (docker == null) {
             throw new IllegalArgumentException("docker is null");
         }
@@ -127,6 +127,7 @@ public class DockerOrchestrator {
         }
 
         this.docker = docker;
+        this.tailFactory = tailFactory;
         this.repo = repo;
         this.fileOrchestrator = fileOrchestrator;
         this.buildFlags = buildFlags;
@@ -350,7 +351,6 @@ public class DockerOrchestrator {
             throw new OrchestrationException(e);
         }
 
-        boolean failed = false;
         try {
             Container existingContainer = findContainer(id);
 
@@ -371,21 +371,21 @@ public class DockerOrchestrator {
                 startContainer(existingContainer.getId());
             }
 
-            for (Plugin plugin : plugins) {
-                plugin.started(id, conf(id));
-            }
+            try (Tail tail = tailFactory.newTail(docker, findContainer(id), logger)) {
+                tail.start();
 
-            healthCheck(id);
-            sleep(id);
+                for (Plugin plugin : plugins) {
+                    plugin.started(id, conf(id));
+                }
+
+                healthCheck(id);
+
+                sleep(id);
+
+                tail.setMaxLines(conf(id).getMaxLogLines());
+            }
         } catch (DockerException e) {
-            failed = true;
             throw new OrchestrationException(e);
-        } catch (OrchestrationException e) {
-            failed = true;
-            throw e;
-        } finally {
-            if (failed)
-                outputContainerLog(id);
         }
     }
 
@@ -402,50 +402,11 @@ public class DockerOrchestrator {
         try {
             docker.removeContainerCmd(existingContainer.getId()).withForce().exec();
         } catch (InternalServerErrorException e) {
-            if (isPermissionErrorTolerant() && isPermissionError(e)) {
+            if (permissionErrorTolerant && isPermissionError(e)) {
                 logger.warn(String.format("ignoring %s when removing container as we are configured to be permission error tolerant", e));
             } else {
                 throw e;
             }
-        }
-    }
-
-    private boolean isPermissionErrorTolerant() {
-        return permissionErrorTolerant;
-    }
-
-    private void outputContainerLog(final Id id) {
-        Container container;
-        try {
-            container = findContainer(id);
-        } catch (DockerException e) {
-            throw new OrchestrationException(e);
-        }
-
-        if (container == null)
-            return;
-
-        try {
-            Conf conf = conf(id);
-
-            if (!conf.isLogOnFailure()) {
-                return;
-            }
-
-            LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId()).withStdErr().withStdOut();
-
-            if (conf.getMaxLogLines() > 0) {
-                logContainerCmd.withTail(conf.getMaxLogLines());
-            }
-
-            InputStream stream = logContainerCmd.exec();
-
-            logger.info(String.format("Logs%s from container %s: %n%s",
-                    (conf.getMaxLogLines() > 0) ? " (max last " + conf.getMaxLogLines() + " lines)" : "",
-                    container.getId(),
-                    Logs.trimDockerLogHeaders(stream)));
-        } catch (Exception e) {
-            logger.warn("Unable to obtain logs from container " + container.getId() + ", will continue: ", e);
         }
     }
 

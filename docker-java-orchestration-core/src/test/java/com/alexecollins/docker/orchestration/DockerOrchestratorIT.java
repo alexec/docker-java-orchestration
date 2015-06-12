@@ -95,6 +95,8 @@ public class DockerOrchestratorIT {
     @Test
     public void whenWeCleanThenAllContainersAreDeleted() throws Exception {
 
+        // I *think* that cleaning a container can sometimes remove two images
+        orchestrator.clean(new Id("busybox"));
         final List<Container> expectedContainers = docker.listContainersCmd().withShowAll(true).exec();
 
         orchestrator.build(new Id("busybox"));
