@@ -70,15 +70,13 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class DockerOrchestratorTest {
 
+    public static final String EXTRA_HOST = "foo:127.0.0.1";
     private static final String IMAGE_NAME = "theImage";
     private static final String IMAGE_ID = "imageId";
-
     private static final String CONTAINER_NAME = "theContainer";
     private static final String CONTAINER_ID = "containerId";
-
     private static final String TAG_NAME = "test-tag";
     private final static Logger LOGGER = (Logger) LoggerFactory.getLogger(DockerOrchestrator.class);
-    public static final String EXTRA_HOST = "foo:127.0.0.1";
     @SuppressWarnings("unchecked")
     private final Appender<ILoggingEvent> appender = mock(Appender.class);
     private final ArgumentCaptor<ILoggingEvent> captor = ArgumentCaptor.forClass(ILoggingEvent.class);
@@ -405,5 +403,16 @@ public class DockerOrchestratorTest {
 
         verifyNoMoreInteractions(dockerMock);
 
+    }
+
+    @Test
+    public void privilegedConfigurationStartsPrivilegedContainer() throws Exception {
+
+        when(confMock.isPrivileged()).thenReturn(true);
+        when(listContainersCmdMock.exec()).thenReturn(Collections.<Container>emptyList());
+
+        testObj.start();
+
+        verify(createContainerCmdMock).withPrivileged(true);
     }
 }

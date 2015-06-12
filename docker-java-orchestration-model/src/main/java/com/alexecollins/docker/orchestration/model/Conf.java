@@ -33,6 +33,7 @@ public class Conf {
     private boolean enabled = true;
     private boolean exposeContainerIp = true;
     private List<String> extraHosts = new ArrayList<>();
+    private boolean privileged;
 
     public Conf() {
     }

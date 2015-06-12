@@ -1,5 +1,9 @@
 Change Log
 ===
+2.8.3
+
+* [DMP Issue 67](https://github.com/alexec/docker-maven-plugin/issues/67) Enhancement: Support privileged containers.
+
 2.9.0
 
 * [DMP Issue 50](https://github.com/alexec/docker-maven-plugin/issues/50) Bug: Container port ordering was reversed.

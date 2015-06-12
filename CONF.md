@@ -52,6 +52,8 @@ sleep: 1000
 tag: alex.e.c/app:${project.artifactId}-${project.version}
 # whether or not the app is enabled
 enabled: true
+# run in privileged mode
+privileged: true
 ```
 
 

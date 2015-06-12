@@ -501,6 +501,7 @@ public class DockerOrchestrator {
         Conf conf = conf(id);
 
         cmd.withPublishAllPorts(true);
+        cmd.withPrivileged(conf.isPrivileged());
 
         Link[] links = links(id);
 
@@ -542,7 +543,8 @@ public class DockerOrchestrator {
         cmd.withEnv(asEnvList(conf.getEnv()));
 
         if (!conf.getExtraHosts().isEmpty()) {
-            cmd.withExtraHosts(conf.getExtraHosts().toArray(new String[0]));
+            List<String> extraHosts = conf.getExtraHosts();
+            cmd.withExtraHosts(extraHosts.toArray(new String[extraHosts.size()]));
             logger.info(" - extra hosts " + conf.getExtraHosts());
         }
 
