@@ -28,7 +28,7 @@ public class DockerfileValidatorTest {
             validator.validate(new File("src/test/wrongDocker"));
             fail("Validate doesn't detect a wrong formatted Dockerfile");
         } catch (Exception e) {
-            assertEquals("Error while validate Dockerfile src/test/wrongDocker/Dockerfile.", e.getMessage());
+            assertEquals("Error while validate Dockerfile src" + System.getProperty("file.separator") + "test" + System.getProperty("file.separator") + "wrongDocker" + System.getProperty("file.separator") + "Dockerfile.", e.getMessage());
         }
 
     }
