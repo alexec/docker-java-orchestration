@@ -73,7 +73,7 @@ class VirtualBoxFacade {
 
     List<Integer> getPortForwards() {
         String output = exec("VBoxManage showvminfo boot2docker-vm --details");
-        Pattern nicRulePattern = Pattern.compile("NIC . Rule.*host port = ([0-9]*).*");
+        Pattern nicRulePattern = Pattern.compile("NIC\\s.\\sRule.*host\\sport\\s=\\s([0-9]*).*");
         List<Integer> ports = new ArrayList<>();
         for (String line : output.split(System.getProperty("line.separator"))) {
             Matcher matcher = nicRulePattern.matcher(line);

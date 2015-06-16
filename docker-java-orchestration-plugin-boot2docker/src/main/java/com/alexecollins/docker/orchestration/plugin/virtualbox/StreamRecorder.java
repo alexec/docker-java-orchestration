@@ -25,6 +25,7 @@ class StreamRecorder extends Thread {
             String line = null;
             while ((line = br.readLine()) != null) {
                 sb.append(line);
+                sb.append(System.getProperty("line.separator"));
             }
         } catch (IOException ioe) {
             ioe.printStackTrace();
