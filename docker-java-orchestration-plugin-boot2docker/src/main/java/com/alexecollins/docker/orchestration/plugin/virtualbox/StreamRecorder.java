@@ -19,16 +19,16 @@ class StreamRecorder extends Thread {
 
     public void run() {
 
-        try {
-            InputStreamReader isr = new InputStreamReader(is);
-            BufferedReader br = new BufferedReader(isr);
+        try (InputStreamReader isr = new InputStreamReader(is);
+             BufferedReader br = new BufferedReader(isr)){
+
             String line = null;
             while ((line = br.readLine()) != null) {
                 sb.append(line);
                 sb.append(System.getProperty("line.separator"));
             }
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+            throw new RuntimeException("Problem consuming stream: " + ioe.getMessage(), ioe);
         }
     }
 
