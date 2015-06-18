@@ -217,7 +217,14 @@ public class DockerOrchestrator {
         final List<Container> matchingContainers = new ArrayList<>();
         for (Container container : docker.listContainersCmd().withShowAll(allContainers).exec()) {
             boolean imageNameMatches = container.getImage().equals(repo.imageName(id));
-            boolean containerNameMatches = asList(container.getNames()).contains(containerName(id));
+            String[] containerNames = container.getNames();
+            if (containerNames == null) {
+                // Every container should have a name, but this is not the case
+                // on Circle CI. Containers with no name are broken residues of
+                // building the image and therefore will be ignored.
+                continue;
+            }
+            boolean containerNameMatches = asList(containerNames).contains(containerName(id));
             if (imageNameMatches || containerNameMatches) {
                 matchingContainers.add(container);
             }

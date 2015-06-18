@@ -3,6 +3,7 @@ Change Log
 2.9.3
 
 * [DMP Issue 67](https://github.com/alexec/docker-maven-plugin/issues/67) Enhancement: Support privileged containers.
+* [DMP Issue 70](https://github.com/alexec/docker-maven-plugin/issues/70) Bug: NPE is thrown with nameless containers.
 
 2.9.0
 

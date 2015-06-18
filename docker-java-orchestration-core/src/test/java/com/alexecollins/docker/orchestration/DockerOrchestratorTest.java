@@ -420,4 +420,16 @@ public class DockerOrchestratorTest {
 
         verify(createContainerCmdMock).withPrivileged(true);
     }
+
+    @Test
+    public void namelessContainersAreIgnored() {
+        when(containerMock.getNames()).thenReturn(null);
+        when(listContainersCmdMock.exec()).thenReturn(Collections.singletonList(containerMock));
+        when(stopContainerCmdMock.withTimeout(1)).thenReturn(stopContainerCmdMock);
+
+        testObj.stop();
+
+        verify(listContainersCmdMockOnlyRunning).exec();
+        verify(stopContainerCmdMock, times(0)).exec();
+    }
 }
