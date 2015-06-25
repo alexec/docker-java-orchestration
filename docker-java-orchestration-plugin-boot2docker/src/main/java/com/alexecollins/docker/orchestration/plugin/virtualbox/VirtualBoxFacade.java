@@ -19,21 +19,27 @@ class VirtualBoxFacade {
     private static String exec(String command) {
         LOGGER.debug("Executing " + command);
         int exitCode;
-        String errorOutput;
-        String output;
+        StreamRecorder error;
+        StreamRecorder output;
         try {
             Process process = Runtime.getRuntime().exec(command);
+
+            error = new StreamRecorder(process.getErrorStream(), "ERROR");
+            output = new StreamRecorder(process.getInputStream(), "OUTPUT");
+
+            error.start();
+            output.start();
             exitCode = process.waitFor();
-            errorOutput = asString(process.getErrorStream());
-            output = asString(process.getInputStream());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        LOGGER.debug(output);
+
+        String outputString = output.toString();
+        LOGGER.debug(outputString.toString());
         if (exitCode != 0) {
-            throw new RuntimeException("exit code " + exitCode + ", " + errorOutput);
+            throw new RuntimeException("exit code " + exitCode + ", " + error.toString());
         } else {
-            return output;
+            return outputString;
         }
     }
 
@@ -67,7 +73,7 @@ class VirtualBoxFacade {
 
     List<Integer> getPortForwards() {
         String output = exec("VBoxManage showvminfo boot2docker-vm --details");
-        Pattern nicRulePattern = Pattern.compile("NIC . Rule.*host port = ([0-9]*).*");
+        Pattern nicRulePattern = Pattern.compile("NIC\\s.\\sRule.*host\\sport\\s=\\s([0-9]*).*");
         List<Integer> ports = new ArrayList<>();
         for (String line : output.split(System.getProperty("line.separator"))) {
             Matcher matcher = nicRulePattern.matcher(line);
