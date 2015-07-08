@@ -20,6 +20,7 @@ import com.github.dockerjava.api.command.InspectContainerCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.ListContainersCmd;
 import com.github.dockerjava.api.command.ListImagesCmd;
+import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
 import com.github.dockerjava.api.command.RemoveContainerCmd;
 import com.github.dockerjava.api.command.StartContainerCmd;
@@ -31,6 +32,7 @@ import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.PushEventStreamItem;
 import com.github.dockerjava.jaxrs.BuildImageCmdExec;
+import com.google.common.base.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.client.ClientResponse;
 import org.hamcrest.CoreMatchers;
@@ -44,6 +46,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,10 +54,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.regex.PatternSyntaxException;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyInt;
@@ -432,4 +439,56 @@ public class DockerOrchestratorTest {
         verify(listContainersCmdMockOnlyRunning).exec();
         verify(stopContainerCmdMock, times(0)).exec();
     }
+
+    @Test
+    public void testWaitForLine() {
+        when(confMock.getWaitForLine()).thenReturn("^Foo$");
+        final LogContainerCmd cmd = mockLogContainerCmd("Foo");
+
+        testObj.start();
+
+        verify(cmd, times(1)).exec();
+    }
+
+    @Test
+    public void testWaitForLineFailEndOfInput() {
+        when(confMock.getWaitForLine()).thenReturn("^Foo$");
+        final LogContainerCmd cmd = mockLogContainerCmd("Bar");
+
+        testObj.start();
+
+        verify(cmd, times(1)).exec();
+
+        verify(appender, atLeastOnce()).doAppend(captor.capture());
+        List<ILoggingEvent> logging = captor.getAllValues();
+        assertThat(logging, CoreMatchers.hasItem((loggedMessage("Unable to obtain logs from container " + containerMock.getId()
+                + ", will continue without waiting"))));
+    }
+
+    @Test
+    public void testWaitForLineInvalidRegex() {
+        when(confMock.getWaitForLine()).thenReturn("^Foo[$");
+
+        try {
+            testObj.start();
+            fail("Expected exception");
+        } catch (OrchestrationException e) {
+            assertThat(e.getCause(),instanceOf(PatternSyntaxException.class));
+        }
+    }
+
+    private LogContainerCmd mockLogContainerCmd(String containerOutput) {
+        final LogContainerCmd cmd = mock(LogContainerCmd.class);
+
+        when(cmd.withStdErr()).thenReturn(cmd);
+        when(cmd.withStdOut()).thenReturn(cmd);
+        when(cmd.withFollowStream()).thenReturn(cmd);
+        when(cmd.withTimestamps()).thenReturn(cmd);
+
+        when(cmd.exec()).thenReturn(new ByteArrayInputStream(containerOutput.getBytes(Charsets.UTF_8)));
+
+        when(dockerMock.logContainerCmd(containerMock.getId())).thenReturn(cmd);
+        return cmd;
+    }
+
 }
