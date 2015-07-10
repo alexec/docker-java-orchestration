@@ -1,6 +1,7 @@
 package com.alexecollins.docker.orchestration;
 
 import com.alexecollins.docker.orchestration.model.BuildFlag;
+import com.alexecollins.docker.orchestration.model.CleanFlag;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
@@ -111,6 +112,23 @@ public class DockerOrchestratorIT {
     }
 
     @Test
+    public void whenWeCleanThenOnlyContainersAreDeleted() throws Exception {
+        final List<Container> expectedContainers = docker.listContainersCmd().withShowAll(true).exec();
+
+        final List<Image> expectedImages = docker.listImagesCmd().exec();
+
+        orchestrator.build(new Id("busybox"));
+        orchestrator.clean(new Id("busybox"), CleanFlag.CONTAINER_ONLY);
+
+        assertEquals(expectedContainers.size(), docker.listContainersCmd().withShowAll(true).exec().size());
+
+        int expectedImageSize = expectedImages.size() + (runningOnCircleCi() ? 1 : 0) + 1;
+        assertEquals(expectedImageSize, docker.listImagesCmd().exec().size());
+
+        orchestrator.clean(new Id("busybox"));
+    }
+
+    @Test
     public void testBuild() throws Exception {
         orchestrator.build();
     }
@@ -138,4 +156,6 @@ public class DockerOrchestratorIT {
     public void testIsRunning() throws Exception {
         orchestrator.isRunning();
     }
+
+
 }

@@ -2,6 +2,7 @@ package com.alexecollins.docker.orchestration;
 
 
 import com.alexecollins.docker.orchestration.model.BuildFlag;
+import com.alexecollins.docker.orchestration.model.CleanFlag;
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.ContainerConf;
 import com.alexecollins.docker.orchestration.model.HealthChecks;
@@ -156,12 +157,20 @@ public class DockerOrchestrator {
     }
 
     public void clean() {
+        clean(CleanFlag.CONTAINER_AND_IMAGE);
+    }
+
+    public void cleanContainers() {
+        clean(CleanFlag.CONTAINER_ONLY);
+    }
+
+    public void clean(final CleanFlag cleanFlag) {
         for (Id id : repo.ids(true)) {
             if (!inclusive(id)) {
                 continue;
             }
             stop(id);
-            clean(id);
+            clean(id, cleanFlag);
         }
     }
 
@@ -179,18 +188,19 @@ public class DockerOrchestrator {
     }
 
     void clean(final Id id) {
+        clean(id, CleanFlag.CONTAINER_AND_IMAGE);
+    }
+
+    void clean(final Id id, final CleanFlag flag) {
+        cleanContainer(id);
+        if (flag == CleanFlag.CONTAINER_AND_IMAGE) {
+            cleanImage(id);
+        }
+    }
+
+    private void cleanImage(final Id id) {
         if (id == null) {
             throw new IllegalArgumentException("id is null");
-        }
-        stop(id);
-        logger.info("Cleaning " + id);
-        for (Container container : findAllContainers(id)) {
-            logger.info("Removing container " + container.getId());
-            try {
-                removeContainer(container);
-            } catch (DockerException e) {
-                throw new OrchestrationException(e);
-            }
         }
         String imageId = null;
         try {
@@ -206,6 +216,22 @@ public class DockerOrchestrator {
                 docker.removeImageCmd(imageId).withForce().exec();
             } catch (DockerException e) {
                 logger.warn(e.getMessage());
+            }
+        }
+    }
+
+    private void cleanContainer(final Id id) {
+        if (id == null) {
+            throw new IllegalArgumentException("id is null");
+        }
+        stop(id);
+        logger.info("Cleaning " + id);
+        for (Container container : findAllContainers(id)) {
+            logger.info("Removing container " + container.getId());
+            try {
+                removeContainer(container);
+            } catch (DockerException e) {
+                throw new OrchestrationException(e);
             }
         }
     }
