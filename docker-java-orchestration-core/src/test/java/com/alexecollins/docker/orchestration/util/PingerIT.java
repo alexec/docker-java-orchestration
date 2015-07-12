@@ -50,12 +50,12 @@ public class PingerIT {
 
     @Test
     public void ensureRegexpMatches() throws Exception {
-        assertTrue(Pinger.ping(httpServerAddress, Pattern.compile("Foo"), timeout));
+        assertTrue(Pinger.ping(httpServerAddress, Pattern.compile("Foo"), timeout, true));
     }
 
     @Test
     public void ensureBadRegexpDoesNotMatch() throws Exception {
-        assertFalse(Pinger.ping(httpServerAddress, Pattern.compile("Bill Murray"), timeout));
+        assertFalse(Pinger.ping(httpServerAddress, Pattern.compile("Bill Murray"), timeout, true));
     }
 
     @Test

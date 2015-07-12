@@ -12,4 +12,5 @@ public class Ping {
     private URI url;
     private int timeout = 30 * 1000;
     private Pattern pattern = Pattern.compile(".*");
+    private boolean sslVerify = true;
 }
