@@ -4,10 +4,11 @@ import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Data
 public class HealthChecks {
 
     private List<Ping> pings = new ArrayList<>();
-    private List<String> logPatterns = new ArrayList<>();
+    private List<Pattern> logPatterns = new ArrayList<>();
 }

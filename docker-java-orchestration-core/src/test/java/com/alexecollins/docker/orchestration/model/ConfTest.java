@@ -6,6 +6,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.regex.Pattern;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -53,5 +55,13 @@ public class ConfTest {
     @Test
     public void volumes() throws Exception {
         assertEquals(Collections.singletonMap("foo", "bar"), conf.getVolumes());
+    }
+
+    @Test
+    public void logPatterns() throws Exception {
+        List<Pattern> logPatterns = conf.getHealthChecks().getLogPatterns();
+        List<Pattern> expected = Collections.singletonList(Pattern.compile("the-pattern"));
+        assertEquals(expected.size(), logPatterns.size());
+        assertEquals(expected.get(0).pattern(), logPatterns.get(0).pattern());
     }
 }
