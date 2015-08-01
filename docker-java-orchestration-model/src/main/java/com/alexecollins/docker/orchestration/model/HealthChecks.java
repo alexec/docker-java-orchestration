@@ -9,4 +9,5 @@ import java.util.List;
 public class HealthChecks {
 
     private List<Ping> pings = new ArrayList<>();
+    private List<String> logPatterns = new ArrayList<>();
 }

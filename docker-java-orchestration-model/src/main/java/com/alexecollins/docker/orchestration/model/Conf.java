@@ -34,7 +34,6 @@ public class Conf {
     private boolean exposeContainerIp = true;
     private List<String> extraHosts = new ArrayList<>();
     private boolean privileged;
-    private String waitForLine;
 
     public Conf() {
     }

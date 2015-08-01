@@ -54,14 +54,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.regex.PatternSyntaxException;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyInt;
@@ -184,7 +180,8 @@ public class DockerOrchestratorTest {
 
         when(confMock.getLinks()).thenReturn(new ArrayList<Link>());
         when(confMock.getContainer()).thenReturn(new ContainerConf());
-        when(confMock.getHealthChecks()).thenReturn(new HealthChecks());
+        HealthChecks healthChecks = mock(HealthChecks.class);
+        when(confMock.getHealthChecks()).thenReturn(healthChecks);
         when(confMock.getTags()).thenReturn(Collections.singletonList(IMAGE_NAME + ":" + TAG_NAME));
         when(confMock.isEnabled()).thenReturn(true);
         final List<String> extraHosts = new ArrayList<>();
@@ -442,7 +439,7 @@ public class DockerOrchestratorTest {
 
     @Test
     public void testWaitForLine() {
-        when(confMock.getWaitForLine()).thenReturn("^Foo$");
+        when(confMock.getHealthChecks().getLogPatterns()).thenReturn(Collections.singletonList("^Foo$"));
         final LogContainerCmd cmd = mockLogContainerCmd("Foo");
 
         testObj.start();
@@ -452,7 +449,7 @@ public class DockerOrchestratorTest {
 
     @Test
     public void testWaitForLineFailEndOfInput() {
-        when(confMock.getWaitForLine()).thenReturn("^Foo$");
+        when(confMock.getHealthChecks().getLogPatterns()).thenReturn(Collections.singletonList("^Foo$"));
         final LogContainerCmd cmd = mockLogContainerCmd("Bar");
 
         testObj.start();
@@ -463,18 +460,6 @@ public class DockerOrchestratorTest {
         List<ILoggingEvent> logging = captor.getAllValues();
         assertThat(logging, CoreMatchers.hasItem((loggedMessage("Unable to obtain logs from container " + containerMock.getId()
                 + ", will continue without waiting"))));
-    }
-
-    @Test
-    public void testWaitForLineInvalidRegex() {
-        when(confMock.getWaitForLine()).thenReturn("^Foo[$");
-
-        try {
-            testObj.start();
-            fail("Expected exception");
-        } catch (OrchestrationException e) {
-            assertThat(e.getCause(),instanceOf(PatternSyntaxException.class));
-        }
     }
 
     private LogContainerCmd mockLogContainerCmd(String containerOutput) {
