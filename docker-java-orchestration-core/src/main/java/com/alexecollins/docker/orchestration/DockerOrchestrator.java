@@ -767,7 +767,7 @@ public class DockerOrchestrator {
             String l;
             while ((l = reader.readLine()) != null) {
                 logger.info(l);
-                if (l.startsWith("{\"errorDetail")) {
+                if (l.startsWith("{\"errorDetail") && !l.equals("{\"errorDetail\":{}}")) {
                     throw new OrchestrationException(extractMessage(l));
                 }
             }
