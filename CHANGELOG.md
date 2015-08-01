@@ -2,8 +2,9 @@ Change Log
 ===
 2.9.4
 
-* [DJO Pull](40) Enhancement: Option to remove just containers on clean.
-* [DJO Pull](41) Enhancement: Option to ignore SSL issues on self-signed health-checks.
+* [DJO Pull](https://github.com/alexec/docker-java-orchestration/pull/39) Enhancement: Added a health-check for making sure an expected log line appears.
+* [DJO Pull](https://github.com/alexec/docker-java-orchestration/pull/40) Enhancement: Option to remove just containers on clean.
+* [DJO Pull](https://github.com/alexec/docker-java-orchestration/pull/41) Enhancement: Option to ignore SSL issues on self-signed health-checks.
 
 2.9.3
 
