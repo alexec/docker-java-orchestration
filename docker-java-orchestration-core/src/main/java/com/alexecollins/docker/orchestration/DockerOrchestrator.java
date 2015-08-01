@@ -652,7 +652,7 @@ public class DockerOrchestrator {
             }
             logger.info(String.format("Pinging %s for pattern \"%s\"", uri, ping.getPattern()));
 
-            if (!Pinger.ping(uri, ping.getPattern(), ping.getTimeout())) {
+            if (!Pinger.ping(uri, ping.getPattern(), ping.getTimeout(), ping.isSslVerify())) {
                 throw new OrchestrationException("timeout waiting for " + uri + " for " + ping.getTimeout() + " with pattern " + ping.getPattern());
             }
         }
