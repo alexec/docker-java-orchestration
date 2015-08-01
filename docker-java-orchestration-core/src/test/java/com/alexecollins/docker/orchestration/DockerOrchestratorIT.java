@@ -109,7 +109,8 @@ public class DockerOrchestratorIT {
             return;
         }
 
-        assertEquals(expectedContainers.size(), docker.listContainersCmd().withShowAll(true).exec().size());
+        int expectedSize = expectedContainers.size() + (runningOnCircleCi() ? 1 : 0);
+        assertEquals(expectedSize, docker.listContainersCmd().withShowAll(true).exec().size());
     }
 
     @Test
