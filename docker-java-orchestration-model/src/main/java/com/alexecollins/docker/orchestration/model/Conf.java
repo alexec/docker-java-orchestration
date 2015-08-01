@@ -35,7 +35,6 @@ public class Conf {
     private String image;
     private List<String> extraHosts = new ArrayList<>();
     private boolean privileged;
-    private String waitForLine;
 
     public Conf() {
     }

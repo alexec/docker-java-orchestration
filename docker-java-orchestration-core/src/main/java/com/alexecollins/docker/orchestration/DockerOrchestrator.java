@@ -28,7 +28,6 @@ import com.github.dockerjava.api.model.Link;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.Volume;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +51,6 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 import static java.util.Arrays.asList;
 
@@ -403,7 +401,6 @@ public class DockerOrchestrator {
         if (id == null) {
             throw new IllegalArgumentException("id is null");
         }
-        final Pattern waitForPattern = compileWaitForPattern(id);
 
         logger.info("Starting " + id);
 
@@ -449,25 +446,10 @@ public class DockerOrchestrator {
 
                 tail.setMaxLines(conf(id).getMaxLogLines());
             }
-            waitFor(id, waitForPattern);
+
         } catch (DockerException e) {
             throw new OrchestrationException(e);
         }
-    }
-
-    private Pattern compileWaitForPattern(Id id) {
-        final String waitForRegex = conf(id).getWaitForLine();
-        final Pattern waitForPattern;
-        if (StringUtils.isNotBlank(waitForRegex)) {
-            try {
-                waitForPattern = Pattern.compile(waitForRegex);
-            } catch (final PatternSyntaxException e) {
-                throw new OrchestrationException(e);
-            }
-        } else {
-            waitForPattern = null;
-        }
-        return waitForPattern;
     }
 
     private Container findContainer(Id id) {
@@ -690,6 +672,9 @@ public class DockerOrchestrator {
             if (!Pinger.ping(uri, ping.getPattern(), ping.getTimeout(), ping.isSslVerify())) {
                 throw new OrchestrationException("timeout waiting for " + uri + " for " + ping.getTimeout() + " with pattern " + ping.getPattern());
             }
+        }
+        for (String pattern : healthChecks.getLogPatterns()) {
+            waitFor(id, Pattern.compile(pattern));
         }
     }
 
