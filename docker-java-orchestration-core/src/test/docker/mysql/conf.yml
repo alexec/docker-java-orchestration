@@ -2,7 +2,7 @@ tag: registry/it-mysql:latest
 ports:
   - 3306
 env:
-  - MYSQL_ROOT_PASSWORD: secret
+  - MYSQL_ROOT_PASSWORD secret
 healthCheck:
   logPatterns:
     - ".*ready for connections.*"
