@@ -1,5 +1,10 @@
 Change Log
 ===
+2.9.4
+
+* [DJO Pull](40) Enhancement: Option to remove just containers on clean.
+* [DJO Pull](41) Enhancement: Option to ignore SSL issues on self-signed health-checks.
+
 2.9.3
 
 * [DMP Issue 67](https://github.com/alexec/docker-maven-plugin/issues/67) Enhancement: Support privileged containers.

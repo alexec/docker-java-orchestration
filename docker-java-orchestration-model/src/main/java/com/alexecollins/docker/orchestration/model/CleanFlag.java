@@ -6,5 +6,5 @@ package com.alexecollins.docker.orchestration.model;
  */
 public enum CleanFlag {
     CONTAINER_AND_IMAGE,
-    CONTAINER_ONLY;
+    CONTAINER_ONLY
 }
