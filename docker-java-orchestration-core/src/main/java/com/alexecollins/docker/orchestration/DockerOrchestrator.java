@@ -624,25 +624,29 @@ public class DockerOrchestrator {
 
     private void healthCheck(Id id) {
         final HealthChecks healthChecks = conf(id).getHealthChecks();
-        for (Ping ping : healthChecks.getPings()) {
-            URI uri;
-            if (ping.getUrl().toString().contains(CONTAINER_IP_PATTERN)) {
-                try {
-                    uri = new URI(ping.getUrl().toString().replace(CONTAINER_IP_PATTERN, getIPAddresses().get(id.toString())));
-                } catch (URISyntaxException e) {
-                    throw new OrchestrationException("Bad health check URI syntax: " + e.getMessage() + ", input: " + e.getInput() + ", index:" + e.getIndex());
-                }
-            } else {
-                uri = ping.getUrl();
-            }
-            logger.info(String.format("Pinging %s for pattern \"%s\"", uri, ping.getPattern()));
-
-            if (!Pinger.ping(uri, ping.getPattern(), ping.getTimeout(), ping.isSslVerify())) {
-                throw new OrchestrationException("timeout waiting for " + uri + " for " + ping.getTimeout() + " with pattern " + ping.getPattern());
-            }
-        }
-        for (LogPattern pattern : healthChecks.getLogPatterns()) {
+        for (Pattern pattern : healthChecks.getLogPatterns()) {
             waitFor(id, pattern);
+        }
+        for (Ping ping : healthChecks.getPings()) {
+            waitFor(id, ping);
+        }
+    }
+
+    private void waitFor(Id id, Ping ping) {
+        URI uri;
+        if (ping.getUrl().toString().contains(CONTAINER_IP_PATTERN)) {
+            try {
+                uri = new URI(ping.getUrl().toString().replace(CONTAINER_IP_PATTERN, getIPAddresses().get(id.toString())));
+            } catch (URISyntaxException e) {
+                throw new OrchestrationException("Bad health check URI syntax: " + e.getMessage() + ", input: " + e.getInput() + ", index:" + e.getIndex());
+            }
+        } else {
+            uri = ping.getUrl();
+        }
+        logger.info(String.format("Pinging %s for pattern \"%s\"", uri, ping.getPattern()));
+
+        if (!Pinger.ping(uri, ping.getPattern(), ping.getTimeout(), ping.isSslVerify())) {
+            throw new OrchestrationException("timeout waiting for " + uri + " for " + ping.getTimeout() + " with pattern " + ping.getPattern());
         }
     }
 
