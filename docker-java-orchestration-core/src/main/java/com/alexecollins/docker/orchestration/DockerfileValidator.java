@@ -30,21 +30,21 @@ class DockerfileValidator {
     private static final Logger logger = LoggerFactory.getLogger(DockerfileValidator.class);
 
     private static Map<String, Pattern> instructionsPatterns() {
-        Pattern addPattern = Pattern.compile("^(~?[${}A-z0-9\\/_.-]+|https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*))\\s~?[A-z0-9\\/_.-]+$");
+        Pattern addPattern = Pattern.compile("^(~?[${.}A-z0-9\\/_.-]+|https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*))\\s~?[A-z0-9\\/_.-]+$");
         Map<String, Pattern> instructionPatterns = new HashMap<>();
-        instructionPatterns.put("FROM", Pattern.compile("^[${}a-z0-9./_-]+((:[${}a-z0-9._-]+)?)$", Pattern.MULTILINE));
+        instructionPatterns.put("FROM", Pattern.compile("^[${.}a-z0-9./_-]+((:[${.}a-z0-9._-]+)?)$", Pattern.MULTILINE));
         instructionPatterns.put("MAINTAINER", Pattern.compile(".+"));
-        instructionPatterns.put("EXPOSE", Pattern.compile("^[${A-z0-9]+([${}A-z0-9\\s]+)?$"));
-        instructionPatterns.put("ENV", Pattern.compile("^[${}a-zA-Z_]+[${}a-zA-Z0-9_]* .+$"));
-        instructionPatterns.put("USER", Pattern.compile("^[${}a-z_][${}a-z0-9_]{0,30}$"));
+        instructionPatterns.put("EXPOSE", Pattern.compile("^[${.}A-z0-9]+([.${.}a-zA-Z0-9\\s]+)?$"));
+        instructionPatterns.put("ENV", Pattern.compile("^[${.}a-zA-Z_]+[${.}a-zA-Z0-9_]* .+$"));
+        instructionPatterns.put("USER", Pattern.compile("^[${.}a-z_][${.}a-z0-9_]{0,30}$"));
         instructionPatterns.put("RUN", Pattern.compile(".+"));
         instructionPatterns.put("CMD", Pattern.compile(".+"));
         instructionPatterns.put("ONBUILD", Pattern.compile(".+"));
         instructionPatterns.put("ENTRYPOINT", Pattern.compile(".+"));
         instructionPatterns.put("ADD", addPattern);
         instructionPatterns.put("COPY", addPattern);
-        instructionPatterns.put("VOLUME", Pattern.compile("^~?([${}A-z0-9\\/_.-]+|\\[(\\s*)?(\"[A-z0-9\\/_. -]+\"(,\\s*)?)+(\\s*)?\\])$"));
-        instructionPatterns.put("WORKDIR", Pattern.compile("^~?[${}A-z0-9\\/_.-]+$"));
+        instructionPatterns.put("VOLUME", Pattern.compile("^~?([${.}A-z0-9\\/_.-]+|\\[(\\s*)?(\"[A-z0-9\\/_. -]+\"(,\\s*)?)+(\\s*)?\\])$"));
+        instructionPatterns.put("WORKDIR", Pattern.compile("^~?[${.}A-z0-9\\/_.-]+$"));
         return instructionPatterns;
     }
 

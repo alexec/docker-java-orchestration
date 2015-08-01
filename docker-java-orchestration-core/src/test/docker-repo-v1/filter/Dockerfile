@@ -1,13 +1,13 @@
-FROM ${foo}/${foo}:${foo}
-MAINTAINER ${foo}
-EXPOSE ${foo}
-USER ${foo}
-ENV ${foo} ${foo}
-RUN ${foo}
-CMD ["${foo}"]
-ONBUILD ${foo}
-ENTRYPOINT ${foo}
+FROM ${foo.bar}/${foo.bar}:${foo.bar}
+MAINTAINER ${foo.bar}
+EXPOSE ${foo.bar}
+USER ${foo.bar}
+ENV ${foo.bar} ${foo.bar}
+RUN ${foo.bar}
+CMD ["${foo.bar}"]
+ONBUILD ${foo.bar}
+ENTRYPOINT ${foo.bar}
 ADD ${testFile.name} /
 COPY ${testFile.name} /
-VOLUME ${foo}
-WORKDIR ${foo}
+VOLUME ${foo.bar}
+WORKDIR ${foo.bar}
