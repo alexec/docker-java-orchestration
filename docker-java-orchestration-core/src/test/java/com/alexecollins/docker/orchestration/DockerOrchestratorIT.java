@@ -43,7 +43,7 @@ public class DockerOrchestratorIT {
     }
 
     private static boolean runningOnCircleCi() {
-        return System.getProperty("user.name").equals("ubuntu");
+        return System.getenv().containsKey("CIRCLE_PROJECT_REPONAME");
     }
 
     @After
@@ -59,6 +59,8 @@ public class DockerOrchestratorIT {
 
     @Before
     public void setUp() throws Exception {
+
+        System.out.println("runningOnCircleCi=" + runningOnCircleCi());
 
         docker = DockerClientBuilder.getInstance(DockerClientConfig.createDefaultConfigBuilder().build()).build();
 
@@ -88,7 +90,8 @@ public class DockerOrchestratorIT {
         orchestrator.build(new Id("busybox"));
         orchestrator.clean(new Id("busybox"));
 
-        assertEquals(expectedImages.size(), docker.listImagesCmd().exec().size());
+        int expectedSize = expectedImages.size() + (runningOnCircleCi() ? 1 : 0);
+        assertEquals(expectedSize, docker.listImagesCmd().exec().size());
     }
 
     @Test
