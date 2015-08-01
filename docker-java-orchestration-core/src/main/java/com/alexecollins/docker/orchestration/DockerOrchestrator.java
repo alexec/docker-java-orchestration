@@ -17,6 +17,7 @@ import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Container;
@@ -435,8 +436,6 @@ public class DockerOrchestrator {
                 startContainer(existingContainer.getId());
             }
 
-            waitFor(id, waitForPattern);
-
             try (Tail tail = tailFactory.newTail(docker, findContainer(id), logger)) {
                 tail.start();
 
@@ -450,6 +449,7 @@ public class DockerOrchestrator {
 
                 tail.setMaxLines(conf(id).getMaxLogLines());
             }
+            waitFor(id, waitForPattern);
         } catch (DockerException e) {
             throw new OrchestrationException(e);
         }
@@ -461,7 +461,7 @@ public class DockerOrchestrator {
         if (StringUtils.isNotBlank(waitForRegex)) {
             try {
                 waitForPattern = Pattern.compile(waitForRegex);
-            } catch ( final PatternSyntaxException e ) {
+            } catch (final PatternSyntaxException e) {
                 throw new OrchestrationException(e);
             }
         } else {
@@ -527,8 +527,20 @@ public class DockerOrchestrator {
         }
 
         try {
-            try (Tail tail = tailFactory.newTail(docker, container, logger)) {
-                tail.start();
+            final LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId()).withStdErr().withStdOut().withFollowStream().withTimestamps();
+
+            final InputStream stream = logContainerCmd.exec();
+
+            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (pattern.matcher(line).find()) {
+                        watch.stop();
+                        logger.info(String.format("Waited for %s", watch.toString()));
+                        return;
+                    }
+                }
+                throw new OrchestrationException("Container log ended before line appeared in output");
             }
         } catch (Exception e) {
             logger.warn("Unable to obtain logs from container " + container.getId() + ", will continue without waiting: ", e);
