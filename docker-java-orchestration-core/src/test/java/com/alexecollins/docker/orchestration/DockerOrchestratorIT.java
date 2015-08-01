@@ -125,7 +125,7 @@ public class DockerOrchestratorIT {
         int expectedContainersSize = expectedContainers.size() + (runningOnCircleCi() ? 1 : 0);
         assertEquals(expectedContainersSize, docker.listContainersCmd().withShowAll(true).exec().size());
 
-        int expectedImageSize = expectedImages.size() + (runningOnCircleCi() ? 1 : 0) + 1;
+        int expectedImageSize = expectedImages.size() + 1;
         assertEquals(expectedImageSize, docker.listImagesCmd().exec().size());
 
         orchestrator.clean(new Id("busybox"));
