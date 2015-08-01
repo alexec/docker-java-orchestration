@@ -11,6 +11,7 @@ import com.alexecollins.docker.orchestration.model.ContainerConf;
 import com.alexecollins.docker.orchestration.model.HealthChecks;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.model.Link;
+import com.alexecollins.docker.orchestration.model.LogPattern;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.command.BuildImageCmd;
@@ -54,8 +55,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.regex.Pattern;
 
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
@@ -440,7 +441,7 @@ public class DockerOrchestratorTest {
 
     @Test
     public void testWaitForLine() {
-        when(confMock.getHealthChecks().getLogPatterns()).thenReturn(Collections.singletonList(pattern("^Foo$")));
+        when(confMock.getHealthChecks().getLogPatterns()).thenReturn(Collections.singletonList(new LogPattern("^Foo$")));
         final LogContainerCmd cmd = mockLogContainerCmd("Foo");
 
         testObj.start();
@@ -448,23 +449,32 @@ public class DockerOrchestratorTest {
         verify(cmd, times(1)).exec();
     }
 
-    private Pattern pattern(String s) {
-        return Pattern.compile(s);
+    @Test
+    public void testWaitForLineFailEndOfInput() {
+        when(confMock.getHealthChecks().getLogPatterns()).thenReturn(Collections.singletonList(new LogPattern("^Foo$")));
+        final LogContainerCmd cmd = mockLogContainerCmd("Bar");
+
+        try {
+            testObj.start();
+        } catch (OrchestrationException e) {
+            assertThat(e.getMessage(), equalTo("Container log ended before line appeared in output"));
+        }
+
+        verify(cmd, times(1)).exec();
     }
 
     @Test
-    public void testWaitForLineFailEndOfInput() {
-        when(confMock.getHealthChecks().getLogPatterns()).thenReturn(Collections.singletonList(pattern("^Foo$")));
-        final LogContainerCmd cmd = mockLogContainerCmd("Bar");
+    public void timeOutWaitingForLogs() {
+        LogPattern logPattern = new LogPattern("^Foo$");
+        logPattern.setTimeout(0);
+        when(confMock.getHealthChecks().getLogPatterns()).thenReturn(Collections.singletonList(logPattern));
+        mockLogContainerCmd("Bar");
 
-        testObj.start();
-
-        verify(cmd, times(1)).exec();
-
-        verify(appender, atLeastOnce()).doAppend(captor.capture());
-        List<ILoggingEvent> logging = captor.getAllValues();
-        assertThat(logging, CoreMatchers.hasItem((loggedMessage("Unable to obtain logs from container " + containerMock.getId()
-                + ", will continue without waiting"))));
+        try {
+            testObj.start();
+        } catch (OrchestrationException e) {
+            assertEquals(String.format("timeout after 0 while waiting for %s in %s's logs", logPattern.getPattern(), idMock), e.getMessage());
+        }
     }
 
     private LogContainerCmd mockLogContainerCmd(String containerOutput) {

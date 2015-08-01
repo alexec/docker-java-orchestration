@@ -7,6 +7,7 @@ import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.ContainerConf;
 import com.alexecollins.docker.orchestration.model.HealthChecks;
 import com.alexecollins.docker.orchestration.model.Id;
+import com.alexecollins.docker.orchestration.model.LogPattern;
 import com.alexecollins.docker.orchestration.model.Ping;
 import com.alexecollins.docker.orchestration.plugin.api.Plugin;
 import com.alexecollins.docker.orchestration.util.Pinger;
@@ -50,7 +51,6 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import static java.util.Arrays.asList;
 
@@ -460,14 +460,14 @@ public class DockerOrchestrator {
         }
     }
 
-    private void waitFor(Id id, Pattern pattern) {
-        if (pattern == null) {
+    private void waitFor(Id id, LogPattern logPattern) {
+        if (logPattern == null) {
             return;
         }
 
         final StopWatch watch = new StopWatch();
         watch.start();
-        logger.info(String.format("Waiting for '%s' to appear in output", pattern.toString()));
+        logger.info(String.format("Waiting for '%s' to appear in output", logPattern.getPattern()));
 
         final Container container;
 
@@ -490,16 +490,19 @@ public class DockerOrchestrator {
             try (final BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    if (pattern.matcher(line).find()) {
+                    if (logPattern.getPattern().matcher(line).find()) {
                         watch.stop();
-                        logger.info(String.format("Waited for %s", watch.toString()));
+                        logger.info(String.format("Waited for %s", watch));
                         return;
                     }
+                    if (watch.getTime() > logPattern.getTimeout()) {
+                        throw new OrchestrationException(String.format("timeout after %d while waiting for %s in %s's logs", logPattern.getTimeout(), logPattern.getPattern(), id));
+                    }
                 }
-                throw new OrchestrationException("Container log ended before line appeared in output");
             }
-        } catch (Exception e) {
-            logger.warn("Unable to obtain logs from container " + container.getId() + ", will continue without waiting: ", e);
+            throw new OrchestrationException("Container log ended before line appeared in output");
+        } catch (IOException e) {
+            throw new OrchestrationException(e);
         }
     }
 
@@ -638,7 +641,7 @@ public class DockerOrchestrator {
                 throw new OrchestrationException("timeout waiting for " + uri + " for " + ping.getTimeout() + " with pattern " + ping.getPattern());
             }
         }
-        for (Pattern pattern : healthChecks.getLogPatterns()) {
+        for (LogPattern pattern : healthChecks.getLogPatterns()) {
             waitFor(id, pattern);
         }
     }

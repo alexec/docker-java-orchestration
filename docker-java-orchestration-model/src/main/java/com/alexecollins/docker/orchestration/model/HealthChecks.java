@@ -10,5 +10,5 @@ import java.util.regex.Pattern;
 public class HealthChecks {
 
     private List<Ping> pings = new ArrayList<>();
-    private List<Pattern> logPatterns = new ArrayList<>();
+    private List<LogPattern> logPatterns = new ArrayList<>();
 }

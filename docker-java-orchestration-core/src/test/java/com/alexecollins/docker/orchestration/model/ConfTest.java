@@ -59,9 +59,11 @@ public class ConfTest {
 
     @Test
     public void logPatterns() throws Exception {
-        List<Pattern> logPatterns = conf.getHealthChecks().getLogPatterns();
+        List<LogPattern> logPatterns = conf.getHealthChecks().getLogPatterns();
         List<Pattern> expected = Collections.singletonList(Pattern.compile("the-pattern"));
         assertEquals(expected.size(), logPatterns.size());
-        assertEquals(expected.get(0).pattern(), logPatterns.get(0).pattern());
+        LogPattern logPattern = logPatterns.get(0);
+        assertEquals(expected.get(0).pattern(), logPattern.getPattern().pattern());
+        assertEquals(30 * 1000, logPattern.getTimeout());
     }
 }
