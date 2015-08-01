@@ -54,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -439,7 +440,7 @@ public class DockerOrchestratorTest {
 
     @Test
     public void testWaitForLine() {
-        when(confMock.getHealthChecks().getLogPatterns()).thenReturn(Collections.singletonList("^Foo$"));
+        when(confMock.getHealthChecks().getLogPatterns()).thenReturn(Collections.singletonList(pattern("^Foo$")));
         final LogContainerCmd cmd = mockLogContainerCmd("Foo");
 
         testObj.start();
@@ -447,9 +448,13 @@ public class DockerOrchestratorTest {
         verify(cmd, times(1)).exec();
     }
 
+    private Pattern pattern(String s) {
+        return Pattern.compile(s);
+    }
+
     @Test
     public void testWaitForLineFailEndOfInput() {
-        when(confMock.getHealthChecks().getLogPatterns()).thenReturn(Collections.singletonList("^Foo$"));
+        when(confMock.getHealthChecks().getLogPatterns()).thenReturn(Collections.singletonList(pattern("^Foo$")));
         final LogContainerCmd cmd = mockLogContainerCmd("Bar");
 
         testObj.start();

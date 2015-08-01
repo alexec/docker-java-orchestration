@@ -638,8 +638,8 @@ public class DockerOrchestrator {
                 throw new OrchestrationException("timeout waiting for " + uri + " for " + ping.getTimeout() + " with pattern " + ping.getPattern());
             }
         }
-        for (String pattern : healthChecks.getLogPatterns()) {
-            waitFor(id, Pattern.compile(pattern));
+        for (Pattern pattern : healthChecks.getLogPatterns()) {
+            waitFor(id, pattern);
         }
     }
 
