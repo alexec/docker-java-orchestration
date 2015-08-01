@@ -20,6 +20,7 @@ import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
@@ -30,14 +31,13 @@ public class RepoTest {
     private static final String PROJECT_VERSION = "1.0";
     private final Id appId = new Id("app");
     private final Id filterId = new Id("filter");
-    private final Repo sut;
     private final Properties properties = new Properties();
     private final String child;
 
     public RepoTest(String child) {
+        this.child = child;
         Properties properties = new Properties();
         properties.setProperty("project.version", PROJECT_VERSION);
-        sut = new Repo("test", "test", new File("src/test", child), properties);
     }
 
     @Parameterized.Parameters(name = "{0}")

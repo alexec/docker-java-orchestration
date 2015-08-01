@@ -8,18 +8,6 @@ import com.alexecollins.docker.orchestration.model.ContainerConf;
 import com.alexecollins.docker.orchestration.model.HealthChecks;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.model.Ping;
-import com.alexecollins.docker.orchestration.model.BuildFlag;
-import com.alexecollins.docker.orchestration.model.Conf;
-import com.alexecollins.docker.orchestration.model.ContainerConf;
-import com.alexecollins.docker.orchestration.model.HealthChecks;
-import com.alexecollins.docker.orchestration.model.Id;
-import com.alexecollins.docker.orchestration.model.Ping;
-import com.alexecollins.docker.orchestration.model.BuildFlag;
-import com.alexecollins.docker.orchestration.model.Conf;
-import com.alexecollins.docker.orchestration.model.ContainerConf;
-import com.alexecollins.docker.orchestration.model.HealthChecks;
-import com.alexecollins.docker.orchestration.model.Id;
-import com.alexecollins.docker.orchestration.model.Ping;
 import com.alexecollins.docker.orchestration.plugin.api.Plugin;
 import com.alexecollins.docker.orchestration.util.Pinger;
 import com.github.dockerjava.api.DockerClient;
@@ -29,7 +17,6 @@ import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
-import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Container;
@@ -37,13 +24,6 @@ import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.InternetProtocol;
 import com.github.dockerjava.api.model.Link;
-import com.github.dockerjava.api.model.PortBinding;
-import com.github.dockerjava.api.model.Ports;
-import com.github.dockerjava.api.model.Volume;
-import com.github.dockerjava.core.NameParser;
-import com.github.dockerjava.api.model.PortBinding;
-import com.github.dockerjava.api.model.Ports;
-import com.github.dockerjava.api.model.Volume;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.Volume;
@@ -72,26 +52,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Properties;
-import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Properties;
-import java.util.ServiceLoader;
-import java.util.Set;
 
 import static java.util.Arrays.asList;
 
@@ -475,6 +435,8 @@ public class DockerOrchestrator {
                 startContainer(existingContainer.getId());
             }
 
+            waitFor(id, waitForPattern);
+
             try (Tail tail = tailFactory.newTail(docker, findContainer(id), logger)) {
                 tail.start();
 
@@ -488,7 +450,6 @@ public class DockerOrchestrator {
 
                 tail.setMaxLines(conf(id).getMaxLogLines());
             }
-            waitFor(id,waitForPattern);
         } catch (DockerException e) {
             throw new OrchestrationException(e);
         }
@@ -566,27 +527,8 @@ public class DockerOrchestrator {
         }
 
         try {
-            final LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId()).withStdErr().withStdOut().withFollowStream().withTimestamps();
-
-            final InputStream stream = logContainerCmd.exec();
-
-            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (pattern.matcher(line).find()) {
-                        watch.stop();
-                        logger.info(String.format("Waited for %s", watch.toString()));
-                        return;
-                    }
-                }
-                throw new OrchestrationException("Container log ended before line appeared in output");
-            }
-
-            try (InputStream stream = logContainerCmd.exec()) {
-                logger.info(String.format("Logs%s from container %s: %n%s",
-                        (conf.getMaxLogLines() > 0) ? " (max last " + conf.getMaxLogLines() + " lines)" : "",
-                        container.getId(),
-                        Logs.trimDockerLogHeaders(stream)));
+            try (Tail tail = tailFactory.newTail(docker, container, logger)) {
+                tail.start();
             }
         } catch (Exception e) {
             logger.warn("Unable to obtain logs from container " + container.getId() + ", will continue without waiting: ", e);
