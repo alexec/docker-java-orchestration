@@ -1,10 +1,6 @@
 package com.alexecollins.docker.orchestration;
 
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.Appender;
 import com.alexecollins.docker.orchestration.model.BuildFlag;
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.ContainerConf;
@@ -35,23 +31,21 @@ import com.github.dockerjava.api.model.PushEventStreamItem;
 import com.github.dockerjava.jaxrs.BuildImageCmdExec;
 import com.google.common.base.Charsets;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.time.StopWatch;
 import org.glassfish.jersey.client.ClientResponse;
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -60,11 +54,11 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -81,10 +75,8 @@ public class DockerOrchestratorTest {
     private static final String CONTAINER_NAME = "theContainer";
     private static final String CONTAINER_ID = "containerId";
     private static final String TAG_NAME = "test-tag";
-    private final static Logger LOGGER = (Logger) LoggerFactory.getLogger(DockerOrchestrator.class);
-    @SuppressWarnings("unchecked")
-    private final Appender<ILoggingEvent> appender = mock(Appender.class);
-    private final ArgumentCaptor<ILoggingEvent> captor = ArgumentCaptor.forClass(ILoggingEvent.class);
+    @Mock
+    private Logger logger;
     @Mock
     private DockerClient dockerMock;
     @Mock
@@ -143,32 +135,14 @@ public class DockerOrchestratorTest {
     private TailFactory tailFactoryMock;
     private DockerOrchestrator testObj;
 
-    private static TypeSafeMatcher<ILoggingEvent> loggedMessage(final String message) {
-        return new TypeSafeMatcher<ILoggingEvent>() {
-            @Override
-            protected boolean matchesSafely(ILoggingEvent event) {
-                return event.getFormattedMessage().contains(message);
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText(String.format("message = <%s>", message));
-            }
-        };
-    }
-
     @Before
     public void setup() throws DockerException, IOException {
-        ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)).setLevel(Level.INFO);
-        LOGGER.setLevel(Level.INFO);
-        LOGGER.addAppender(appender);
-
         testObj = new DockerOrchestrator(
                 dockerMock,
                 repoMock,
                 fileOrchestratorMock,
                 EnumSet.noneOf(BuildFlag.class),
-                LOGGER,
+                logger,
                 tailFactoryMock,
                 dockerfileValidator,
                 definitionFilter,
@@ -313,9 +287,7 @@ public class DockerOrchestratorTest {
 
     @Test
     public void logsLoadedPlugin() throws Exception {
-        verify(appender, atLeastOnce()).doAppend(captor.capture());
-        List<ILoggingEvent> logging = captor.getAllValues();
-        assertThat(logging, CoreMatchers.hasItem((loggedMessage("Loaded " + TestPlugin.class + " plugin"))));
+        verify(logger).info("Loaded " + TestPlugin.class + " plugin");
     }
 
     @Test
@@ -452,29 +424,48 @@ public class DockerOrchestratorTest {
     @Test
     public void testWaitForLineFailEndOfInput() {
         when(confMock.getHealthChecks().getLogPatterns()).thenReturn(Collections.singletonList(new LogPattern("^Foo$")));
-        final LogContainerCmd cmd = mockLogContainerCmd("Bar");
-
-        try {
-            testObj.start();
-        } catch (OrchestrationException e) {
-            assertThat(e.getMessage(), equalTo(String.format("%s's log ended before ^Foo$ appeared in output", idMock)));
-        }
-
-        verify(cmd, times(1)).exec();
-    }
-
-    @Test
-    public void timeOutWaitingForLogs() {
-        LogPattern logPattern = new LogPattern("^Foo$");
-        logPattern.setTimeout(0);
-        when(confMock.getHealthChecks().getLogPatterns()).thenReturn(Collections.singletonList(logPattern));
         mockLogContainerCmd("Bar");
 
         try {
             testObj.start();
+            fail();
         } catch (OrchestrationException e) {
-            assertEquals(String.format("timeout after 0 while waiting for %s in %s's logs", logPattern.getPattern(), idMock), e.getMessage());
+            assertThat(e.getMessage(), equalTo(String.format("%s's log ended before [\"^Foo$\"] appeared in output", idMock)));
         }
+    }
+
+    @Test
+    public void patternsAreLoggedBothWhenRequestAndFound() {
+        List<LogPattern> logPatterns = Collections.singletonList(new LogPattern("^Foo$"));
+        when(confMock.getHealthChecks().getLogPatterns()).thenReturn(logPatterns);
+        mockLogContainerCmd("Foo");
+
+        testObj.start();
+
+        verify(logger).info(eq("Waiting for {} to appear in output"), eq("[\"^Foo$\"]"));
+        // assume that as we only have one pattern, it will be the same
+        verify(logger).info(eq("Waited {} for {}"), any(StopWatch.class), eq("^Foo$"));
+    }
+
+    @Test
+    public void timeOutWaitingForLogs() {
+        // pattern are in order of timeout here
+        LogPattern firstLogPattern = new LogPattern("^Foo$");
+        firstLogPattern.setTimeout(0);
+        LogPattern secondLogPattern = new LogPattern("^Bar$");
+        // here we have reverse order
+        when(confMock.getHealthChecks().getLogPatterns()).thenReturn(Arrays.asList(secondLogPattern, firstLogPattern));
+        mockLogContainerCmd("Bar");
+
+        try {
+            testObj.start();
+            fail();
+        } catch (OrchestrationException e) {
+            assertEquals(String.format("timeout after 0 while waiting for %s in %s's logs", firstLogPattern.getPattern(), idMock), e.getMessage());
+        }
+
+        verify(logger).info(eq("Waiting for {} to appear in output"), eq("[\"^Foo$\", \"^Bar$\"]"));
+        verify(logger).info(eq("Waited {} for {}"), any(StopWatch.class), eq("^Bar$"));
     }
 
     private LogContainerCmd mockLogContainerCmd(String containerOutput) {
@@ -482,6 +473,7 @@ public class DockerOrchestratorTest {
 
         when(cmd.withStdErr()).thenReturn(cmd);
         when(cmd.withStdOut()).thenReturn(cmd);
+        when(cmd.withTailAll()).thenReturn(cmd);
         when(cmd.withFollowStream()).thenReturn(cmd);
         when(cmd.withTimestamps()).thenReturn(cmd);
 

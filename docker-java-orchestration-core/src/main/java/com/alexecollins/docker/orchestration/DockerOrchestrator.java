@@ -29,6 +29,8 @@ import com.github.dockerjava.api.model.Link;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.Volume;
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,8 +45,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -152,6 +157,26 @@ public class DockerOrchestrator {
 
     private static boolean isPermissionError(InternalServerErrorException e) {
         return e.getMessage().contains("operation not permitted");
+    }
+
+    private static List<LogPattern> sortedLogPatterns(List<LogPattern> logPatterns) {
+        final List<LogPattern> pending = new ArrayList<>(logPatterns);
+        Collections.sort(pending, new Comparator<LogPattern>() {
+            @Override
+            public int compare(LogPattern o1, LogPattern o2) {
+                return o1.getTimeout() - o2.getTimeout();
+            }
+        });
+        return pending;
+    }
+
+    private static String logPatternsToString(List<LogPattern> pending) {
+        return Lists.transform(pending, new Function<LogPattern, String>() {
+            @Override
+            public String apply(LogPattern input) {
+                return String.format("\"%s\"", input.getPattern().pattern());
+            }
+        }).toString();
     }
 
     public void clean() {
@@ -460,14 +485,10 @@ public class DockerOrchestrator {
         }
     }
 
-    private void waitFor(Id id, LogPattern logPattern) {
-        if (logPattern == null) {
+    private void waitForLogPatterns(Id id, List<LogPattern> logPatterns) {
+        if (logPatterns == null || logPatterns.isEmpty()) {
             return;
         }
-
-        final StopWatch watch = new StopWatch();
-        watch.start();
-        logger.info(String.format("Waiting for '%s' to appear in output", logPattern.getPattern()));
 
         final Container container;
 
@@ -482,25 +503,41 @@ public class DockerOrchestrator {
             return;
         }
 
+        final StopWatch watch = new StopWatch();
+        final List<LogPattern> pending = sortedLogPatterns(logPatterns);
+        watch.start();
+
+        logger.info("Waiting for {} to appear in output", logPatternsToString(pending));
         try {
-            final LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId()).withStdErr().withStdOut().withFollowStream().withTimestamps();
+            final LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId())
+                    .withStdErr()
+                    .withStdOut()
+                    .withTailAll()
+                    .withFollowStream()
+                    .withTimestamps();
 
-            final InputStream stream = logContainerCmd.exec();
-
-            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
+            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(logContainerCmd.exec()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    if (logPattern.getPattern().matcher(line).find()) {
+                    for (Iterator<LogPattern> iterator = pending.iterator(); iterator.hasNext(); ) {
+                        LogPattern logPattern = iterator.next();
+                        if (logPattern.getPattern().matcher(line).find()) {
+                            logger.info("Waited {} for {}", watch, logPattern.getPattern().toString());
+                            iterator.remove();
+                        }
+                    }
+                    if (pending.isEmpty()) {
                         watch.stop();
-                        logger.info(String.format("Waited for %s", watch));
                         return;
                     }
-                    if (watch.getTime() > logPattern.getTimeout()) {
-                        throw new OrchestrationException(String.format("timeout after %d while waiting for %s in %s's logs", logPattern.getTimeout(), logPattern.getPattern(), id));
+                    for (LogPattern logPattern : pending) {
+                        if (watch.getTime() >= logPattern.getTimeout()) {
+                            throw new OrchestrationException(String.format("timeout after %d while waiting for %s in %s's logs", logPattern.getTimeout(), logPattern.getPattern(), id));
+                        }
                     }
                 }
             }
-            throw new OrchestrationException(String.format("%s's log ended before %s appeared in output", id, logPattern.getPattern()));
+            throw new OrchestrationException(String.format("%s's log ended before %s appeared in output", id, logPatternsToString(pending)));
         } catch (IOException e) {
             throw new OrchestrationException(e);
         }
@@ -624,15 +661,17 @@ public class DockerOrchestrator {
 
     private void healthCheck(Id id) {
         final HealthChecks healthChecks = conf(id).getHealthChecks();
-        for (LogPattern pattern : healthChecks.getLogPatterns()) {
-            waitFor(id, pattern);
-        }
-        for (Ping ping : healthChecks.getPings()) {
-            waitFor(id, ping);
+        waitForLogPatterns(id, healthChecks.getLogPatterns());
+        waitForPings(id, healthChecks.getPings());
+    }
+
+    private void waitForPings(Id id, List<Ping> pings) {
+        for (Ping ping : pings) {
+            waitForLogPatterns(id, ping);
         }
     }
 
-    private void waitFor(Id id, Ping ping) {
+    private void waitForLogPatterns(Id id, Ping ping) {
         URI uri;
         if (ping.getUrl().toString().contains(CONTAINER_IP_PATTERN)) {
             try {
