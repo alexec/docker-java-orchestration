@@ -23,7 +23,11 @@ public class Conf {
      * E.g. "8080" or "8080 8080" where the former is the exposed port and the latter the container port.
      */
     private List<String> ports = new ArrayList<>();
-    private int sleep = 0;
+    private int sleep = 1000;
+    /**
+     * @deprecated We always log both success and failure.
+     */
+    @Deprecated
     private boolean logOnFailure = true;
     private int maxLogLines = 10; // same as unix tail command
     private List<Id> volumesFrom = new ArrayList<>();
