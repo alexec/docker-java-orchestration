@@ -671,11 +671,11 @@ public class DockerOrchestrator {
 
     private void waitForPings(Id id, List<Ping> pings) {
         for (Ping ping : pings) {
-            waitForLogPatterns(id, ping);
+            waitForPing(id, ping);
         }
     }
 
-    private void waitForLogPatterns(Id id, Ping ping) {
+    private void waitForPing(Id id, Ping ping) {
         URI uri;
         if (ping.getUrl().toString().contains(CONTAINER_IP_PATTERN)) {
             try {
