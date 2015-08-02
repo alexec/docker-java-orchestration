@@ -23,12 +23,14 @@ import com.github.dockerjava.api.command.PushImageCmd;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.InternetProtocol;
 import com.github.dockerjava.api.model.Link;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.Volume;
+import com.github.dockerjava.core.command.FrameReader;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.time.StopWatch;
@@ -508,39 +510,41 @@ public class DockerOrchestrator {
         watch.start();
 
         logger.info("Waiting for {} to appear in output", logPatternsToString(pending));
-        try {
-            final LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId())
-                    .withStdErr()
-                    .withStdOut()
-                    .withTailAll()
-                    .withFollowStream()
-                    .withTimestamps();
 
-            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(logContainerCmd.exec()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    for (Iterator<LogPattern> iterator = pending.iterator(); iterator.hasNext(); ) {
-                        LogPattern logPattern = iterator.next();
-                        if (logPattern.getPattern().matcher(line).find()) {
-                            logger.info("Waited {} for \"{}\"", watch, logPattern.getPattern().toString());
-                            iterator.remove();
-                        }
+        final LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId())
+                .withStdErr()
+                .withStdOut()
+                .withTailAll()
+                .withFollowStream();
+
+        try (final FrameReader reader = new FrameReader(logContainerCmd.exec())) {
+            Frame frame;
+            while ((frame = reader.readFrame()) != null) {
+                String line = new String(frame.getPayload()).trim();
+                for (Iterator<LogPattern> iterator = pending.iterator(); iterator.hasNext(); ) {
+                    LogPattern logPattern = iterator.next();
+                    if (logPattern.getPattern().matcher(line).find()) {
+                        logger.info("Waited {} for \"{}\"", watch, logPattern.getPattern().toString());
+                        iterator.remove();
                     }
-                    if (pending.isEmpty()) {
-                        watch.stop();
-                        return;
-                    }
-                    for (LogPattern logPattern : pending) {
-                        if (watch.getTime() >= logPattern.getTimeout()) {
-                            throw new OrchestrationException(String.format("timeout after %d while waiting for \"%s\" in %s's logs", logPattern.getTimeout(), logPattern.getPattern(), id));
-                        }
+                }
+                if (pending.isEmpty()) {
+                    watch.stop();
+                    return;
+                }
+                for (LogPattern logPattern : pending) {
+                    if (watch.getTime() >= logPattern.getTimeout()) {
+                        throw new OrchestrationException(String.format("timeout after %d while waiting for \"%s\" in %s's logs", logPattern.getTimeout(), logPattern.getPattern(), id));
                     }
                 }
             }
-            throw new OrchestrationException(String.format("%s's log ended before %s appeared in output", id, logPatternsToString(pending)));
         } catch (IOException e) {
-            throw new OrchestrationException(e);
+            // silently swallow this message
+            if (!e.getMessage().equals("Stream closed")) {
+                throw new OrchestrationException(e);
+            }
         }
+        throw new OrchestrationException(String.format("%s's log ended before %s appeared in output", id, logPatternsToString(pending)));
     }
 
     private boolean isImageIdFromContainerMatchingProvidedImageId(String containerId, final Id id) {

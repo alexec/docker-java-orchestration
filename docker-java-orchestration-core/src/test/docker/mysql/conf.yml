@@ -1,3 +1,6 @@
 tag: registry/it-mysql:latest
 ports:
   - 3306
+healthChecks:
+  logPatterns:
+    - "ready for connections"

@@ -29,7 +29,6 @@ import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.PushEventStreamItem;
 import com.github.dockerjava.jaxrs.BuildImageCmdExec;
-import com.google.common.base.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.glassfish.jersey.client.ClientResponse;
@@ -40,7 +39,6 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.slf4j.Logger;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -134,6 +132,22 @@ public class DockerOrchestratorTest {
     @Mock
     private TailFactory tailFactoryMock;
     private DockerOrchestrator testObj;
+
+    private static InputStream frameStream(String containerOutput) {
+        final List<Integer> bytes = new ArrayList<>();
+
+        bytes.addAll(Arrays.asList(0, 0, 0, 0, 0, 0, 0, containerOutput.length()));
+        for (int b : containerOutput.getBytes()) {
+            bytes.add(b);
+        }
+
+        return new InputStream() {
+            @Override
+            public int read() throws IOException {
+                return bytes.isEmpty() ? -1 : bytes.remove(0);
+            }
+        };
+    }
 
     @Before
     public void setup() throws DockerException, IOException {
@@ -477,7 +491,7 @@ public class DockerOrchestratorTest {
         when(cmd.withFollowStream()).thenReturn(cmd);
         when(cmd.withTimestamps()).thenReturn(cmd);
 
-        when(cmd.exec()).thenReturn(new ByteArrayInputStream(containerOutput.getBytes(Charsets.UTF_8)));
+        when(cmd.exec()).thenReturn(frameStream(containerOutput));
 
         when(dockerMock.logContainerCmd(containerMock.getId())).thenReturn(cmd);
         return cmd;
