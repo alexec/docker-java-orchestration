@@ -500,7 +500,7 @@ public class DockerOrchestrator {
                     }
                 }
             }
-            throw new OrchestrationException("Container log ended before line appeared in output");
+            throw new OrchestrationException(String.format("%s's log ended before %s appeared in output", id, logPattern.getPattern()));
         } catch (IOException e) {
             throw new OrchestrationException(e);
         }

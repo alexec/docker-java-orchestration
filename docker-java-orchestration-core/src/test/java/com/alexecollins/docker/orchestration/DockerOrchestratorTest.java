@@ -457,7 +457,7 @@ public class DockerOrchestratorTest {
         try {
             testObj.start();
         } catch (OrchestrationException e) {
-            assertThat(e.getMessage(), equalTo("Container log ended before line appeared in output"));
+            assertThat(e.getMessage(), equalTo(String.format("%s's log ended before ^Foo$ appeared in output", idMock)));
         }
 
         verify(cmd, times(1)).exec();
