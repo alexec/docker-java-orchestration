@@ -624,7 +624,7 @@ public class DockerOrchestrator {
 
     private void healthCheck(Id id) {
         final HealthChecks healthChecks = conf(id).getHealthChecks();
-        for (Pattern pattern : healthChecks.getLogPatterns()) {
+        for (LogPattern pattern : healthChecks.getLogPatterns()) {
             waitFor(id, pattern);
         }
         for (Ping ping : healthChecks.getPings()) {
