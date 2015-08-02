@@ -444,7 +444,7 @@ public class DockerOrchestratorTest {
 
         verify(logger).info(eq("Waiting for {} to appear in output"), eq("[\"^Foo$\"]"));
         // assume that as we only have one pattern, it will be the same
-        verify(logger).info(eq("Waited {} for {}"), any(StopWatch.class), eq("^Foo$"));
+        verify(logger).info(eq("Waited {} for \"{}\""), any(StopWatch.class), eq("^Foo$"));
     }
 
     @Test
@@ -461,11 +461,11 @@ public class DockerOrchestratorTest {
             testObj.start();
             fail();
         } catch (OrchestrationException e) {
-            assertEquals(String.format("timeout after 0 while waiting for %s in %s's logs", firstLogPattern.getPattern(), idMock), e.getMessage());
+            assertEquals(String.format("timeout after 0 while waiting for \"%s\" in %s's logs", firstLogPattern.getPattern(), idMock), e.getMessage());
         }
 
         verify(logger).info(eq("Waiting for {} to appear in output"), eq("[\"^Foo$\", \"^Bar$\"]"));
-        verify(logger).info(eq("Waited {} for {}"), any(StopWatch.class), eq("^Bar$"));
+        verify(logger).info(eq("Waited {} for \"{}\""), any(StopWatch.class), eq("^Bar$"));
     }
 
     private LogContainerCmd mockLogContainerCmd(String containerOutput) {

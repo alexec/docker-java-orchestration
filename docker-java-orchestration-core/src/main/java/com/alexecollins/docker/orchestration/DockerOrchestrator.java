@@ -522,7 +522,7 @@ public class DockerOrchestrator {
                     for (Iterator<LogPattern> iterator = pending.iterator(); iterator.hasNext(); ) {
                         LogPattern logPattern = iterator.next();
                         if (logPattern.getPattern().matcher(line).find()) {
-                            logger.info("Waited {} for {}", watch, logPattern.getPattern().toString());
+                            logger.info("Waited {} for \"{}\"", watch, logPattern.getPattern().toString());
                             iterator.remove();
                         }
                     }
@@ -532,7 +532,7 @@ public class DockerOrchestrator {
                     }
                     for (LogPattern logPattern : pending) {
                         if (watch.getTime() >= logPattern.getTimeout()) {
-                            throw new OrchestrationException(String.format("timeout after %d while waiting for %s in %s's logs", logPattern.getTimeout(), logPattern.getPattern(), id));
+                            throw new OrchestrationException(String.format("timeout after %d while waiting for \"%s\" in %s's logs", logPattern.getTimeout(), logPattern.getPattern(), id));
                         }
                     }
                 }
