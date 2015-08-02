@@ -12,4 +12,7 @@ public class LogPattern {
     public LogPattern(String pattern) {
         this.pattern = Pattern.compile(pattern);
     }
+
+    public LogPattern() {
+    }
 }
