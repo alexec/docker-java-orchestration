@@ -1,5 +1,9 @@
 Change Log
 ===
+2.10.1
+
+* Bug: Improved reliability of log health-check.
+
 2.10.0
 
 * [DJO Pull](https://github.com/alexec/docker-java-orchestration/pull/39) Enhancement: Added a health-check for making sure an expected log line appears.
