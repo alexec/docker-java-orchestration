@@ -441,9 +441,9 @@ public class DockerOrchestrator {
                     plugin.started(id, conf(id));
                 }
 
-                healthCheck(id);
-
                 sleep(id);
+
+                healthCheck(id);
 
                 tail.setMaxLines(conf(id).getMaxLogLines());
             }
