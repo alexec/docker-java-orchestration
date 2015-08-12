@@ -18,6 +18,7 @@ import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Container;
@@ -512,10 +513,16 @@ public class DockerOrchestrator {
 
         logger.info("Waiting for {} to appear in output", logPatternsToString(pending));
 
+        final LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId())
+                .withStdErr()
+                .withStdOut()
+                .withTailAll()
+                .withFollowStream();
 
         try (final FrameReader reader = new FrameReader(logContainerCmd.exec())) {
             Frame frame;
             while ((frame = reader.readFrame()) != null) {
+                logger.debug("Read \"{}\"", frame);
                 String line = new String(frame.getPayload()).trim();
                 for (Iterator<LogPattern> iterator = pending.iterator(); iterator.hasNext(); ) {
                     LogPattern logPattern = iterator.next();
