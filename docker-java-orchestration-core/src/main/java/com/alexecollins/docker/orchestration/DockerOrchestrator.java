@@ -679,7 +679,7 @@ public class DockerOrchestrator {
         URI uri;
         if (ping.getUrl().toString().contains(CONTAINER_IP_PATTERN)) {
             try {
-                uri = new URI(ping.getUrl().toString().replace(CONTAINER_IP_PATTERN, getIPAddresses().get(id.toString())));
+                uri = new URI(ping.getUrl().toString().replace(CONTAINER_IP_PATTERN, getIPAddress(id)));
             } catch (URISyntaxException e) {
                 throw new OrchestrationException("Bad health check URI syntax: " + e.getMessage() + ", input: " + e.getInput() + ", index:" + e.getIndex());
             }
@@ -759,14 +759,22 @@ public class DockerOrchestrator {
         }
     }
 
+    public String getIPAddress(Id id) {
+        if (repo.conf(id).isExposeContainerIp()) {
+            String containerName = repo.containerName(id);
+            InspectContainerResponse containerInspectResponse = docker.inspectContainerCmd(containerName).exec();
+            return containerInspectResponse.getNetworkSettings().getIpAddress();
+        } else  {
+            throw new IllegalArgumentException(id + " container IP address is not exposed");
+        }
+    }
+
     public Map<String, String> getIPAddresses() {
         Map<String, String> idToIpAddressMap = new HashMap<>();
         for (Id id : ids()) {
             Conf conf = repo.conf(id);
             if (inclusive(id) && conf.isExposeContainerIp()) {
-                String containerName = repo.containerName(id);
-                InspectContainerResponse containerInspectResponse = docker.inspectContainerCmd(containerName).exec();
-                idToIpAddressMap.put(id.toString(), containerInspectResponse.getNetworkSettings().getIpAddress());
+                idToIpAddressMap.put(id.toString(), getIPAddress(id));
             }
         }
         return idToIpAddressMap;
