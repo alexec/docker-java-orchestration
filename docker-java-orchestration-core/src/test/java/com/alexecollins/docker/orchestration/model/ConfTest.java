@@ -35,8 +35,7 @@ public class ConfTest {
         assertNotNull(conf.getVolumesFrom());
 
         assertEquals(new Link("foo:bar"), conf.getLinks().get(0));
-
-        assertThat(conf.isLogOnFailure(), is(true));
+        
         assertThat(conf.getMaxLogLines(), is(123));
     }
 
