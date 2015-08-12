@@ -437,15 +437,17 @@ public class DockerOrchestrator {
             try (Tail tail = tailFactory.newTail(docker, findContainer(id), logger)) {
                 tail.start();
 
+                Conf conf = conf(id);
+
                 for (Plugin plugin : plugins) {
-                    plugin.started(id, conf(id));
+                    plugin.started(id, conf);
                 }
 
                 sleep(id);
 
                 healthCheck(id);
 
-                tail.setMaxLines(conf(id).getMaxLogLines());
+                tail.setMaxLines(conf.getMaxLogLines());
             }
 
         } catch (DockerException e) {
