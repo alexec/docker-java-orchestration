@@ -1,33 +1,12 @@
 package com.alexecollins.docker.orchestration;
 
 
-import com.alexecollins.docker.orchestration.model.BuildFlag;
-import com.alexecollins.docker.orchestration.model.Conf;
-import com.alexecollins.docker.orchestration.model.ContainerConf;
-import com.alexecollins.docker.orchestration.model.HealthChecks;
-import com.alexecollins.docker.orchestration.model.Id;
+import com.alexecollins.docker.orchestration.model.*;
 import com.alexecollins.docker.orchestration.model.Link;
-import com.alexecollins.docker.orchestration.model.LogPattern;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
-import com.github.dockerjava.api.command.BuildImageCmd;
-import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.InspectContainerCmd;
-import com.github.dockerjava.api.command.InspectContainerResponse;
-import com.github.dockerjava.api.command.ListContainersCmd;
-import com.github.dockerjava.api.command.ListImagesCmd;
-import com.github.dockerjava.api.command.LogContainerCmd;
-import com.github.dockerjava.api.command.PushImageCmd;
-import com.github.dockerjava.api.command.RemoveContainerCmd;
-import com.github.dockerjava.api.command.StartContainerCmd;
-import com.github.dockerjava.api.command.StopContainerCmd;
-import com.github.dockerjava.api.command.TagImageCmd;
-import com.github.dockerjava.api.model.AuthConfig;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.ContainerConfig;
-import com.github.dockerjava.api.model.Image;
-import com.github.dockerjava.api.model.PushEventStreamItem;
+import com.github.dockerjava.api.command.*;
+import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.jaxrs.BuildImageCmdExec;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.time.StopWatch;
@@ -42,27 +21,11 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
+import java.util.*;
 
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyBoolean;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DockerOrchestratorTest {
@@ -73,6 +36,7 @@ public class DockerOrchestratorTest {
     private static final String CONTAINER_NAME = "theContainer";
     private static final String CONTAINER_ID = "containerId";
     private static final String TAG_NAME = "test-tag";
+    private static final String IP_ADDRESS = "127.0.0.1";
     @Mock
     private Logger logger;
     @Mock
@@ -101,6 +65,8 @@ public class DockerOrchestratorTest {
     private Image imageMock;
     @Mock
     private InspectContainerResponse containerInspectResponseMock;
+    @Mock
+    private InspectContainerResponse.NetworkSettings networkSettingsMock;
     @Mock
     private BuildImageCmd buildImageCmdMock;
     @Mock
@@ -223,6 +189,8 @@ public class DockerOrchestratorTest {
         when(dockerMock.inspectContainerCmd(CONTAINER_ID)).thenReturn(inspectContainerCmdMock);
         when(inspectContainerCmdMock.exec()).thenReturn(containerInspectResponseMock);
         when(containerInspectResponseMock.getImageId()).thenReturn(IMAGE_ID);
+        when(containerInspectResponseMock.getNetworkSettings()).thenReturn(networkSettingsMock);
+        when(networkSettingsMock.getIpAddress()).thenReturn(IP_ADDRESS);
 
         when(dockerMock.tagImageCmd(anyString(), anyString(), anyString())).thenReturn(tagImageCmdMock);
         when(tagImageCmdMock.withForce()).thenReturn(tagImageCmdMock);
@@ -480,6 +448,21 @@ public class DockerOrchestratorTest {
 
         verify(logger).info(eq("Waiting for {} to appear in output"), eq("[\"^Foo$\", \"^Bar$\"]"));
         verify(logger).info(eq("Waited {} for \"{}\""), any(StopWatch.class), eq("^Bar$"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldNotExposeIPAddressWhenContainerIsNotExposed() {
+        when(confMock.isExposeContainerIp()).thenReturn(false);
+        testObj.getIPAddress(idMock);
+        fail("Expected exception to be thrown");
+    }
+
+    @Test
+    public void shouldExposeIPAddressFromDockeExec() {
+        when(confMock.isExposeContainerIp()).thenReturn(true);
+        String result = testObj.getIPAddress(idMock);
+        assertEquals(IP_ADDRESS, result);
+        verify(inspectContainerCmdMock, times(1)).exec();
     }
 
     private LogContainerCmd mockLogContainerCmd(String containerOutput) {
