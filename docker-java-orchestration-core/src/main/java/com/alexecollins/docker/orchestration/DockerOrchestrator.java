@@ -1,35 +1,16 @@
 package com.alexecollins.docker.orchestration;
 
 
-import com.alexecollins.docker.orchestration.model.BuildFlag;
-import com.alexecollins.docker.orchestration.model.CleanFlag;
-import com.alexecollins.docker.orchestration.model.Conf;
-import com.alexecollins.docker.orchestration.model.ContainerConf;
-import com.alexecollins.docker.orchestration.model.HealthChecks;
-import com.alexecollins.docker.orchestration.model.Id;
-import com.alexecollins.docker.orchestration.model.LogPattern;
-import com.alexecollins.docker.orchestration.model.Ping;
+import com.alexecollins.docker.orchestration.model.*;
 import com.alexecollins.docker.orchestration.plugin.api.Plugin;
 import com.alexecollins.docker.orchestration.util.Pinger;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.InternalServerErrorException;
 import com.github.dockerjava.api.NotFoundException;
-import com.github.dockerjava.api.command.BuildImageCmd;
-import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.command.InspectContainerResponse;
-import com.github.dockerjava.api.command.LogContainerCmd;
-import com.github.dockerjava.api.command.PushImageCmd;
-import com.github.dockerjava.api.model.Bind;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.Frame;
-import com.github.dockerjava.api.model.Image;
-import com.github.dockerjava.api.model.InternetProtocol;
+import com.github.dockerjava.api.command.*;
+import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.api.model.Link;
-import com.github.dockerjava.api.model.PortBinding;
-import com.github.dockerjava.api.model.Ports;
-import com.github.dockerjava.api.model.Volume;
 import com.github.dockerjava.core.command.FrameReader;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
@@ -37,27 +18,10 @@ import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Properties;
-import java.util.ServiceLoader;
-import java.util.Set;
+import java.util.*;
 
 import static java.util.Arrays.asList;
 
@@ -682,7 +646,7 @@ public class DockerOrchestrator {
         URI uri;
         if (ping.getUrl().toString().contains(CONTAINER_IP_PATTERN)) {
             try {
-                uri = new URI(ping.getUrl().toString().replace(CONTAINER_IP_PATTERN, getIPAddresses().get(id.toString())));
+                uri = new URI(ping.getUrl().toString().replace(CONTAINER_IP_PATTERN, getIPAddress(id)));
             } catch (URISyntaxException e) {
                 throw new OrchestrationException("Bad health check URI syntax: " + e.getMessage() + ", input: " + e.getInput() + ", index:" + e.getIndex());
             }
@@ -762,14 +726,22 @@ public class DockerOrchestrator {
         }
     }
 
+    public String getIPAddress(Id id) {
+        Container container = findContainer(id);
+        if (container != null && repo.conf(id).isExposeContainerIp()) {
+            InspectContainerResponse containerInspectResponse = docker.inspectContainerCmd(container.getId()).exec();
+            return containerInspectResponse.getNetworkSettings().getIpAddress();
+        } else {
+            throw new IllegalArgumentException(id + " container IP address is not exposed");
+        }
+    }
+
     public Map<String, String> getIPAddresses() {
         Map<String, String> idToIpAddressMap = new HashMap<>();
         for (Id id : ids()) {
             Conf conf = repo.conf(id);
             if (inclusive(id) && conf.isExposeContainerIp()) {
-                String containerName = repo.containerName(id);
-                InspectContainerResponse containerInspectResponse = docker.inspectContainerCmd(containerName).exec();
-                idToIpAddressMap.put(id.toString(), containerInspectResponse.getNetworkSettings().getIpAddress());
+                idToIpAddressMap.put(id.toString(), getIPAddress(id));
             }
         }
         return idToIpAddressMap;
