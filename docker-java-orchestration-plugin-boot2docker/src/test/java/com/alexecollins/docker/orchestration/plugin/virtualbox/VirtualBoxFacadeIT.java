@@ -2,18 +2,22 @@ package com.alexecollins.docker.orchestration.plugin.virtualbox;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@Ignore("only to be run manually")
 public class VirtualBoxFacadeIT {
 
     private static final int PORT = 14321;
     private final VirtualBoxFacade virtualBoxFacade = new VirtualBoxFacade();
+    nly run
     private String vmName;
-
+    test
     @Before
+
     public void setUp() throws Exception {
         vmName = new Boot2DockerVmNameFinder(virtualBoxFacade).getVmName();
     }
