@@ -1,6 +1,7 @@
 package com.alexecollins.docker.orchestration.plugin.virtualbox;
 
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
@@ -10,11 +11,17 @@ public class VirtualBoxFacadeIT {
 
     private static final int PORT = 14321;
     private final VirtualBoxFacade virtualBoxFacade = new VirtualBoxFacade();
+    private String vmName;
+
+    @Before
+    public void setUp() throws Exception {
+        vmName = new Boot2DockerVmNameFinder(virtualBoxFacade).getVmName();
+    }
 
     @After
     public void tearDown() throws Exception {
         if (OS.isNotUnix()) {
-            virtualBoxFacade.deletePortForward(PORT);
+            virtualBoxFacade.deletePortForward(vmName, PORT);
         }
     }
 
@@ -22,13 +29,13 @@ public class VirtualBoxFacadeIT {
     public void canCreateAndDeletePortForward() throws Exception {
 
         if (OS.isNotUnix()) {
-            virtualBoxFacade.createPortForward(PORT);
-            assertTrue(virtualBoxFacade.getPortForwards().contains(PORT));
-            virtualBoxFacade.recreatePortForward(PORT);
-            assertTrue(virtualBoxFacade.getPortForwards().contains(PORT));
+            virtualBoxFacade.createPortForward(vmName, PORT);
+            assertTrue(virtualBoxFacade.getPortForwards(vmName).contains(PORT));
+            virtualBoxFacade.recreatePortForward(vmName, PORT);
+            assertTrue(virtualBoxFacade.getPortForwards(vmName).contains(PORT));
 
-            virtualBoxFacade.deletePortForward(PORT);
-            assertFalse(virtualBoxFacade.getPortForwards().contains(PORT));
+            virtualBoxFacade.deletePortForward(vmName, PORT);
+            assertFalse(virtualBoxFacade.getPortForwards(vmName).contains(PORT));
         }
     }
 }

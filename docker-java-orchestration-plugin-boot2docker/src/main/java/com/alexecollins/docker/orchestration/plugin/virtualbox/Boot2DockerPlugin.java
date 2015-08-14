@@ -10,8 +10,8 @@ public class Boot2DockerPlugin implements Plugin {
     private static final Logger LOGGER = LoggerFactory.getLogger(Boot2DockerPlugin.class);
     private final boolean skip = isDisabled();
     private final VirtualBoxFacade virtualBoxFacade = new VirtualBoxFacade();
+    private final Boot2DockerVmNameFinder boot2DockerVmNameFinder = new Boot2DockerVmNameFinder(virtualBoxFacade);
     private final String skipReason = "host is Unix like";
-
 
     private static int hostPort(String stringPort) {
         return Integer.parseInt(stringPort.split(" ")[0]);
@@ -24,8 +24,12 @@ public class Boot2DockerPlugin implements Plugin {
             return;
         }
         for (String stringPort : conf.getPorts()) {
-            virtualBoxFacade.recreatePortForward(hostPort(stringPort));
+            virtualBoxFacade.recreatePortForward(getVmName(), hostPort(stringPort));
         }
+    }
+
+    private String getVmName() {
+        return boot2DockerVmNameFinder.getVmName();
     }
 
     @Override
@@ -35,7 +39,7 @@ public class Boot2DockerPlugin implements Plugin {
             return;
         }
         for (String stringPort : conf.getPorts()) {
-            virtualBoxFacade.deletePortForward(hostPort(stringPort));
+            virtualBoxFacade.deletePortForward(getVmName(), hostPort(stringPort));
         }
     }
 

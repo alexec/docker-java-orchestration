@@ -1,8 +1,10 @@
 Change Log
 ===
-2.102.
+2.10.2
 
-* [DJO Pull 47](https://github.com/alexec/docker-java-orchestration/pull/47) Bug: Fixed bug that prevented health-checking by IP on multiple containers. 
+* [DJO Pull 47](https://github.com/alexec/docker-java-orchestration/pull/47) Bug: Fixed bug that prevented health-checking by IP on multiple containers.
+* Enhancement: Made logging of failures clearer.
+* Enhancement: Support new Docker VirtualBox set-up.
 
 2.10.1
 
