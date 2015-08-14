@@ -448,7 +448,6 @@ public class DockerOrchestrator {
             throw new OrchestrationException(e);
         } finally {
             try (Tail tail = tailFactory.newTail(docker, findContainer(id), logger)) {
-                tail.setMaxLines(conf(id).getMaxLogLines());
                 tail.start();
                 tail.join();
             } catch (InterruptedException e) {
