@@ -13,11 +13,9 @@ public class VirtualBoxFacadeIT {
 
     private static final int PORT = 14321;
     private final VirtualBoxFacade virtualBoxFacade = new VirtualBoxFacade();
-    nly run
     private String vmName;
-    test
-    @Before
 
+    @Before
     public void setUp() throws Exception {
         vmName = new Boot2DockerVmNameFinder(virtualBoxFacade).getVmName();
     }
