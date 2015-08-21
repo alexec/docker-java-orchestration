@@ -60,7 +60,7 @@ class VirtualBoxFacade {
 
     List<String> getVmNames() {
         List<String> vmNames = new ArrayList<>();
-        for (String line : commandExecutor.exec("VBoxManage list vms").split(System.getProperty("line.separator"))) {
+        for (String line : commandExecutor.exec("VBoxManage list runningvms").split(System.getProperty("line.separator"))) {
             vmNames.add(line.replaceFirst("\"(.*)\".*", "$1"));
         }
 
