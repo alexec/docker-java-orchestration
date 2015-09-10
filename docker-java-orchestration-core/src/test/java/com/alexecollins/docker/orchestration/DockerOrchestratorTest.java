@@ -1,31 +1,81 @@
 package com.alexecollins.docker.orchestration;
 
 
-import com.alexecollins.docker.orchestration.model.*;
+import com.alexecollins.docker.orchestration.model.BuildFlag;
+import com.alexecollins.docker.orchestration.model.Conf;
+import com.alexecollins.docker.orchestration.model.ContainerConf;
+import com.alexecollins.docker.orchestration.model.HealthChecks;
+import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.model.Link;
+import com.alexecollins.docker.orchestration.model.LogPattern;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
-import com.github.dockerjava.api.command.*;
-import com.github.dockerjava.api.model.*;
-import com.github.dockerjava.jaxrs.BuildImageCmdExec;
-import org.apache.commons.io.IOUtils;
+import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.command.BuildImageCmd;
+import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.InspectContainerCmd;
+import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.command.ListContainersCmd;
+import com.github.dockerjava.api.command.ListImagesCmd;
+import com.github.dockerjava.api.command.LogContainerCmd;
+import com.github.dockerjava.api.command.PushImageCmd;
+import com.github.dockerjava.api.command.RemoveContainerCmd;
+import com.github.dockerjava.api.command.StartContainerCmd;
+import com.github.dockerjava.api.command.StopContainerCmd;
+import com.github.dockerjava.api.command.TagImageCmd;
+import com.github.dockerjava.api.model.AuthConfig;
+import com.github.dockerjava.api.model.BuildResponseItem;
+import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.model.ContainerConfig;
+import com.github.dockerjava.api.model.Frame;
+import com.github.dockerjava.api.model.Image;
+import com.github.dockerjava.api.model.PushResponseItem;
+import com.github.dockerjava.api.model.StreamType;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.time.StopWatch;
 import org.glassfish.jersey.client.ClientResponse;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DockerOrchestratorTest {
@@ -99,21 +149,7 @@ public class DockerOrchestratorTest {
     private TailFactory tailFactoryMock;
     private DockerOrchestrator testObj;
 
-    private static InputStream frameStream(String containerOutput) {
-        final List<Integer> bytes = new ArrayList<>();
-
-        bytes.addAll(Arrays.asList(0, 0, 0, 0, 0, 0, 0, containerOutput.length()));
-        for (int b : containerOutput.getBytes()) {
-            bytes.add(b);
-        }
-
-        return new InputStream() {
-            @Override
-            public int read() throws IOException {
-                return bytes.isEmpty() ? -1 : bytes.remove(0);
-            }
-        };
-    }
+    private final ExecutorService backgroundExecutor = Executors.newSingleThreadExecutor();
 
     @Before
     public void setup() throws DockerException, IOException {
@@ -158,9 +194,26 @@ public class DockerOrchestratorTest {
         when(buildImageCmdMock.withTag(any(String.class))).thenReturn(buildImageCmdMock);
         when(buildImageCmdMock.withNoCache(anyBoolean())).thenReturn(buildImageCmdMock);
         when(buildImageCmdMock.withQuiet(anyBoolean())).thenReturn(buildImageCmdMock);
-        when(buildImageCmdMock.exec()).thenReturn(new BuildImageCmdExec.ResponseImpl(IOUtils.toInputStream("Successfully built")));
+        when(buildImageCmdMock.exec(any(ResultCallback.class))).thenAnswer(
+                new Answer<Object>() {
+                    @Override
+                    public Object answer(final InvocationOnMock invocation) throws Throwable {
+                        final ResultCallback o = (ResultCallback) invocation.getArguments()[0];
 
-        when(dockerMock.createContainerCmd(IMAGE_ID)).thenReturn(createContainerCmdMock);
+                        final BuildResponseItem item = new BuildResponseItem() {
+                            @Override
+                            public String getStream() {
+                                return "Successfully built imageId";
+                            }
+                        };
+                        o.onNext(item);
+
+                        o.onComplete();
+                        return o;
+                    }
+                });
+
+                when(dockerMock.createContainerCmd(IMAGE_ID)).thenReturn(createContainerCmdMock);
         when(createContainerCmdMock.exec()).thenReturn(createContainerResponse);
         when(createContainerCmdMock.withName(eq(CONTAINER_NAME))).thenReturn(createContainerCmdMock);
 
@@ -197,22 +250,40 @@ public class DockerOrchestratorTest {
 
         when(dockerMock.pushImageCmd(anyString())).thenReturn(pushImageCmd);
         when(pushImageCmd.withAuthConfig(any(AuthConfig.class))).thenReturn(pushImageCmd);
-        when(pushImageCmd.exec()).thenReturn(new PushImageCmd.Response() {
-            private final InputStream proxy = IOUtils.toInputStream("{\"status\":\"The push refers to a repository [docker.io/pushtechnology/daas-management] (len: 2)\"}{\"errorDetail\":{\"message\":\"Received unexpected HTTP status: 500 Internal Server Error\"},\"error\":\"Received unexpected HTTP status: 500 Internal Server Error\"}");
+        when(pushImageCmd.exec(any(ResultCallback.class))).thenAnswer(
+                new Answer<ResultCallback<PushResponseItem>>() {
 
-            @Override
-            public int read() throws IOException {
-                return proxy.read();
-            }
+                    private final LinkedList<PushResponseItem> pushResponses = Lists.newLinkedList();
 
-            @Override
-            public Iterable<PushEventStreamItem> getItems() throws IOException {
-                return null;
-            }
-        });
+                    {
+
+                        final String result = "{\"status\":\"The push refers to a repository [docker.io/pushtechnology/daas-management] (len: 2)\"}";
+                        final String error = "{\"errorDetail\":{\"message\":\"Received unexpected HTTP status: 500 Internal Server Error\"},\"error\":\"Received unexpected HTTP status: 500 Internal Server Error\"}";
+
+                        final ObjectMapper mapper = new ObjectMapper();
+                        pushResponses.add(mapper.readValue(result, PushResponseItem.class));
+                        pushResponses.add(mapper.readValue(error, PushResponseItem.class));
+                    }
+
+                    @Override
+                    public ResultCallback<PushResponseItem> answer(final InvocationOnMock invocation) throws Throwable {
+                        ResultCallback<PushResponseItem> callback = (ResultCallback<PushResponseItem>) invocation.getArguments()[0];
+
+                        callback.onNext(pushResponses.removeFirst());
+                        callback.onNext(pushResponses.removeFirst());
+                        callback.onComplete();
+
+                        return callback;
+                    }
+                });
 
         when(definitionFilter.test(any(Id.class), any(Conf.class))).thenReturn(true);
         when(tailFactoryMock.newTail(any(DockerClient.class), any(Container.class), any(Logger.class))).thenReturn(tailMock);
+    }
+
+    @After
+    public void teadDown() {
+        backgroundExecutor.shutdown();
     }
 
     @Test
@@ -410,7 +481,7 @@ public class DockerOrchestratorTest {
 
         testObj.start();
 
-        verify(cmd, times(1)).exec();
+        verify(cmd, times(1)).exec(any(ResultCallback.class));
     }
 
     @Test
@@ -475,7 +546,7 @@ public class DockerOrchestratorTest {
         verify(inspectContainerCmdMock, times(1)).exec();
     }
 
-    private LogContainerCmd mockLogContainerCmd(String containerOutput) {
+    private LogContainerCmd mockLogContainerCmd(final String containerOutput) {
         final LogContainerCmd cmd = mock(LogContainerCmd.class);
 
         when(cmd.withStdErr()).thenReturn(cmd);
@@ -484,7 +555,31 @@ public class DockerOrchestratorTest {
         when(cmd.withFollowStream()).thenReturn(cmd);
         when(cmd.withTimestamps()).thenReturn(cmd);
 
-        when(cmd.exec()).thenReturn(frameStream(containerOutput));
+        when(cmd.exec(any(ResultCallback.class))).thenAnswer(
+                new Answer<Object>() {
+                    @Override
+                    public Object answer(final InvocationOnMock invocation) throws Throwable {
+                        final ResultCallback<Frame> callback = (ResultCallback<Frame>) invocation.getArguments()[0];
+
+                        final Future<Void> result = backgroundExecutor.submit(new Callable<Void>() {
+
+                            @Override
+                            public Void call() throws Exception {
+                                callback.onNext(new Frame(StreamType.STDOUT, containerOutput.getBytes()));
+                                callback.onComplete();
+                                return null;
+                            }
+                        });
+
+                        try {
+                            result.get();
+                        } catch (ExecutionException e) {
+                            throw e.getCause();
+                        }
+                        return callback;
+                    }
+                }
+        );
 
         when(dockerMock.logContainerCmd(containerMock.getId())).thenReturn(cmd);
         return cmd;
