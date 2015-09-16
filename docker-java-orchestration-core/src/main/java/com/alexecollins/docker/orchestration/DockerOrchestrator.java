@@ -43,6 +43,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -810,8 +811,8 @@ public class DockerOrchestrator {
         try {
             PushImageCmd pushImageCmd = docker.pushImageCmd(repo(id));
             logger.info("Pushing " + id + " (" + pushImageCmd.getName() + ")");
-            InputStream inputStream = pushImageCmd.exec();
-            throwExceptionIfThereIsAnError(inputStream);
+            PushImageCmd.Response response = pushImageCmd.exec();
+            throwExceptionIfThereIsAnError(response);
         } catch (DockerException | IOException e) {
             throw new OrchestrationException(e);
         }
@@ -824,13 +825,36 @@ public class DockerOrchestrator {
     private void throwExceptionIfThereIsAnError(InputStream exec) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(exec))) {
             String l;
-            while ((l = reader.readLine()) != null) {
-                logger.info(l);
+            while ((l = readMessageLine(reader)) != null) {
+                if (!buildQuiet()) {
+                    logger.info(l);
+                }
                 if (l.startsWith("{\"errorDetail") && !l.equals("{\"errorDetail\":{}}")) {
                     throw new OrchestrationException(extractMessage(l));
                 }
             }
         }
+    }
+
+    private String readMessageLine(Reader reader) throws IOException {
+        StringBuffer l = new StringBuffer();
+        int c;
+        int depth = 0;
+        while ((c = reader.read()) != -1) {
+            if (c != '\n' && c != '\r') {
+                l.append((char) c);
+                if (c == '{') {
+                    depth++;
+                }
+                else if (c == '}') {
+                    depth--;
+                }
+                if (depth == 0) {
+                    return l.toString();
+                }
+            }
+        }
+        return null;
     }
 
     private String extractMessage(String l) {
