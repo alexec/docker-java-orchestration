@@ -198,7 +198,7 @@ public class DockerOrchestratorTest {
         when(dockerMock.pushImageCmd(anyString())).thenReturn(pushImageCmd);
         when(pushImageCmd.withAuthConfig(any(AuthConfig.class))).thenReturn(pushImageCmd);
         when(pushImageCmd.exec()).thenReturn(new PushImageCmd.Response() {
-            private final InputStream proxy = IOUtils.toInputStream("{\"status\":\"The push refers to...\"}");
+            private final InputStream proxy = IOUtils.toInputStream("{\"status\":\"The push refers to a repository [docker.io/pushtechnology/daas-management] (len: 2)\"}{\"errorDetail\":{\"message\":\"Received unexpected HTTP status: 500 Internal Server Error\"},\"error\":\"Received unexpected HTTP status: 500 Internal Server Error\"}");
 
             @Override
             public int read() throws IOException {
@@ -315,8 +315,13 @@ public class DockerOrchestratorTest {
 
     @Test
     public void pushImage() {
-        testObj.push();
-
+        try {
+            testObj.push();
+            assertTrue(false);
+        }
+        catch (OrchestrationException oe) {
+            // need to get here
+        }
         verify(dockerMock).pushImageCmd(IMAGE_NAME);
     }
 
@@ -325,8 +330,13 @@ public class DockerOrchestratorTest {
         String repositoryWithRegistryAndPort = "my.registry.com:5000/mynamespace/myrepository";
 
         when(repoMock.tag(idMock)).thenReturn(repositoryWithRegistryAndPort + ":" + TAG_NAME);
-
-        testObj.push();
+        try {
+            testObj.push();
+            assertTrue(false);
+        }
+        catch (OrchestrationException oe) {
+            // need to get here
+        }
 
         verify(dockerMock).pushImageCmd(repositoryWithRegistryAndPort);
     }
