@@ -32,7 +32,7 @@ class DockerfileValidator {
     private static Map<String, Pattern> instructionsPatterns() {
         Pattern addPattern = Pattern.compile("^(~?[${.}A-z0-9\\/_.-]+|https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*))\\s~?[A-z0-9\\/_.-]+$");
         Map<String, Pattern> instructionPatterns = new HashMap<>();
-        instructionPatterns.put("FROM", Pattern.compile("^[${.}a-z0-9./_-]+((:[${.}a-z0-9._-]+)?)$", Pattern.MULTILINE));
+        instructionPatterns.put("FROM", Pattern.compile("^[${.}a-z0-9./_:-]+((:[${.}a-z0-9._-]+)?)$", Pattern.MULTILINE));
         instructionPatterns.put("MAINTAINER", Pattern.compile(".+"));
         instructionPatterns.put("EXPOSE", Pattern.compile("^[${.}A-z0-9]+([.${.}a-zA-Z0-9\\s]+)?$"));
         instructionPatterns.put("ENV", Pattern.compile("^[${.}a-zA-Z_]+[${.}a-zA-Z0-9_]* .+$"));
