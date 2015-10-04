@@ -13,12 +13,12 @@ machine:
   DOCKER_CERT_PATH: $HOME/.docker
   DOCKER_TLS_VERIFY: 1
 dependencies:
- override: 
+ override:
   - mvn install -DskipTests -s settings.xml
 test:
  override:
   - sudo service mysql stop
-  - mvn deploy -Prun-its -s settings.xml
+  - mvn release:prepare release:perform -B -Prun-its -s settings.xml
  post:
   - mkdir -p $CIRCLE_TEST_REPORTS/junit/
   - find . -type f -regex ".*/target/.*-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
