@@ -2,6 +2,7 @@ package com.alexecollins.docker.orchestration;
 
 import com.alexecollins.docker.orchestration.model.BuildFlag;
 import com.alexecollins.docker.orchestration.model.CleanFlag;
+import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
@@ -74,14 +75,22 @@ public class DockerOrchestratorIT {
                 .project("docker-java-orchestrator")
                 .buildFlags(EnumSet.of(BuildFlag.REMOVE_INTERMEDIATE_IMAGES))
                 .permissionErrorTolerant(true)
+                .definitionFilter(new DefinitionFilter() {
+                    @Override
+                    public boolean test(final Id id, @SuppressWarnings("UnusedParameters") final Conf conf) {
+                        return !new Id("private-registry").equals(id);
+                    }
+                })
                 .build();
     }
 
     @Test
     public void listsAllDefinintions() throws Exception {
-        final List<Id> expectedIds = Arrays.asList(new Id("busybox"), new Id("disabled"), new Id("mysql"), new Id("app"));
+        final List<Id> expectedIds = Arrays.asList(new Id("busybox"), new Id("disabled"), new Id("mysql"),
+                                                   new Id("app"), new Id("private-registry"));
         final List<Id> actualIds = orchestrator.ids();
-        assertTrue(expectedIds.containsAll(actualIds) && actualIds.containsAll(expectedIds));
+        assertTrue("Expected " + expectedIds + " to contain all values of " + actualIds,
+                expectedIds.containsAll(actualIds) && actualIds.containsAll(expectedIds));
     }
 
     @Test
