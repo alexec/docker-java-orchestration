@@ -1,5 +1,13 @@
 Change Log
 ===
+2.11.0
+
+* [DJO Pull 53][https://github.com/alexec/docker-java-orchestration/pull/53] Enhancement: Updated to docker-java 2.1.1.
+ 
+2.10.8
+
+* [DJO Pull 52][https://github.com/alexec/docker-java-orchestration/pull/52] Bug: Correct validation of Dockerfilee
+
 2.10.5
 
 * [DJO Pull 50][https://github.com/alexec/docker-java-orchestration/pull/50] Bug: Orchestrator was not honoring quietness and not catching errors when pushing.
