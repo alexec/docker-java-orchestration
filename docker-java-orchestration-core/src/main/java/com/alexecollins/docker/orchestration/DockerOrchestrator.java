@@ -12,6 +12,7 @@ import com.alexecollins.docker.orchestration.model.Ping;
 import com.alexecollins.docker.orchestration.plugin.api.Plugin;
 import com.alexecollins.docker.orchestration.util.Pinger;
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.DockerClientException;
 import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.InternalServerErrorException;
 import com.github.dockerjava.api.NotFoundException;
@@ -21,6 +22,7 @@ import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
 import com.github.dockerjava.api.model.Bind;
+import com.github.dockerjava.api.model.BuildResponseItem;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Frame;
@@ -30,20 +32,18 @@ import com.github.dockerjava.api.model.Link;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.Volume;
-import com.github.dockerjava.core.command.FrameReader;
+import com.github.dockerjava.core.command.BuildImageResultCallback;
+import com.github.dockerjava.core.command.LogContainerResultCallback;
+import com.github.dockerjava.core.command.PushImageResultCallback;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -59,6 +59,7 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 
@@ -347,20 +348,46 @@ public class DockerOrchestrator {
                     .withQuiet(quiet)
                     .withTag(tag);
 
-            throwExceptionIfThereIsAnError(build.exec());
+            final BuildImageResultCallback callback = new BuildImageResultCallback() {
+
+                @Override
+                public void onNext(final BuildResponseItem item) {
+                    super.onNext(item);
+                    logger.info(buildResponseItemToString(item).replaceAll("\\r?\\n$",""));
+                }
+            };
+
+            final String imageId = build.exec(callback).awaitImageId();
 
             for (String otherTag : repo.conf(id).getTags()) {
                 int lastIndexOfColon = otherTag.lastIndexOf(':');
                 if (lastIndexOfColon > -1) {
                     String repositoryName = otherTag.substring(0, lastIndexOfColon);
                     String tagName = otherTag.substring(lastIndexOfColon + 1);
-                    docker.tagImageCmd(findImageId(id), repositoryName, tagName).withForce().exec();
+                    docker.tagImageCmd(imageId, repositoryName, tagName).withForce().exec();
                 }
             }
-        } catch (DockerException | IOException e) {
+        } catch (DockerException e) {
             throw new OrchestrationException(e);
         }
+    }
 
+    private static String buildResponseItemToString(final BuildResponseItem item) {
+        if (item.getStream() != null) {
+            return item.getStream();
+        }
+        if (item.getStatus() != null) {
+            if (item.getProgress() != null) {
+                return item.getStatus() + ": " + item.getProgress();
+            }
+            return item.getStatus();
+        }
+
+        if (item.getError() != null) {
+            return item.getError();
+        }
+
+        return item.toString();
     }
 
     private String findImageId(Id id) {
@@ -448,12 +475,8 @@ public class DockerOrchestrator {
         } catch (DockerException e) {
             throw new OrchestrationException(e);
         } finally {
-            try (Tail tail = tailFactory.newTail(docker, findContainer(id), logger)) {
-                tail.start();
-                tail.join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            final Tail tail = tailFactory.newTail(docker, findContainer(id), logger);
+            tail.start();
         }
     }
 
@@ -491,7 +514,7 @@ public class DockerOrchestrator {
         }
     }
 
-    private void waitForLogPatterns(Id id, List<LogPattern> logPatterns) {
+    private void waitForLogPatterns(final Id id, final List<LogPattern> logPatterns) {
         if (logPatterns == null || logPatterns.isEmpty()) {
             return;
         }
@@ -509,9 +532,7 @@ public class DockerOrchestrator {
             return;
         }
 
-        final StopWatch watch = new StopWatch();
-        final List<LogPattern> pending = sortedLogPatterns(logPatterns);
-        watch.start();
+        final List<LogPattern> pending = Collections.synchronizedList(sortedLogPatterns(logPatterns));
 
         logger.info("Waiting for {} to appear in output", logPatternsToString(pending));
 
@@ -521,11 +542,17 @@ public class DockerOrchestrator {
                 .withTailAll()
                 .withFollowStream();
 
-        try (final FrameReader reader = new FrameReader(logContainerCmd.exec())) {
-            Frame frame;
-            while ((frame = reader.readFrame()) != null) {
-                logger.debug("Read \"{}\"", frame);
-                String line = new String(frame.getPayload()).trim();
+        final LogContainerResultCallback callback = new LogContainerResultCallback() {
+
+            final StopWatch watch = new StopWatch();
+
+            {
+                watch.start();
+            }
+
+            @Override
+            public void onNext(final Frame item) {
+                final String line = new String(item.getPayload()).trim();
                 for (Iterator<LogPattern> iterator = pending.iterator(); iterator.hasNext(); ) {
                     LogPattern logPattern = iterator.next();
                     if (logPattern.getPattern().matcher(line).find()) {
@@ -535,6 +562,7 @@ public class DockerOrchestrator {
                 }
                 if (pending.isEmpty()) {
                     watch.stop();
+                    onComplete();
                     return;
                 }
                 for (LogPattern logPattern : pending) {
@@ -543,13 +571,27 @@ public class DockerOrchestrator {
                     }
                 }
             }
-        } catch (IOException e) {
-            // silently swallow this message
-            if (!e.getMessage().equals("Stream closed")) {
-                throw new OrchestrationException(e);
+
+            @Override
+            public void onComplete() {
+                super.onComplete();
+
+                if (!pending.isEmpty() ) {
+                    throw new OrchestrationException(String.format("%s's log ended before %s appeared in output", id, logPatternsToString(pending)));
+                }
             }
+        };
+
+        int timeoutMax = 0;
+        for (final LogPattern pattern : pending) {
+            timeoutMax = Math.max(timeoutMax, pattern.getTimeout());
         }
-        throw new OrchestrationException(String.format("%s's log ended before %s appeared in output", id, logPatternsToString(pending)));
+
+        try {
+            logContainerCmd.exec(callback).awaitCompletion(timeoutMax, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            throw new OrchestrationException(String.format("timeout after %d while waiting for log-patterns in %s's log", timeoutMax, id));
+        }
     }
 
     private boolean isImageIdFromContainerMatchingProvidedImageId(String containerId, final Id id) {
@@ -811,55 +853,18 @@ public class DockerOrchestrator {
         try {
             PushImageCmd pushImageCmd = docker.pushImageCmd(repo(id));
             logger.info("Pushing " + id + " (" + pushImageCmd.getName() + ")");
-            PushImageCmd.Response response = pushImageCmd.exec();
-            throwExceptionIfThereIsAnError(response);
-        } catch (DockerException | IOException e) {
+
+            final PushImageResultCallback callback = new PushImageResultCallback();
+
+            pushImageCmd.exec(callback).awaitSuccess();
+
+        } catch (DockerException | DockerClientException e) {
             throw new OrchestrationException(e);
         }
     }
 
     private String repo(Id id) {
         return repo.tag(id).replaceFirst(":[^:]*$", "");
-    }
-
-    private void throwExceptionIfThereIsAnError(InputStream exec) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(exec))) {
-            String l;
-            while ((l = readMessageLine(reader)) != null) {
-                if (!buildQuiet()) {
-                    logger.info(l);
-                }
-                if (l.startsWith("{\"errorDetail") && !l.equals("{\"errorDetail\":{}}")) {
-                    throw new OrchestrationException(extractMessage(l));
-                }
-            }
-        }
-    }
-
-    private String readMessageLine(Reader reader) throws IOException {
-        StringBuffer l = new StringBuffer();
-        int c;
-        int depth = 0;
-        while ((c = reader.read()) != -1) {
-            if (c != '\n' && c != '\r') {
-                l.append((char) c);
-                if (c == '{') {
-                    depth++;
-                }
-                else if (c == '}') {
-                    depth--;
-                }
-                if (depth == 0) {
-                    return l.toString();
-                }
-            }
-        }
-        return null;
-    }
-
-    private String extractMessage(String l) {
-        return l;
-        //return l.replaceFirst(".*\"message\":\"([^\"]*)\".*", "$1");
     }
 
     public boolean isRunning() {
