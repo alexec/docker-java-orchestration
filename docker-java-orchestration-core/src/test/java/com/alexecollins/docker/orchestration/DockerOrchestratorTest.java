@@ -56,6 +56,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -600,10 +601,13 @@ public class DockerOrchestratorTest {
         File destDir = new File(System.getProperty("java.io.tmpdir"));
 
         // when
-        testObj.save(destDir, true);
+        Map<Id, File> saved = testObj.save(destDir, true);
 
         // then
-        verify(logger).info("saving {} as {}", idMock, new File(destDir, idMock + ".tar.gz"));
+        File expectedFile = new File(destDir, idMock + ".tar.gz");
+        assertEquals(Collections.singletonMap(idMock, expectedFile), saved);
+
+        verify(logger).info("saving {} as {}", idMock, expectedFile);
         verify(dockerMock).saveImageCmd(IMAGE_ID);
     }
 }

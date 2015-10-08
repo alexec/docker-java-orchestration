@@ -898,9 +898,11 @@ public class DockerOrchestrator {
      *
      * @param destDir Where to save them.
      * @param gzip    Gzip the output.
+     *                @return What's been saved where.
      */
-    public void save(File destDir, boolean gzip) {
+    public Map<Id, File> save(File destDir, boolean gzip) {
 
+        Map<Id, File> saved = new HashMap<>();
         for (Id id : ids()) {
             if (!inclusive(id)) {
                 continue;
@@ -920,6 +922,9 @@ public class DockerOrchestrator {
             } catch (IOException e) {
                 throw new OrchestrationException(e);
             }
+
+            saved.put(id, outputFile);
         }
+        return saved;
     }
 }
