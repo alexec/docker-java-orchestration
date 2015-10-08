@@ -910,7 +910,7 @@ public class DockerOrchestrator {
 
             File outputFile = new File(destDir, id + ".tar" + (gzip ? ".gz" : ""));
 
-            logger.info("saving {} as {}", id, outputFile);
+            logger.info("Saving {} as {}", id, outputFile);
 
             if (!imageExists(id)) {
                 throw new OrchestrationException("image for " + id + " does not exist");

@@ -212,6 +212,7 @@ public class DockerOrchestratorTest {
                                 return "Successfully built imageId";
                             }
                         };
+                        //noinspection unchecked
                         o.onNext(item);
 
                         o.onComplete();
@@ -273,7 +274,7 @@ public class DockerOrchestratorTest {
 
                     @Override
                     public ResultCallback<PushResponseItem> answer(final InvocationOnMock invocation) throws Throwable {
-                        ResultCallback<PushResponseItem> callback = (ResultCallback<PushResponseItem>) invocation.getArguments()[0];
+                        @SuppressWarnings("unchecked") ResultCallback<PushResponseItem> callback = (ResultCallback<PushResponseItem>) invocation.getArguments()[0];
 
                         callback.onNext(pushResponses.removeFirst());
                         callback.onNext(pushResponses.removeFirst());
@@ -568,7 +569,7 @@ public class DockerOrchestratorTest {
                 new Answer<Object>() {
                     @Override
                     public Object answer(final InvocationOnMock invocation) throws Throwable {
-                        final ResultCallback<Frame> callback = (ResultCallback<Frame>) invocation.getArguments()[0];
+                        @SuppressWarnings("unchecked") final ResultCallback<Frame> callback = (ResultCallback<Frame>) invocation.getArguments()[0];
 
                         final Future<Void> result = backgroundExecutor.submit(new Callable<Void>() {
 
@@ -607,7 +608,7 @@ public class DockerOrchestratorTest {
         File expectedFile = new File(destDir, idMock + ".tar.gz");
         assertEquals(Collections.singletonMap(idMock, expectedFile), saved);
 
-        verify(logger).info("saving {} as {}", idMock, expectedFile);
+        verify(logger).info("Saving {} as {}", idMock, expectedFile);
         verify(dockerMock).saveImageCmd(IMAGE_ID);
     }
 }
