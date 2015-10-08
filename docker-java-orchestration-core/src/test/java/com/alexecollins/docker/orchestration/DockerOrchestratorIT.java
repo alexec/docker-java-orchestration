@@ -171,5 +171,13 @@ public class DockerOrchestratorIT {
         orchestrator.isRunning();
     }
 
+    @Test
+    public void saveCreatesAppTarFile() throws Exception {
+        orchestrator.build();
 
+        File destDir = new File("target");
+        orchestrator.save(destDir, false);
+
+        assertTrue(new File(destDir, "app.tar").exists());
+    }
 }

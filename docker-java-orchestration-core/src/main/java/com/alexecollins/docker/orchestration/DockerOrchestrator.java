@@ -37,13 +37,17 @@ import com.github.dockerjava.core.command.LogContainerResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -60,6 +64,7 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPOutputStream;
 
 import static java.util.Arrays.asList;
 
@@ -181,6 +186,24 @@ public class DockerOrchestrator {
                 return String.format("\"%s\"", input.getPattern().pattern());
             }
         }).toString();
+    }
+
+    private static String buildResponseItemToString(final BuildResponseItem item) {
+        if (item.getStream() != null) {
+            return item.getStream();
+        }
+        if (item.getStatus() != null) {
+            if (item.getProgress() != null) {
+                return item.getStatus() + ": " + item.getProgress();
+            }
+            return item.getStatus();
+        }
+
+        if (item.getError() != null) {
+            return item.getError();
+        }
+
+        return item.toString();
     }
 
     public void clean() {
@@ -353,7 +376,7 @@ public class DockerOrchestrator {
                 @Override
                 public void onNext(final BuildResponseItem item) {
                     super.onNext(item);
-                    logger.info(buildResponseItemToString(item).replaceAll("\\r?\\n$",""));
+                    logger.info(buildResponseItemToString(item).replaceAll("\\r?\\n$", ""));
                 }
             };
 
@@ -370,24 +393,6 @@ public class DockerOrchestrator {
         } catch (DockerException e) {
             throw new OrchestrationException(e);
         }
-    }
-
-    private static String buildResponseItemToString(final BuildResponseItem item) {
-        if (item.getStream() != null) {
-            return item.getStream();
-        }
-        if (item.getStatus() != null) {
-            if (item.getProgress() != null) {
-                return item.getStatus() + ": " + item.getProgress();
-            }
-            return item.getStatus();
-        }
-
-        if (item.getError() != null) {
-            return item.getError();
-        }
-
-        return item.toString();
     }
 
     private String findImageId(Id id) {
@@ -576,7 +581,7 @@ public class DockerOrchestrator {
             public void onComplete() {
                 super.onComplete();
 
-                if (!pending.isEmpty() ) {
+                if (!pending.isEmpty()) {
                     throw new OrchestrationException(String.format("%s's log ended before %s appeared in output", id, logPatternsToString(pending)));
                 }
             }
@@ -884,5 +889,37 @@ public class DockerOrchestrator {
             }
         }
         throw new NoSuchElementException("plugin " + pluginClass + " is not loaded");
+    }
+
+    /**
+     * Save the images to files.
+     * <p/>
+     * Very much like "docker save ..."
+     *
+     * @param destDir Where to save them.
+     * @param gzip    Gzip the output.
+     */
+    public void save(File destDir, boolean gzip) {
+
+        for (Id id : ids()) {
+            if (!inclusive(id)) {
+                continue;
+            }
+
+            File outputFile = new File(destDir, id + ".tar" + (gzip ? ".gz" : ""));
+
+            logger.info("saving {} as {}", id, outputFile);
+
+            if (!imageExists(id)) {
+                throw new OrchestrationException("image for " + id + " does not exist");
+            }
+
+            try (InputStream in = docker.saveImageCmd(findImageId(id)).exec();
+                 OutputStream out = gzip ? new GZIPOutputStream(new FileOutputStream(outputFile)) : new FileOutputStream(outputFile)) {
+                IOUtils.copy(in, out);
+            } catch (IOException e) {
+                throw new OrchestrationException(e);
+            }
+        }
     }
 }

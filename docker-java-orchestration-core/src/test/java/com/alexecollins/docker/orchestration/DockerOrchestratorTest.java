@@ -22,6 +22,7 @@ import com.github.dockerjava.api.command.ListImagesCmd;
 import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
 import com.github.dockerjava.api.command.RemoveContainerCmd;
+import com.github.dockerjava.api.command.SaveImageCmd;
 import com.github.dockerjava.api.command.StartContainerCmd;
 import com.github.dockerjava.api.command.StopContainerCmd;
 import com.github.dockerjava.api.command.TagImageCmd;
@@ -48,6 +49,7 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -87,6 +89,7 @@ public class DockerOrchestratorTest {
     private static final String CONTAINER_ID = "containerId";
     private static final String TAG_NAME = "test-tag";
     private static final String IP_ADDRESS = "127.0.0.1";
+    private final ExecutorService backgroundExecutor = Executors.newSingleThreadExecutor();
     @Mock
     private Logger logger;
     @Mock
@@ -136,6 +139,8 @@ public class DockerOrchestratorTest {
     @Mock
     private TagImageCmd tagImageCmdMock;
     @Mock
+    private SaveImageCmd saveImageCmd;
+    @Mock
     private PushImageCmd pushImageCmd;
     @Mock
     private ListImagesCmd listImagesCmdMock;
@@ -147,9 +152,9 @@ public class DockerOrchestratorTest {
     private Tail tailMock;
     @Mock
     private TailFactory tailFactoryMock;
+    @Mock
+    private InputStream saveInputStream;
     private DockerOrchestrator testObj;
-
-    private final ExecutorService backgroundExecutor = Executors.newSingleThreadExecutor();
 
     @Before
     public void setup() throws DockerException, IOException {
@@ -279,6 +284,9 @@ public class DockerOrchestratorTest {
 
         when(definitionFilter.test(any(Id.class), any(Conf.class))).thenReturn(true);
         when(tailFactoryMock.newTail(any(DockerClient.class), any(Container.class), any(Logger.class))).thenReturn(tailMock);
+        when(dockerMock.saveImageCmd(anyString())).thenReturn(saveImageCmd);
+        when(saveImageCmd.exec()).thenReturn(saveInputStream);
+        when(saveInputStream.read(any(byte[].class))).thenReturn(-1);
     }
 
     @After
@@ -585,4 +593,17 @@ public class DockerOrchestratorTest {
         return cmd;
     }
 
+    @Test
+    public void saveShouldInvokeDockerAndLog() throws Exception {
+
+        // given
+        File destDir = new File(System.getProperty("java.io.tmpdir"));
+
+        // when
+        testObj.save(destDir, true);
+
+        // then
+        verify(logger).info("saving {} as {}", idMock, new File(destDir, idMock + ".tar.gz"));
+        verify(dockerMock).saveImageCmd(IMAGE_ID);
+    }
 }

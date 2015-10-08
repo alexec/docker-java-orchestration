@@ -1,5 +1,9 @@
 Change Log
 ===
+2.11.1
+
+* Enhancement: Added new `save` command.
+
 2.11.0
 
 * [DJO Pull 53][https://github.com/alexec/docker-java-orchestration/pull/53] Enhancement: Updated to docker-java 2.1.1.
