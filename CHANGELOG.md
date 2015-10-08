@@ -1,5 +1,9 @@
 Change Log
 ===
+2.11.2
+
+* Enhancement: Return information about saved files.
+
 2.11.1
 
 * Enhancement: Added new `save` command.
