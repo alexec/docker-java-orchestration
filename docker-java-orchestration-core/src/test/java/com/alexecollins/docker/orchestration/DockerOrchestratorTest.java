@@ -90,6 +90,7 @@ public class DockerOrchestratorTest {
     private static final String CONTAINER_ID = "containerId";
     private static final String TAG_NAME = "test-tag";
     private static final String IP_ADDRESS = "127.0.0.1";
+    private static final File SAVE_DIR = new File(System.getProperty("java.io.tmpdir"));
     private final ExecutorService backgroundExecutor = Executors.newSingleThreadExecutor();
     @Mock
     private Logger logger;
@@ -180,7 +181,9 @@ public class DockerOrchestratorTest {
         when(confMock.getContainer()).thenReturn(new ContainerConf());
         HealthChecks healthChecks = mock(HealthChecks.class);
         when(confMock.getHealthChecks()).thenReturn(healthChecks);
-        when(confMock.getTags()).thenReturn(Collections.singletonList(IMAGE_NAME + ":" + TAG_NAME));
+        String tag = IMAGE_NAME + ":" + TAG_NAME;
+        when(confMock.getTag()).thenReturn(tag);
+        when(confMock.getTags()).thenReturn(Collections.singletonList(tag));
         when(confMock.isEnabled()).thenReturn(true);
         final List<String> extraHosts = new ArrayList<>();
         extraHosts.add(EXTRA_HOST);
@@ -596,19 +599,48 @@ public class DockerOrchestratorTest {
     }
 
     @Test
-    public void saveShouldInvokeDockerAndLog() throws Exception {
-
-        // given
-        File destDir = new File(System.getProperty("java.io.tmpdir"));
+    public void saveTarShouldInvokeDockerAn() throws Exception {
 
         // when
-        Map<Id, File> saved = testObj.save(destDir, true);
+        Map<Id, File> saved = testObj.save(SAVE_DIR, false);
 
         // then
-        File expectedFile = new File(destDir, idMock + ".tar.gz");
+        File expectedFile = new File(SAVE_DIR, idMock + ".tar");
+        assertEquals(Collections.singletonMap(idMock, expectedFile), saved);
+    }
+
+    @Test
+    public void saveShouldInvokeDockerAndLog() throws Exception {
+
+        // when
+        Map<Id, File> saved = testObj.save(SAVE_DIR, true);
+
+        // then
+        File expectedFile = new File(SAVE_DIR, idMock + ".tar.gz");
         assertEquals(Collections.singletonMap(idMock, expectedFile), saved);
 
         verify(logger).info("Saving {} as {}", idMock, expectedFile);
+        verify(logger).warn("Image does NOT have tag. Saving using image ID. Export will be missing 'repositories' data.");
+        verify(logger).info("Saving image {}", imageMock.getId());
         verify(dockerMock).saveImageCmd(IMAGE_ID);
+    }
+
+
+    @Test
+    public void taggedImageSaveShouldInvokeDockerAndLog() throws Exception {
+
+        // given
+        when(confMock.hasTag()).thenReturn(true);
+
+        // when
+        Map<Id, File> saved = testObj.save(SAVE_DIR, true);
+
+        // then
+        File expectedFile = new File(SAVE_DIR, idMock + ".tar.gz");
+        assertEquals(Collections.singletonMap(idMock, expectedFile), saved);
+
+        verify(logger).info("Saving {} as {}", idMock, expectedFile);
+        verify(logger).info("Saving image {}", confMock.getTag());
+        verify(dockerMock).saveImageCmd(confMock.getTag());
     }
 }

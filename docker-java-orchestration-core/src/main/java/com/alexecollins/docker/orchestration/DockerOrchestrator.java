@@ -916,7 +916,16 @@ public class DockerOrchestrator {
                 throw new OrchestrationException("image for " + id + " does not exist");
             }
 
-            try (InputStream in = docker.saveImageCmd(findImageId(id)).exec();
+            Conf conf = conf(id);
+            String name = conf.hasTag() ? conf.getTag() : findImageId(id);
+
+            if (!conf.hasTag()) {
+                logger.warn("Image does NOT have tag. Saving using image ID. Export will be missing 'repositories' data.");
+            }
+
+            logger.info("Saving image {}", name);
+
+            try (InputStream in = docker.saveImageCmd(name).exec();
                  OutputStream out = gzip ? new GZIPOutputStream(new FileOutputStream(outputFile)) : new FileOutputStream(outputFile)) {
                 IOUtils.copy(in, out);
             } catch (IOException e) {

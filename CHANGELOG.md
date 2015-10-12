@@ -1,5 +1,9 @@
 Change Log
 ===
+2.11.3
+
+* Enhancement: Saving images includes tag information if possible.
+
 2.11.2
 
 * Enhancement: Return information about saved files.
