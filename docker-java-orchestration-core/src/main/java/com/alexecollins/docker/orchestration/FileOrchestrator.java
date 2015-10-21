@@ -10,16 +10,17 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Properties;
-
-import static org.apache.commons.io.FileUtils.copyDirectory;
-import static org.apache.commons.io.FileUtils.copyDirectoryToDirectory;
-import static org.apache.commons.io.FileUtils.copyFileToDirectory;
 
 class FileOrchestrator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileOrchestrator.class);
-
     /**
      * files to do property filtering on
      */
@@ -28,12 +29,10 @@ class FileOrchestrator {
      * properties to filter
      */
     private final Properties properties;
-
     /**
      * output directory
      */
     private final File workDir;
-
     /**
      * root directory from which paths stem
      */
@@ -65,7 +64,7 @@ class FileOrchestrator {
         }
         final File destDir = new File(workDir, dockerFolder.getName());
         // copy template
-        copyDirectory(dockerFolder, destDir);
+        copyDirectoryToDirectory(dockerFolder, destDir);
 
         Filters.filter(destDir, filter, properties);
 
@@ -86,7 +85,43 @@ class FileOrchestrator {
         if (fileEntry.isDirectory()) {
             copyDirectoryToDirectory(fileEntry, destDir);
         } else {
-            copyFileToDirectory(fileEntry, destDir);
+            Files.copy(fileEntry.toPath(), destDir.toPath(),
+                    StandardCopyOption.COPY_ATTRIBUTES,
+                    StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private void copyDirectoryToDirectory(final File sourceDirectory, final File destinationDirectory) throws IOException {
+        Files.walkFileTree(sourceDirectory.toPath(), new CopyFileVisitor(destinationDirectory.toPath()));
+    }
+
+    private static class CopyFileVisitor extends SimpleFileVisitor<Path> {
+        private final Path targetPath;
+        private Path sourcePath = null;
+
+        public CopyFileVisitor(Path targetPath) {
+            this.targetPath = targetPath;
+        }
+
+        @Override
+        public FileVisitResult preVisitDirectory(final Path dir,
+                                                 final BasicFileAttributes attrs) throws IOException {
+            if (sourcePath == null) {
+                sourcePath = dir;
+            }
+
+            Files.createDirectories(targetPath.resolve(sourcePath
+                        .relativize(dir)));
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFile(final Path file,
+                                         final BasicFileAttributes attrs) throws IOException {
+            Files.copy(file,
+                    targetPath.resolve(sourcePath.relativize(file)),
+                    StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
+            return FileVisitResult.CONTINUE;
         }
     }
 
