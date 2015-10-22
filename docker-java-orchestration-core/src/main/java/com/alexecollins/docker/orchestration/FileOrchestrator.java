@@ -4,12 +4,14 @@ import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.model.Item;
 import com.alexecollins.docker.orchestration.util.Filters;
+import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -92,7 +94,11 @@ class FileOrchestrator {
     }
 
     private void copyDirectoryToDirectory(final File sourceDirectory, final File destinationDirectory) throws IOException {
-        Files.walkFileTree(sourceDirectory.toPath(), new CopyFileVisitor(destinationDirectory.toPath()));
+        Files.walkFileTree(
+                sourceDirectory.toPath(),
+                ImmutableSet.of(FileVisitOption.FOLLOW_LINKS),
+                1000,
+                new CopyFileVisitor(destinationDirectory.toPath()));
     }
 
     private static class CopyFileVisitor extends SimpleFileVisitor<Path> {
