@@ -31,6 +31,8 @@ import com.github.dockerjava.api.model.InternetProtocol;
 import com.github.dockerjava.api.model.Link;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
+import com.github.dockerjava.api.model.PushResponseItem;
+import com.github.dockerjava.api.model.ResponseItem;
 import com.github.dockerjava.api.model.Volume;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.LogContainerResultCallback;
@@ -188,7 +190,7 @@ public class DockerOrchestrator {
         }).toString();
     }
 
-    private static String buildResponseItemToString(final BuildResponseItem item) {
+    private static String buildResponseItemToString(final ResponseItem item) {
         if (item.getStream() != null) {
             return item.getStream();
         }
@@ -859,7 +861,14 @@ public class DockerOrchestrator {
             PushImageCmd pushImageCmd = docker.pushImageCmd(repo(id));
             logger.info("Pushing " + id + " (" + pushImageCmd.getName() + ")");
 
-            final PushImageResultCallback callback = new PushImageResultCallback();
+            final PushImageResultCallback callback = new PushImageResultCallback() {
+
+                public void onNext(final PushResponseItem item) {
+                        super.onNext(item);
+                        logger.info(buildResponseItemToString(item).replaceAll("\\r?\\n$", ""));
+                };
+
+            };
 
             pushImageCmd.exec(callback).awaitSuccess();
 
