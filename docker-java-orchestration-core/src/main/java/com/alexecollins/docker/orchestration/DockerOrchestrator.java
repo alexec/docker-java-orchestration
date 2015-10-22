@@ -38,7 +38,9 @@ import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.LogContainerResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
 import com.google.common.base.Function;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
@@ -857,28 +859,36 @@ public class DockerOrchestrator {
     }
 
     private void push(Id id) {
-        try {
-            PushImageCmd pushImageCmd = docker.pushImageCmd(repo(id));
-            logger.info("Pushing " + id + " (" + pushImageCmd.getName() + ")");
+        for (final String repo : repos(id)) {
+            try {
+                PushImageCmd pushImageCmd = docker.pushImageCmd(repo);
+                logger.info("Pushing " + id + " (" + pushImageCmd.getName() + ")");
 
-            final PushImageResultCallback callback = new PushImageResultCallback() {
+                final PushImageResultCallback callback = new PushImageResultCallback() {
 
-                public void onNext(final PushResponseItem item) {
+                    public void onNext(final PushResponseItem item) {
                         super.onNext(item);
                         logger.info(buildResponseItemToString(item).replaceAll("\\r?\\n$", ""));
+                    }
+
                 };
 
-            };
+                pushImageCmd.exec(callback).awaitSuccess();
 
-            pushImageCmd.exec(callback).awaitSuccess();
-
-        } catch (DockerException | DockerClientException e) {
-            throw new OrchestrationException(e);
+            } catch (DockerException | DockerClientException e) {
+                throw new OrchestrationException(e);
+            }
         }
     }
 
-    private String repo(Id id) {
-        return repo.tag(id).replaceFirst(":[^:]*$", "");
+    private Iterable<String> repos(Id id) {
+        return FluentIterable.from(repo.tags(id))
+                .transform(new Function<String, String>() {
+                    @Override
+                    public String apply(final String tag) {
+                        return tag.replaceFirst(":[^:]*$", "");
+                    }
+                }).toSortedSet(Ordering.usingToString());
     }
 
     public boolean isRunning() {

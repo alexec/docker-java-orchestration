@@ -67,7 +67,6 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
@@ -174,6 +173,7 @@ public class DockerOrchestratorTest {
         when(repoMock.src(idMock)).thenReturn(srcFileMock);
         when(repoMock.conf(idMock)).thenReturn(confMock);
         when(repoMock.tag(idMock)).thenReturn(IMAGE_NAME);
+        when(repoMock.tags(idMock)).thenReturn(Collections.singletonList(IMAGE_NAME));
         when(repoMock.containerName(idMock)).thenReturn(CONTAINER_NAME);
         when(repoMock.imageName(idMock)).thenReturn(IMAGE_NAME);
 
@@ -401,7 +401,7 @@ public class DockerOrchestratorTest {
     public void pushImage() {
         try {
             testObj.push();
-            assertTrue(false);
+            fail("Exception expected");
         }
         catch (OrchestrationException oe) {
             // need to get here
@@ -413,10 +413,10 @@ public class DockerOrchestratorTest {
     public void pushImageWithRegistryAndPort() {
         String repositoryWithRegistryAndPort = "my.registry.com:5000/mynamespace/myrepository";
 
-        when(repoMock.tag(idMock)).thenReturn(repositoryWithRegistryAndPort + ":" + TAG_NAME);
+        when(repoMock.tags(idMock)).thenReturn(Collections.singletonList(repositoryWithRegistryAndPort + ":" + TAG_NAME));
         try {
             testObj.push();
-            assertTrue(false);
+            fail("Exception expected");
         }
         catch (OrchestrationException oe) {
             // need to get here

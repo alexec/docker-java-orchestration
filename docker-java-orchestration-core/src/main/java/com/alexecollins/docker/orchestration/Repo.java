@@ -112,6 +112,13 @@ class Repo {
                         : imageName(id);
     }
 
+    public List<String> tags(Id id) {
+        Conf conf = conf(id);
+        return conf.hasTag()
+                ? conf.getTags()
+                : Collections.singletonList(imageName(id));
+    }
+
     String imageName(Id id) {
         return user + "/" + project + "_" + id;
     }
