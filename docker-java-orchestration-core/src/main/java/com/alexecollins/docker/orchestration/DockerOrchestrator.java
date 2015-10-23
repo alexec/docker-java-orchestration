@@ -31,12 +31,16 @@ import com.github.dockerjava.api.model.InternetProtocol;
 import com.github.dockerjava.api.model.Link;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
+import com.github.dockerjava.api.model.PushResponseItem;
+import com.github.dockerjava.api.model.ResponseItem;
 import com.github.dockerjava.api.model.Volume;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.LogContainerResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
 import com.google.common.base.Function;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
@@ -188,7 +192,7 @@ public class DockerOrchestrator {
         }).toString();
     }
 
-    private static String buildResponseItemToString(final BuildResponseItem item) {
+    private static String buildResponseItemToString(final ResponseItem item) {
         if (item.getStream() != null) {
             return item.getStream();
         }
@@ -855,21 +859,36 @@ public class DockerOrchestrator {
     }
 
     private void push(Id id) {
-        try {
-            PushImageCmd pushImageCmd = docker.pushImageCmd(repo(id));
-            logger.info("Pushing " + id + " (" + pushImageCmd.getName() + ")");
+        for (final String repo : repos(id)) {
+            try {
+                PushImageCmd pushImageCmd = docker.pushImageCmd(repo);
+                logger.info("Pushing " + id + " (" + pushImageCmd.getName() + ")");
 
-            final PushImageResultCallback callback = new PushImageResultCallback();
+                final PushImageResultCallback callback = new PushImageResultCallback() {
 
-            pushImageCmd.exec(callback).awaitSuccess();
+                    public void onNext(final PushResponseItem item) {
+                        super.onNext(item);
+                        logger.info(buildResponseItemToString(item).replaceAll("\\r?\\n$", ""));
+                    }
 
-        } catch (DockerException | DockerClientException e) {
-            throw new OrchestrationException(e);
+                };
+
+                pushImageCmd.exec(callback).awaitSuccess();
+
+            } catch (DockerException | DockerClientException e) {
+                throw new OrchestrationException(e);
+            }
         }
     }
 
-    private String repo(Id id) {
-        return repo.tag(id).replaceFirst(":[^:]*$", "");
+    private Iterable<String> repos(Id id) {
+        return FluentIterable.from(repo.tags(id))
+                .transform(new Function<String, String>() {
+                    @Override
+                    public String apply(final String tag) {
+                        return tag.replaceFirst(":[^:]*$", "");
+                    }
+                }).toSortedSet(Ordering.usingToString());
     }
 
     public boolean isRunning() {
