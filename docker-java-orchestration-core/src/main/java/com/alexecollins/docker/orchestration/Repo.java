@@ -6,6 +6,9 @@ import com.alexecollins.docker.orchestration.model.Id;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 @SuppressWarnings("CanBeFinal")
 class Repo {
@@ -159,6 +163,19 @@ class Repo {
     List<Id> sort(final Map<Id, List<Id>> links) {
         final List<Id> in = new LinkedList<>(links.keySet());
         final List<Id> out = new LinkedList<>();
+
+        final List<String> linkErrors = Lists.newLinkedList();
+        for (final Map.Entry<Id,List<Id>> entry : links.entrySet()) {
+            final Set<Id> linkedImages = Sets.newHashSet(entry.getValue());
+            final Sets.SetView<Id> difference = Sets.difference(linkedImages, links.keySet());
+            if (!difference.isEmpty()) {
+                linkErrors.add("Missing linked containers in " + entry.getKey() + ": " + difference);
+            }
+        }
+        if (!linkErrors.isEmpty()) {
+            throw new IllegalStateException(Joiner.on('\n').join(linkErrors));
+        }
+
 
         while (!in.isEmpty()) {
             boolean hit = false;

@@ -100,6 +100,16 @@ public class RepoTest {
         sut.sort(links);
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void testMissingDependencies() throws Exception {
+        final Map<Id, List<Id>> links = new HashMap<>();
+        final Id a = new Id("a");
+        final Id b = new Id("b");
+        links.put(a, Collections.singletonList(b));
+        sut.sort(links);
+    }
+
+
     @Test
     public void appHasPacking() throws Exception {
         Conf conf = sut.conf(appId);
