@@ -87,7 +87,14 @@ class FileOrchestrator {
         if (fileEntry.isDirectory()) {
             copyDirectoryToDirectory(fileEntry, destDir);
         } else {
-            Files.copy(fileEntry.toPath(), destDir.toPath(),
+            final Path targetPath;
+            if (destDir.isDirectory()) {
+                targetPath = destDir.toPath().resolve(fileEntry.toPath().getFileName());
+            } else {
+                targetPath = destDir.toPath();
+            }
+
+            Files.copy(fileEntry.toPath(), targetPath,
                     StandardCopyOption.COPY_ATTRIBUTES,
                     StandardCopyOption.REPLACE_EXISTING);
         }
