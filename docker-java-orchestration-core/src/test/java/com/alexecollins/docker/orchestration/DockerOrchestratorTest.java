@@ -203,6 +203,7 @@ public class DockerOrchestratorTest {
         when(buildImageCmdMock.withTag(any(String.class))).thenReturn(buildImageCmdMock);
         when(buildImageCmdMock.withNoCache(anyBoolean())).thenReturn(buildImageCmdMock);
         when(buildImageCmdMock.withQuiet(anyBoolean())).thenReturn(buildImageCmdMock);
+        when(buildImageCmdMock.withPull(anyBoolean())).thenReturn(buildImageCmdMock);
         when(buildImageCmdMock.exec(any(ResultCallback.class))).thenAnswer(
                 new Answer<Object>() {
                     @Override
