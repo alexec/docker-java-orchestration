@@ -369,11 +369,15 @@ public class DockerOrchestrator {
             final boolean quiet = buildQuiet();
             logger.info(" - quiet: " + quiet);
 
+            final boolean pull = buildPull();
+            logger.info(" - pull: " + pull);
+
             BuildImageCmd build = docker.buildImageCmd(dockerFolder)
                     .withNoCache(noCache)
                     .withRemove(removeIntermediateImages)
                     .withQuiet(quiet)
-                    .withTag(tag);
+                    .withTag(tag)
+                    .withPull(pull);
 
             final BuildImageResultCallback callback = new BuildImageResultCallback() {
 
@@ -421,6 +425,10 @@ public class DockerOrchestrator {
 
     private boolean buildQuiet() {
         return haveBuildFlag(BuildFlag.QUIET);
+    }
+
+    private boolean buildPull() {
+        return haveBuildFlag(BuildFlag.PULL);
     }
 
     private boolean buildRemoveIntermediateImages() {
