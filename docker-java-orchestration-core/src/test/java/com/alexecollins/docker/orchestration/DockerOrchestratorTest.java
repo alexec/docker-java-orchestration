@@ -8,6 +8,7 @@ import com.alexecollins.docker.orchestration.model.HealthChecks;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.alexecollins.docker.orchestration.model.Link;
 import com.alexecollins.docker.orchestration.model.LogPattern;
+import com.alexecollins.docker.orchestration.model.VolumeFrom;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
@@ -35,6 +36,7 @@ import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.PushResponseItem;
 import com.github.dockerjava.api.model.StreamType;
 import com.google.common.collect.Lists;
+
 import org.apache.commons.lang.time.StopWatch;
 import org.glassfish.jersey.client.ClientResponse;
 import org.junit.After;
@@ -188,6 +190,7 @@ public class DockerOrchestratorTest {
         final List<String> extraHosts = new ArrayList<>();
         extraHosts.add(EXTRA_HOST);
         when(confMock.getExtraHosts()).thenReturn(extraHosts);
+        when(confMock.getVolumesFrom()).thenReturn(new ArrayList<VolumeFrom>());
 
         when(containerMock.getId()).thenReturn(CONTAINER_ID);
         when(containerMock.getNames()).thenReturn(new String[0]);

@@ -34,6 +34,7 @@ public class ConfTest {
         assertNotNull(conf.getPorts());
         assertNotNull(conf.getVolumesFrom());
 
+        assertEquals(new VolumeFrom("noop"), conf.getVolumesFrom().get(0));
         assertEquals(new Link("foo:bar"), conf.getLinks().get(0));
         
         assertThat(conf.getMaxLogLines(), is(123));
