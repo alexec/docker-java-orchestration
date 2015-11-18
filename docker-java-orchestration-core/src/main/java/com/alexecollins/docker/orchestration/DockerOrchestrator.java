@@ -781,7 +781,11 @@ public class DockerOrchestrator {
         final Link[] out = new Link[links.size()];
         for (int i = 0; i < links.size(); i++) {
             com.alexecollins.docker.orchestration.model.Link link = links.get(i);
-            final String name = com.alexecollins.docker.orchestration.util.Links.name(findContainer(link.getId()).getNames());
+            Container container = findContainer(link.getId());
+            if (container == null) {
+                throw new OrchestrationException(String.format("Could not find container for link %s", link.getId()));
+            }
+            final String name = com.alexecollins.docker.orchestration.util.Links.name(container.getNames());
             final String alias = link.getAlias();
             out[i] = new Link(name, alias);
         }
