@@ -21,6 +21,7 @@ import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
+import com.github.dockerjava.api.model.AccessMode;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.BuildResponseItem;
 import com.github.dockerjava.api.model.Container;
@@ -34,6 +35,7 @@ import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.PushResponseItem;
 import com.github.dockerjava.api.model.ResponseItem;
 import com.github.dockerjava.api.model.Volume;
+import com.github.dockerjava.api.model.VolumesFrom;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.LogContainerResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
@@ -41,6 +43,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
@@ -318,7 +321,11 @@ public class DockerOrchestrator {
     }
 
     private String containerName(Id id) {
-        ContainerConf container = repo.conf(id).getContainer();
+        Conf conf = repo.conf(id);
+        if (conf == null) {
+            throw new OrchestrationException(String.format("Unable to retrieve container name for id %s", id));
+        }
+        ContainerConf container = conf.getContainer();
         return container.hasName() ? container.getName() : repo.defaultContainerName(id);
     }
 
@@ -660,6 +667,10 @@ public class DockerOrchestrator {
         logger.info(" - links " + conf.getLinks());
         cmd.withLinks(links);
 
+        logger.info(" - volumesFrom " + conf.getVolumesFrom());
+        VolumesFrom[] volumesFrom = volumesFrom(id);
+        cmd.withVolumesFrom(volumesFrom);
+
         List<PortBinding> portBindings = new ArrayList<>();
         for (String e : conf.getPorts()) {
 
@@ -765,6 +776,22 @@ public class DockerOrchestrator {
             final String name = com.alexecollins.docker.orchestration.util.Links.name(findContainer(link.getId()).getNames());
             final String alias = link.getAlias();
             out[i] = new Link(name, alias);
+        }
+        return out;
+    }
+
+    private VolumesFrom[] volumesFrom(Id id) {
+        final List<com.alexecollins.docker.orchestration.model.VolumeFrom> volumes = conf(id).getVolumesFrom();
+        final VolumesFrom[] out = new VolumesFrom[volumes.size()];
+        for (int i = 0; i < volumes.size(); i++) {
+            com.alexecollins.docker.orchestration.model.VolumeFrom volume = volumes.get(i);
+            final Container container = findContainer(volume.getId());
+            if (container == null) {
+                throw new OrchestrationException(String.format(
+                        "Can not use volume %s, unable to find corresponding container.", volume.getId()));
+            }
+            final AccessMode accessMode = AccessMode.fromBoolean(volume.isReadWrite());
+            out[i] = new VolumesFrom(volume.getId().toString(), accessMode);
         }
         return out;
     }
