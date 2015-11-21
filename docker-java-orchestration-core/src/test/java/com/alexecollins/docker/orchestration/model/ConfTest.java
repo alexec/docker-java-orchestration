@@ -6,7 +6,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -54,7 +56,11 @@ public class ConfTest {
 
     @Test
     public void volumes() throws Exception {
-        assertEquals(Collections.singletonMap("foo", "bar"), conf.getVolumes());
+    	Map<String, String> volumes = new HashMap<>(2);
+    	volumes.put("foo", "bar");
+    	volumes.put("volume", "");
+    	
+        assertEquals(volumes, conf.getVolumes());
     }
 
     @Test

@@ -66,6 +66,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.ServiceLoader;
@@ -689,16 +690,23 @@ public class DockerOrchestrator {
 
         logger.info(" - volumes " + conf.getVolumes());
 
+        final List<Volume> volumes = new ArrayList<>();
         final List<Bind> binds = new ArrayList<>();
-        for (Map.Entry<String, String> entry : conf.getVolumes().entrySet()) {
+        for (Entry<String, String> entry : conf.getVolumes().entrySet()) {
             String volumePath = entry.getKey();
+            Volume volume = new Volume(volumePath);
+            
             String hostPath = entry.getValue();
-            File file = new File(hostPath);
-            String path = file.getAbsolutePath();
-            logger.info(" - volumes " + volumePath + " <- " + path);
-            binds.add(new Bind(path, new Volume(volumePath)));
+            if (hostPath!=null && !hostPath.trim().equals("")){
+            	File file = new File(hostPath);
+            	String path = file.getAbsolutePath();
+            	logger.info(" - volumes " + volumePath + " <- " + path);
+            	binds.add(new Bind(path, volume));
+            } else {
+            	volumes.add(volume);
+            }
         }
-
+        cmd.withVolumes(volumes.toArray(new Volume[volumes.size()]));
         cmd.withBinds(binds.toArray(new Bind[binds.size()]));
 
         cmd.withName(repo.containerName(id));
