@@ -9,6 +9,7 @@ volumesFrom:
   - noop
 volumes:
   foo: bar
+  volume: 
 links:
   - foo:bar
 logOnFailure: true
