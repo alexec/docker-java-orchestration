@@ -471,7 +471,7 @@ public class DockerOrchestrator {
             Container existingContainer = findContainer(id);
 
             if (existingContainer == null) {
-                logger.info("No existing container so creating and starting new one");
+                logger.info("No existing container for id {} so creating and starting new one", id);
                 startContainer(createNewContainer(id));
 
             } else if (!isImageIdFromContainerMatchingProvidedImageId(existingContainer.getId(), id)) {
