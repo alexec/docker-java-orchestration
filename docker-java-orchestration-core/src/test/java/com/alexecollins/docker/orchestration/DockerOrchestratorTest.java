@@ -238,6 +238,7 @@ public class DockerOrchestratorTest {
         when(dockerMock.removeContainerCmd(CONTAINER_ID)).thenReturn(removeContainerCmdMock);
         when(dockerMock.listImagesCmd()).thenReturn(listImagesCmdMock);
         when(removeContainerCmdMock.withForce()).thenReturn(removeContainerCmdMock);
+        when(removeContainerCmdMock.withRemoveVolumes(true)).thenReturn(removeContainerCmdMock);
 
         when(listImagesCmdMock.exec()).thenReturn(Collections.singletonList(imageMock));
 
