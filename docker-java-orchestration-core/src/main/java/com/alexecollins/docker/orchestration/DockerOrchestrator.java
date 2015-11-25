@@ -271,7 +271,7 @@ public class DockerOrchestrator {
         if (imageId != null) {
             logger.info("Removing image " + imageId);
             try {
-                docker.removeImageCmd(imageId).withForce().exec();
+                docker.removeImageCmd(imageId).exec();
             } catch (DockerException e) {
                 logger.warn(e.getMessage());
             }
