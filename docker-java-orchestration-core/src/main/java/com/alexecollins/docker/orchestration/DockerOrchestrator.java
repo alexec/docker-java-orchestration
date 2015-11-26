@@ -26,7 +26,6 @@ import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.BuildResponseItem;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.InternetProtocol;
 import com.github.dockerjava.api.model.Link;
@@ -37,15 +36,12 @@ import com.github.dockerjava.api.model.ResponseItem;
 import com.github.dockerjava.api.model.Volume;
 import com.github.dockerjava.api.model.VolumesFrom;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
-import com.github.dockerjava.core.command.LogContainerResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
-
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +59,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -187,7 +182,7 @@ public class DockerOrchestrator {
         return pending;
     }
 
-    private static String logPatternsToString(List<LogPattern> pending) {
+    static String logPatternsToString(List<LogPattern> pending) {
         return Lists.transform(pending, new Function<LogPattern, String>() {
             @Override
             public String apply(LogPattern input) {
@@ -557,9 +552,9 @@ public class DockerOrchestrator {
             return;
         }
 
-        final List<LogPattern> pending = Collections.synchronizedList(sortedLogPatterns(logPatterns));
+        final List<LogPattern> pendingPatterns = sortedLogPatterns(logPatterns);
 
-        logger.info("Waiting for {} to appear in output", logPatternsToString(pending));
+        logger.info("Waiting for {} to appear in output", logPatternsToString(pendingPatterns));
 
         final LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId())
                 .withStdErr()
@@ -567,55 +562,25 @@ public class DockerOrchestrator {
                 .withTailAll()
                 .withFollowStream();
 
-        final LogContainerResultCallback callback = new LogContainerResultCallback() {
-
-            final StopWatch watch = new StopWatch();
-
-            {
-                watch.start();
-            }
-
-            @Override
-            public void onNext(final Frame item) {
-                final String line = new String(item.getPayload()).trim();
-                for (Iterator<LogPattern> iterator = pending.iterator(); iterator.hasNext(); ) {
-                    LogPattern logPattern = iterator.next();
-                    if (logPattern.getPattern().matcher(line).find()) {
-                        logger.info("Waited {} for \"{}\"", watch, logPattern.getPattern().toString());
-                        iterator.remove();
-                    }
-                }
-                if (pending.isEmpty()) {
-                    watch.stop();
-                    onComplete();
-                    return;
-                }
-                for (LogPattern logPattern : pending) {
-                    if (watch.getTime() >= logPattern.getTimeout()) {
-                        throw new OrchestrationException(String.format("timeout after %d while waiting for \"%s\" in %s's logs", logPattern.getTimeout(), logPattern.getPattern(), id));
-                    }
-                }
-            }
-
-            @Override
-            public void onComplete() {
-                super.onComplete();
-
-                if (!pending.isEmpty()) {
-                    throw new OrchestrationException(String.format("%s's log ended before %s appeared in output", id, logPatternsToString(pending)));
-                }
-            }
-        };
+        final PatternMatchingStartupResultCallback callback = new PatternMatchingStartupResultCallback(logger, pendingPatterns, id);
 
         int timeoutMax = 0;
-        for (final LogPattern pattern : pending) {
+        for (final LogPattern pattern : pendingPatterns) {
             timeoutMax = Math.max(timeoutMax, pattern.getTimeout());
         }
 
         try {
             logContainerCmd.exec(callback).awaitCompletion(timeoutMax, TimeUnit.MILLISECONDS);
+            if (!callback.isComplete()) {
+                callback.cancel();
+                throw new OrchestrationException(String.format("timeout after %d while waiting for log-patterns in %s's log", timeoutMax, id));
+            }
         } catch (InterruptedException e) {
-            throw new OrchestrationException(String.format("timeout after %d while waiting for log-patterns in %s's log", timeoutMax, id));
+            throw new OrchestrationException(String.format("Interrupt while waiting for log-patterns in %s's log", timeoutMax, id));
+        }
+
+        if (!callback.isComplete()) {
+            throw new OrchestrationException(String.format("%s's log ended before %s appeared in output", id, logPatternsToString(pendingPatterns)));
         }
     }
 
@@ -1002,4 +967,5 @@ public class DockerOrchestrator {
         }
         return saved;
     }
+
 }
