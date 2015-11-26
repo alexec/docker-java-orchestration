@@ -516,7 +516,7 @@ public class DockerOrchestrator {
 
     private void removeContainer(Container existingContainer) {
         try {
-            docker.removeContainerCmd(existingContainer.getId()).withForce().exec();
+            docker.removeContainerCmd(existingContainer.getId()).withForce().withRemoveVolumes(true).exec();
         } catch (InternalServerErrorException e) {
             if (permissionErrorTolerant && isPermissionError(e)) {
                 logger.warn(String.format("ignoring %s when removing container as we are configured to be permission error tolerant", e));
