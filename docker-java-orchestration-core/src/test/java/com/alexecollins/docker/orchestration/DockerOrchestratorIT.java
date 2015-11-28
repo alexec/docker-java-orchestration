@@ -134,8 +134,7 @@ public class DockerOrchestratorIT {
         orchestrator.build(new Id("busybox"));
         orchestrator.clean(new Id("busybox"), CleanFlag.CONTAINER_ONLY);
 
-        int expectedNumContainers = numContainersBefore + (runningOnCircleCi() ? 1 : 0);
-        assertEquals(expectedNumContainers, getNumContainers());
+        assertEquals(numContainersBefore, getNumContainers());
 
         int expectedNumImages = numImagesBefore + 1;
         assertEquals(expectedNumImages, getNumImages());
