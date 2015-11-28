@@ -122,8 +122,7 @@ public class DockerOrchestratorIT {
             return;
         }
 
-        int expectedNumContainers = numContainersBefore + (runningOnCircleCi() ? 1 : 0);
-        assertEquals(expectedNumContainers, getNumContainers());
+        assertEquals(numContainersBefore, getNumContainers());
     }
 
     @Test
