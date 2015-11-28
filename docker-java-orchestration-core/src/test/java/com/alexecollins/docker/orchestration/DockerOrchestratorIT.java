@@ -5,8 +5,6 @@ import com.alexecollins.docker.orchestration.model.CleanFlag;
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import org.junit.After;
@@ -82,6 +80,8 @@ public class DockerOrchestratorIT {
                     }
                 })
                 .build();
+
+        orchestrator.clean();
     }
 
     @Test
@@ -96,13 +96,15 @@ public class DockerOrchestratorIT {
     @Test
     public void whenWeCleanThenAllImagesAreDeleted() throws Exception {
 
-        final List<Image> expectedImages = docker.listImagesCmd().exec();
+        int numImagesBefore = getNumImages();
 
         orchestrator.build(new Id("busybox"));
         orchestrator.clean(new Id("busybox"));
 
-        int expectedSize = expectedImages.size() + (runningOnCircleCi() ? 1 : 0);
-        assertEquals(expectedSize, docker.listImagesCmd().exec().size());
+        int expectedNumImages = numImagesBefore + (runningOnCircleCi() ? 1 : 0);
+        int numImagesAfter = getNumImages();
+
+        assertEquals(expectedNumImages, numImagesAfter);
     }
 
     @Test
@@ -110,7 +112,7 @@ public class DockerOrchestratorIT {
 
         // I *think* that cleaning a container can sometimes remove two images
         orchestrator.clean(new Id("busybox"));
-        final List<Container> expectedContainers = docker.listContainersCmd().withShowAll(true).exec();
+        int numContainersBefore = getNumContainers();
 
         orchestrator.build(new Id("busybox"));
         try {
@@ -120,26 +122,34 @@ public class DockerOrchestratorIT {
             return;
         }
 
-        int expectedSize = expectedContainers.size() + (runningOnCircleCi() ? 1 : 0);
-        assertEquals(expectedSize, docker.listContainersCmd().withShowAll(true).exec().size());
+        int expectedNumContainers = numContainersBefore + (runningOnCircleCi() ? 1 : 0);
+        assertEquals(expectedNumContainers, getNumContainers());
     }
 
     @Test
     public void whenWeCleanThenOnlyContainersAreDeleted() throws Exception {
-        final List<Container> expectedContainers = docker.listContainersCmd().withShowAll(true).exec();
 
-        final List<Image> expectedImages = docker.listImagesCmd().exec();
+        int numContainersBefore = getNumContainers();
+        int numImagesBefore = getNumImages();
 
         orchestrator.build(new Id("busybox"));
         orchestrator.clean(new Id("busybox"), CleanFlag.CONTAINER_ONLY);
 
-        int expectedContainersSize = expectedContainers.size() + (runningOnCircleCi() ? 1 : 0);
-        assertEquals(expectedContainersSize, docker.listContainersCmd().withShowAll(true).exec().size());
+        int expectedNumContainers = numContainersBefore + (runningOnCircleCi() ? 1 : 0);
+        assertEquals(expectedNumContainers, getNumContainers());
 
-        int expectedImageSize = expectedImages.size() + 1;
-        assertEquals(expectedImageSize, docker.listImagesCmd().exec().size());
+        int expectedNumImages = numImagesBefore + 1;
+        assertEquals(expectedNumImages, getNumImages());
 
         orchestrator.clean(new Id("busybox"));
+    }
+
+    private int getNumImages() {
+        return docker.listImagesCmd().exec().size();
+    }
+
+    private int getNumContainers() {
+        return docker.listContainersCmd().withShowAll(true).exec().size();
     }
 
     @Test

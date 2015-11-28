@@ -278,9 +278,8 @@ public class DockerOrchestrator {
             throw new IllegalArgumentException("id is null");
         }
         stop(id);
-        logger.info("Cleaning " + id);
+        logger.info("Cleaning container " + id);
         for (Container container : findAllContainers(id)) {
-            logger.info("Removing container " + container.getId());
             try {
                 removeContainer(container);
             } catch (DockerException e) {
@@ -510,6 +509,7 @@ public class DockerOrchestrator {
     }
 
     private void removeContainer(Container existingContainer) {
+        logger.info("Removing container " + existingContainer.getId());
         try {
             docker.removeContainerCmd(existingContainer.getId()).withForce().withRemoveVolumes(true).exec();
         } catch (InternalServerErrorException e) {
