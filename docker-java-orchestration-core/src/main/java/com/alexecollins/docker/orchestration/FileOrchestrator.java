@@ -85,7 +85,7 @@ class FileOrchestrator {
     private void copyFileEntry(final File destDir, File fileEntry) throws IOException {
         LOGGER.info(" - add " + fileEntry);
         if (fileEntry.isDirectory()) {
-            copyDirectoryToDirectory(fileEntry, destDir);
+            copyDirectoryToDirectory(fileEntry, new File(destDir, fileEntry.getName()));
         } else {
             final Path targetPath;
             if (destDir.isDirectory()) {
