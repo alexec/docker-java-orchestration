@@ -30,7 +30,7 @@ public class Conf {
     @Deprecated
     private boolean logOnFailure = true;
     private int maxLogLines = 10; // same as unix tail command
-    private List<Id> volumesFrom = new ArrayList<>();
+    private List<VolumeFrom> volumesFrom = new ArrayList<>();
     private HealthChecks healthChecks = new HealthChecks();
     private Map<String, String> env = new HashMap<>();
     private Map<String, String> volumes = new HashMap<>();

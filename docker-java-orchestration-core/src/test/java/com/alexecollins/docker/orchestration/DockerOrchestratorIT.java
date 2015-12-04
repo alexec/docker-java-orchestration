@@ -2,10 +2,9 @@ package com.alexecollins.docker.orchestration;
 
 import com.alexecollins.docker.orchestration.model.BuildFlag;
 import com.alexecollins.docker.orchestration.model.CleanFlag;
+import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import org.junit.After;
@@ -74,24 +73,38 @@ public class DockerOrchestratorIT {
                 .project("docker-java-orchestrator")
                 .buildFlags(EnumSet.of(BuildFlag.REMOVE_INTERMEDIATE_IMAGES))
                 .permissionErrorTolerant(true)
+                .definitionFilter(new DefinitionFilter() {
+                    @Override
+                    public boolean test(final Id id, @SuppressWarnings("UnusedParameters") final Conf conf) {
+                        return !new Id("private-registry").equals(id);
+                    }
+                })
                 .build();
+
+        orchestrator.clean();
     }
 
     @Test
     public void listsAllDefinintions() throws Exception {
-        assertEquals(Arrays.asList(new Id("busybox"), new Id("disabled"), new Id("mysql"), new Id("app")), orchestrator.ids());
+        final List<Id> expectedIds = Arrays.asList(new Id("busybox"), new Id("disabled"), new Id("mysql"),
+                                                   new Id("app"), new Id("private-registry"));
+        final List<Id> actualIds = orchestrator.ids();
+        assertTrue("Expected " + expectedIds + " to contain all values of " + actualIds,
+                expectedIds.containsAll(actualIds) && actualIds.containsAll(expectedIds));
     }
 
     @Test
     public void whenWeCleanThenAllImagesAreDeleted() throws Exception {
 
-        final List<Image> expectedImages = docker.listImagesCmd().exec();
+        int numImagesBefore = getNumImages();
 
         orchestrator.build(new Id("busybox"));
         orchestrator.clean(new Id("busybox"));
 
-        int expectedSize = expectedImages.size() + (runningOnCircleCi() ? 1 : 0);
-        assertEquals(expectedSize, docker.listImagesCmd().exec().size());
+        int expectedNumImages = numImagesBefore + (runningOnCircleCi() ? 1 : 0);
+        int numImagesAfter = getNumImages();
+
+        assertEquals(expectedNumImages, numImagesAfter);
     }
 
     @Test
@@ -99,7 +112,7 @@ public class DockerOrchestratorIT {
 
         // I *think* that cleaning a container can sometimes remove two images
         orchestrator.clean(new Id("busybox"));
-        final List<Container> expectedContainers = docker.listContainersCmd().withShowAll(true).exec();
+        int numContainersBefore = getNumContainers();
 
         orchestrator.build(new Id("busybox"));
         try {
@@ -109,26 +122,32 @@ public class DockerOrchestratorIT {
             return;
         }
 
-        int expectedSize = expectedContainers.size() + (runningOnCircleCi() ? 1 : 0);
-        assertEquals(expectedSize, docker.listContainersCmd().withShowAll(true).exec().size());
+        assertEquals(numContainersBefore, getNumContainers());
     }
 
     @Test
     public void whenWeCleanThenOnlyContainersAreDeleted() throws Exception {
-        final List<Container> expectedContainers = docker.listContainersCmd().withShowAll(true).exec();
 
-        final List<Image> expectedImages = docker.listImagesCmd().exec();
+        int numContainersBefore = getNumContainers();
+        int numImagesBefore = getNumImages();
 
         orchestrator.build(new Id("busybox"));
         orchestrator.clean(new Id("busybox"), CleanFlag.CONTAINER_ONLY);
 
-        int expectedContainersSize = expectedContainers.size() + (runningOnCircleCi() ? 1 : 0);
-        assertEquals(expectedContainersSize, docker.listContainersCmd().withShowAll(true).exec().size());
+        assertEquals(numContainersBefore, getNumContainers());
 
-        int expectedImageSize = expectedImages.size() + 1;
-        assertEquals(expectedImageSize, docker.listImagesCmd().exec().size());
+        int expectedNumImages = numImagesBefore + 1;
+        assertEquals(expectedNumImages, getNumImages());
 
         orchestrator.clean(new Id("busybox"));
+    }
+
+    private int getNumImages() {
+        return docker.listImagesCmd().exec().size();
+    }
+
+    private int getNumContainers() {
+        return docker.listContainersCmd().withShowAll(true).exec().size();
     }
 
     @Test
@@ -160,5 +179,13 @@ public class DockerOrchestratorIT {
         orchestrator.isRunning();
     }
 
+    @Test
+    public void saveCreatesAppTarFile() throws Exception {
+        orchestrator.build();
 
+        File destDir = new File("target");
+        orchestrator.save(destDir, false);
+
+        assertTrue(new File(destDir, "app.tar").exists());
+    }
 }
