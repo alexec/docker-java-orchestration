@@ -41,6 +41,10 @@ import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +57,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -793,6 +799,44 @@ public class DockerOrchestrator {
         }
     }
 
+    private void copy(final Id id, final String resource, final String hostpath) {
+        if (id == null) {
+            throw new IllegalArgumentException("id is null");
+        }
+
+        logger.info("Copying " + resource + " from " + id + " to " + hostpath);
+        if (findContainer(id) == null) {
+            createNewContainer(id);
+        }
+
+        for (Container container : findAllContainers(id)) {
+            try {
+                // The copy command returns a "tar stream". Seems a less than friendly API, but ho-hum.
+                InputStream is = docker.copyFileFromContainerCmd(container.getId(), resource).withHostPath(hostpath).exec();
+                final TarArchiveInputStream tais = (TarArchiveInputStream) new ArchiveStreamFactory().createArchiveInputStream("tar", is);
+                File targetPath = new File(hostpath);  // hostpath could be a file or a directory
+
+                TarArchiveEntry tarEntry = tais.getNextTarEntry();
+                while (tarEntry != null) {
+                    File destPath = targetPath;
+                    if (targetPath.isDirectory()) {
+                        destPath = new File(targetPath, tarEntry.getName());
+                    }
+                    if (tarEntry.isDirectory() && destPath.isDirectory()) {
+                        destPath.mkdirs();
+                    } else {
+                        Files.copy(tais, destPath.toPath());
+                    }
+                    tarEntry = tais.getNextTarEntry();
+                }
+                tais.close();
+                is.close();
+             } catch (DockerException | IOException | ArchiveException e) {
+                throw new OrchestrationException(e);
+            }
+        }
+    }
+
     public void build() {
         for (Id id : ids()) {
             if (!inclusive(id)) {
@@ -824,6 +868,15 @@ public class DockerOrchestrator {
                 continue;
             }
             start(id);
+        }
+    }
+
+    public void copy(String resource, String hostpath) {
+        for (Id id : ids()) {
+            if (!inclusive(id)) {
+                continue;
+            }
+            copy(id, resource, hostpath);
         }
     }
 
