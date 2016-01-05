@@ -14,6 +14,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.BuildImageCmd;
+import com.github.dockerjava.api.command.CopyFileFromContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerCmd;
@@ -37,6 +38,7 @@ import com.github.dockerjava.api.model.PushResponseItem;
 import com.github.dockerjava.api.model.StreamType;
 import com.google.common.collect.Lists;
 
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.lang.time.StopWatch;
 import org.glassfish.jersey.client.ClientResponse;
 import org.junit.After;
@@ -140,6 +142,8 @@ public class DockerOrchestratorTest {
     @Mock
     private StopContainerCmd stopContainerCmdMock;
     @Mock
+    private CopyFileFromContainerCmd copyFileFromContainerMock;
+    @Mock
     private TagImageCmd tagImageCmdMock;
     @Mock
     private SaveImageCmd saveImageCmd;
@@ -157,6 +161,9 @@ public class DockerOrchestratorTest {
     private TailFactory tailFactoryMock;
     @Mock
     private InputStream saveInputStream;
+    @Mock
+    private InputStream tarInputStream;
+
     private DockerOrchestrator testObj;
 
     @Before
@@ -233,6 +240,14 @@ public class DockerOrchestratorTest {
 
         when(createContainerResponse.getId()).thenReturn(CONTAINER_ID);
 
+        when(dockerMock.copyFileFromContainerCmd(any(String.class), any(String.class))).thenReturn(copyFileFromContainerMock);
+        when(copyFileFromContainerMock.exec()).thenReturn(tarInputStream);
+        when(copyFileFromContainerMock.withContainerId(CONTAINER_ID)).thenReturn(copyFileFromContainerMock);
+        when(copyFileFromContainerMock.withResource(any(String.class))).thenReturn(copyFileFromContainerMock);
+        when(copyFileFromContainerMock.withHostPath(any(String.class))).thenReturn(copyFileFromContainerMock);
+        when(copyFileFromContainerMock.getContainerId()).thenReturn(CONTAINER_ID);
+        when(tarInputStream.read(any(byte[].class), anyInt(), anyInt())).thenReturn(-1);
+
         when(dockerMock.startContainerCmd(CONTAINER_ID)).thenReturn(startContainerCmdMock);
         when(dockerMock.stopContainerCmd(CONTAINER_ID)).thenReturn(stopContainerCmdMock);
         when(dockerMock.removeContainerCmd(CONTAINER_ID)).thenReturn(removeContainerCmdMock);
@@ -300,7 +315,7 @@ public class DockerOrchestratorTest {
     }
 
     @After
-    public void teadDown() {
+    public void tearDown() {
         backgroundExecutor.shutdown();
     }
 
@@ -354,6 +369,14 @@ public class DockerOrchestratorTest {
         testObj.stop();
 
         verify(stopContainerCmdMock).exec();
+    }
+
+    @Test
+    public void copyResourceFromContainer() throws DockerException, IOException {
+        when(listContainersCmdMockOnlyRunning.exec()).thenReturn(Collections.<Container>emptyList());
+        testObj.copy("a resource", "a path");
+
+        verify(copyFileFromContainerMock, times(1)).exec();
     }
 
     @Test
