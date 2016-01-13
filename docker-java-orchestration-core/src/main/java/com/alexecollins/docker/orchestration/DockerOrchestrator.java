@@ -26,18 +26,21 @@ import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.BuildResponseItem;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.Identifier;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.InternetProtocol;
 import com.github.dockerjava.api.model.Link;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.PushResponseItem;
+import com.github.dockerjava.api.model.Repository;
 import com.github.dockerjava.api.model.ResponseItem;
 import com.github.dockerjava.api.model.Volume;
 import com.github.dockerjava.api.model.VolumesFrom;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
@@ -58,7 +61,6 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -924,10 +926,15 @@ public class DockerOrchestrator {
     }
 
     private void push(Id id) {
-        for (final String repo : repos(id)) {
+        for (final Identifier identifier : identifiers(id)) {
             try {
-                PushImageCmd pushImageCmd = docker.pushImageCmd(repo);
-                logger.info("Pushing " + id + " (" + pushImageCmd.getName() + ")");
+                final PushImageCmd pushImageCmd = docker.pushImageCmd(identifier.repository.name);
+
+                if (identifier.tag.isPresent()) {
+                    pushImageCmd.withTag(identifier.tag.get());
+                }
+
+                logger.info("Pushing " + id + " (" + asString(identifier) + ")");
 
                 final PushImageResultCallback callback = new PushImageResultCallback() {
 
@@ -946,12 +953,28 @@ public class DockerOrchestrator {
         }
     }
 
-    private Iterable<String> repos(Id id) {
+    private String asString(final Identifier identifier) {
+        if (identifier == null) {
+            return "";
+        }
+
+        final Optional<String> tag = identifier.tag;
+
+        return identifier.repository.getPath() + (tag.isPresent() ? ":" + tag.get() : "");
+    }
+
+    private Iterable<Identifier> identifiers(Id id) {
         return FluentIterable.from(repo.tags(id))
-                .transform(new Function<String, String>() {
+                .transform(new Function<String, Identifier>() {
                     @Override
-                    public String apply(final String tag) {
-                        return tag.replaceFirst(":[^:]*$", "");
+                    public Identifier apply(final String tag) {
+                        final String repository = tag.replaceFirst(":[^:]*$", "");
+
+                        if (tag.equals(repository)) {
+                            return new Identifier(new Repository(repository), null);
+                        } else {
+                            return new Identifier(new Repository(repository),tag.substring(repository.length() + 1));
+                        }
                     }
                 }).toSortedSet(Ordering.usingToString());
     }

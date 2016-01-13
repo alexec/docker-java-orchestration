@@ -33,12 +33,12 @@ import com.github.dockerjava.api.model.BuildResponseItem;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.Frame;
+import com.github.dockerjava.api.model.Identifier;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.PushResponseItem;
+import com.github.dockerjava.api.model.Repository;
 import com.github.dockerjava.api.model.StreamType;
 import com.google.common.collect.Lists;
-
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.lang.time.StopWatch;
 import org.glassfish.jersey.client.ClientResponse;
 import org.junit.After;
@@ -78,6 +78,7 @@ import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -435,13 +436,14 @@ public class DockerOrchestratorTest {
             // need to get here
         }
         verify(dockerMock).pushImageCmd(IMAGE_NAME);
+        verify(pushImageCmd, never()).withTag(anyString());
     }
 
     @Test
     public void pushImageWithRegistryAndPort() {
-        String repositoryWithRegistryAndPort = "my.registry.com:5000/mynamespace/myrepository";
+        final Identifier identifier = new Identifier(new Repository("my.registry.com:5000/mynamespace/myrepository"), TAG_NAME);
 
-        when(repoMock.tags(idMock)).thenReturn(Collections.singletonList(repositoryWithRegistryAndPort + ":" + TAG_NAME));
+        when(repoMock.tags(idMock)).thenReturn(Collections.singletonList(identifier.repository.name + ":" + TAG_NAME));
         try {
             testObj.push();
             fail("Exception expected");
@@ -450,7 +452,8 @@ public class DockerOrchestratorTest {
             // need to get here
         }
 
-        verify(dockerMock).pushImageCmd(repositoryWithRegistryAndPort);
+        verify(dockerMock).pushImageCmd(identifier.repository.name);
+        verify(pushImageCmd).withTag(TAG_NAME);
     }
 
     @Test
