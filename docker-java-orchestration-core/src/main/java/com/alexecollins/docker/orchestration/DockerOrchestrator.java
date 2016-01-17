@@ -18,6 +18,7 @@ import com.github.dockerjava.api.InternalServerErrorException;
 import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
@@ -623,7 +624,7 @@ public class DockerOrchestrator {
     private void startContainer(String idOfContainerToStart) {
         try {
             docker.startContainerCmd(idOfContainerToStart).exec();
-        } catch (DockerException e) {
+        } catch (Exception e) {
             logger.error("Unable to start container " + idOfContainerToStart, e);
             throw new OrchestrationException(e);
         }
@@ -698,7 +699,20 @@ public class DockerOrchestrator {
             logger.info(" - extra hosts " + conf.getExtraHosts());
         }
 
-        return cmd.exec().getId();
+        final CreateContainerResponse createResponse = cmd.exec();
+
+        final String[] warnings = createResponse.getWarnings();
+        if (warnings != null) {
+            for (final String warning : warnings) {
+                logger.warn("Warning during container creation: " + warning);
+            }
+        }
+
+        final String returnId = createResponse.getId();
+
+        logger.info("Created new container " + returnId + " for " + id);
+
+        return returnId;
     }
 
     /**
