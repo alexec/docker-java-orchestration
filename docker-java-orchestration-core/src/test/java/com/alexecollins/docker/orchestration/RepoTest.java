@@ -109,7 +109,6 @@ public class RepoTest {
         sut.sort(links);
     }
 
-
     @Test
     public void appHasPacking() throws Exception {
         Conf conf = sut.conf(appId);
@@ -129,5 +128,32 @@ public class RepoTest {
         List<Id> identifiers = sut.ids(false);
         assertEquals(identifiers.size(), 2);
         assertThat(identifiers, hasItems(appId, filterId));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testDuplicateLinksSimple() throws Exception {
+        final Map<Id, List<Id>> links = new HashMap<>();
+        final Id a = new Id("a");
+        final Id b1 = new Id("b"), b2 = new Id("b");
+        links.put(a, Arrays.asList(b1, b2));
+        sut.sort(links);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testDuplicateLinksWithAlias() throws Exception {
+        final Map<Id, List<Id>> links = new HashMap<>();
+        final Id a = new Id("a");
+        final Id b1 = new Id("foo:b"), b2 = new Id("bar:b");
+        links.put(a, Arrays.asList(b1,b2));
+        sut.sort(links);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testDuplicateLinksMixed() throws Exception {
+        final Map<Id, List<Id>> links = new HashMap<>();
+        final Id a = new Id("a");
+        final Id b1 = new Id("foo:b"), b2 = new Id("b");
+        links.put(a, Arrays.asList(b1,b2));
+        sut.sort(links);
     }
 }

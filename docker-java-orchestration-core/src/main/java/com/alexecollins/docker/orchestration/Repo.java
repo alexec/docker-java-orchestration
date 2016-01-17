@@ -171,6 +171,14 @@ class Repo {
             if (!difference.isEmpty()) {
                 linkErrors.add("Missing linked containers in " + entry.getKey() + ": " + difference);
             }
+            final Set<String> seenIds = Sets.newHashSet();
+            for (final Id id: linkedImages) {
+                final String linkName = id.toString().replaceFirst("[^:]+:","");
+                if (seenIds.contains(linkName)) {
+                    linkErrors.add("Configuration for " + entry.getKey() + " contains " + linkName + " multiple times (" + id.toString() + ")");
+                }
+                seenIds.add(linkName);
+            }
         }
         if (!linkErrors.isEmpty()) {
             throw new IllegalStateException(Joiner.on('\n').join(linkErrors));
