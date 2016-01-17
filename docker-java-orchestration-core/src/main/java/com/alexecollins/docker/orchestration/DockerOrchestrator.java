@@ -45,6 +45,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -772,6 +773,7 @@ public class DockerOrchestrator {
     private Link[] links(Id id) {
         final List<com.alexecollins.docker.orchestration.model.Link> links = conf(id).getLinks();
         final Link[] out = new Link[links.size()];
+        final Set<String> seenAliases = Sets.newHashSet();
         for (int i = 0; i < links.size(); i++) {
             com.alexecollins.docker.orchestration.model.Link link = links.get(i);
             Container container = findContainer(link.getId());
@@ -780,6 +782,10 @@ public class DockerOrchestrator {
             }
             final String name = com.alexecollins.docker.orchestration.util.Links.name(container.getNames());
             final String alias = link.getAlias();
+            if (seenAliases.contains(alias)) {
+                throw new OrchestrationException(String.format("Alias %s already used for a link with container %s", alias, id));
+            }
+            seenAliases.add(alias);
             out[i] = new Link(name, alias);
         }
         return out;
