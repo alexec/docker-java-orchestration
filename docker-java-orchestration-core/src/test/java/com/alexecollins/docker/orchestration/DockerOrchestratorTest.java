@@ -67,7 +67,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.StringEndsWith.endsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
@@ -323,13 +323,21 @@ public class DockerOrchestratorTest {
     @Test
     public void createAndStartNewContainer() throws DockerException, IOException {
 
-        when(listContainersCmdMock.exec()).thenReturn(Collections.<Container>emptyList());
+        mockRunningIdMock();
 
         testObj.start();
 
         verify(createContainerCmdMock).exec();
         verify(createContainerCmdMock).withExtraHosts(EXTRA_HOST);
         verify(startContainerCmdMock).exec();
+    }
+
+    private void mockRunningIdMock() {
+        final Container container = mock(Container.class);
+        when(container.getImage()).thenReturn("idMock");
+        when(container.getNames()).thenReturn(new String[0]);
+        when(listContainersCmdMock.exec()).thenReturn(Collections.<Container>emptyList()).thenReturn(Collections.singletonList(container));
+        when(repoMock.imageName(any(Id.class))).thenReturn("idMock");
     }
 
     @Test
@@ -499,7 +507,7 @@ public class DockerOrchestratorTest {
     public void privilegedConfigurationStartsPrivilegedContainer() throws Exception {
 
         when(confMock.isPrivileged()).thenReturn(true);
-        when(listContainersCmdMock.exec()).thenReturn(Collections.<Container>emptyList());
+        mockRunningIdMock();
 
         testObj.start();
 
@@ -537,7 +545,7 @@ public class DockerOrchestratorTest {
             testObj.start();
             fail();
         } catch (OrchestrationException e) {
-            assertThat(e.getMessage(), equalTo(String.format("%s's log ended before [\"^Foo$\"] appeared in output", idMock)));
+            assertThat(e.getMessage(), endsWith(String.format("%s's log ended before [\"^Foo$\"] appeared in output", idMock)));
         }
     }
 
@@ -568,7 +576,7 @@ public class DockerOrchestratorTest {
             testObj.start();
             fail();
         } catch (OrchestrationException e) {
-            assertEquals(String.format("timeout after 0 while waiting for \"%s\" in %s's logs", firstLogPattern.getPattern(), idMock), e.getMessage());
+            assertThat(e.getMessage(), endsWith(String.format("timeout after 0 while waiting for \"%s\" in %s's logs", firstLogPattern.getPattern(), idMock)));
         }
 
         verify(logger).info(eq("Waiting for {} to appear in output"), eq("[\"^Foo$\", \"^Bar$\"]"));
