@@ -5,6 +5,7 @@ import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Frame;
+import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 
 import java.io.Closeable;
@@ -18,6 +19,7 @@ class Tail implements ResultCallback<Frame> {
     private volatile boolean cancelled;
 
     Tail(DockerClient docker, Container container, Logger logger) {
+        Preconditions.checkNotNull(container,"Container must not be null");
         this.logger = logger;
         this.logContainerCmd = docker.logContainerCmd(container.getId())
                 .withStdErr()

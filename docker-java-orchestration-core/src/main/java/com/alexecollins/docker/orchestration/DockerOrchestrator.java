@@ -18,6 +18,7 @@ import com.github.dockerjava.api.InternalServerErrorException;
 import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
@@ -44,6 +45,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -499,12 +501,18 @@ public class DockerOrchestrator {
 
             healthCheck(id);
 
-        } catch (DockerException e) {
+        } catch (Exception e) {
+            logger.error("Error starting container with id " + id + ": " + e.getMessage());
             throw new OrchestrationException(e);
-        } finally {
-            final Tail tail = tailFactory.newTail(docker, findContainer(id), logger);
-            tail.start();
         }
+
+        final Container container = findContainer(id);
+        if (container == null) {
+            throw new OrchestrationException("Could not find container with id " + id);
+        }
+
+        final Tail tail = tailFactory.newTail(docker, container, logger);
+        tail.start();
     }
 
     private Container findContainer(Id id) {
@@ -617,7 +625,7 @@ public class DockerOrchestrator {
     private void startContainer(String idOfContainerToStart) {
         try {
             docker.startContainerCmd(idOfContainerToStart).exec();
-        } catch (DockerException e) {
+        } catch (Exception e) {
             logger.error("Unable to start container " + idOfContainerToStart, e);
             throw new OrchestrationException(e);
         }
@@ -692,7 +700,20 @@ public class DockerOrchestrator {
             logger.info(" - extra hosts " + conf.getExtraHosts());
         }
 
-        return cmd.exec().getId();
+        final CreateContainerResponse createResponse = cmd.exec();
+
+        final String[] warnings = createResponse.getWarnings();
+        if (warnings != null) {
+            for (final String warning : warnings) {
+                logger.warn("Warning during container creation: " + warning);
+            }
+        }
+
+        final String returnId = createResponse.getId();
+
+        logger.info("Created new container " + returnId + " for " + id);
+
+        return returnId;
     }
 
     /**
@@ -752,6 +773,7 @@ public class DockerOrchestrator {
     private Link[] links(Id id) {
         final List<com.alexecollins.docker.orchestration.model.Link> links = conf(id).getLinks();
         final Link[] out = new Link[links.size()];
+        final Set<String> seenAliases = Sets.newHashSet();
         for (int i = 0; i < links.size(); i++) {
             com.alexecollins.docker.orchestration.model.Link link = links.get(i);
             Container container = findContainer(link.getId());
@@ -760,6 +782,10 @@ public class DockerOrchestrator {
             }
             final String name = com.alexecollins.docker.orchestration.util.Links.name(container.getNames());
             final String alias = link.getAlias();
+            if (seenAliases.contains(alias)) {
+                throw new OrchestrationException(String.format("Alias %s already used for a link with container %s", alias, id));
+            }
+            seenAliases.add(alias);
             out[i] = new Link(name, alias);
         }
         return out;
