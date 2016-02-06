@@ -633,7 +633,7 @@ public class DockerOrchestrator {
             
             String hostPath = entry.getValue();
             if (hostPath!=null && !hostPath.trim().equals("")){
-                Remologger.info(" - volumes " + volumePath + " <- " + hostPath);
+                logger.info(" - volumes " + volumePath + " <- " + hostPath);
                 binds.add(new Bind(hostPath, volume));
             } else {
             	volumes.add(volume);
