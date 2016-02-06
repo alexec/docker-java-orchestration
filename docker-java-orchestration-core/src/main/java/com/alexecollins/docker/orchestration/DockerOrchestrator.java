@@ -1,43 +1,13 @@
 package com.alexecollins.docker.orchestration;
 
 
-import com.alexecollins.docker.orchestration.model.BuildFlag;
-import com.alexecollins.docker.orchestration.model.CleanFlag;
-import com.alexecollins.docker.orchestration.model.Conf;
-import com.alexecollins.docker.orchestration.model.ContainerConf;
-import com.alexecollins.docker.orchestration.model.HealthChecks;
-import com.alexecollins.docker.orchestration.model.Id;
-import com.alexecollins.docker.orchestration.model.LogPattern;
-import com.alexecollins.docker.orchestration.model.Ping;
+import com.alexecollins.docker.orchestration.model.*;
 import com.alexecollins.docker.orchestration.plugin.api.Plugin;
 import com.alexecollins.docker.orchestration.util.Pinger;
-import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.DockerClientException;
-import com.github.dockerjava.api.DockerException;
-import com.github.dockerjava.api.InternalServerErrorException;
-import com.github.dockerjava.api.NotFoundException;
-import com.github.dockerjava.api.command.BuildImageCmd;
-import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.InspectContainerResponse;
-import com.github.dockerjava.api.command.LogContainerCmd;
-import com.github.dockerjava.api.command.PushImageCmd;
-import com.github.dockerjava.api.model.AccessMode;
-import com.github.dockerjava.api.model.Bind;
-import com.github.dockerjava.api.model.BuildResponseItem;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.Identifier;
-import com.github.dockerjava.api.model.Image;
-import com.github.dockerjava.api.model.InternetProtocol;
+import com.github.dockerjava.api.*;
+import com.github.dockerjava.api.command.*;
+import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.api.model.Link;
-import com.github.dockerjava.api.model.PortBinding;
-import com.github.dockerjava.api.model.Ports;
-import com.github.dockerjava.api.model.PushResponseItem;
-import com.github.dockerjava.api.model.Repository;
-import com.github.dockerjava.api.model.ResponseItem;
-import com.github.dockerjava.api.model.Volume;
-import com.github.dockerjava.api.model.VolumesFrom;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
 import com.google.common.base.Function;
@@ -54,28 +24,12 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
-import java.util.Properties;
-import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
@@ -679,10 +633,8 @@ public class DockerOrchestrator {
             
             String hostPath = entry.getValue();
             if (hostPath!=null && !hostPath.trim().equals("")){
-            	File file = new File(hostPath);
-            	String path = file.getAbsolutePath();
-            	logger.info(" - volumes " + volumePath + " <- " + path);
-            	binds.add(new Bind(path, volume));
+                Remologger.info(" - volumes " + volumePath + " <- " + hostPath);
+                binds.add(new Bind(hostPath, volume));
             } else {
             	volumes.add(volume);
             }
