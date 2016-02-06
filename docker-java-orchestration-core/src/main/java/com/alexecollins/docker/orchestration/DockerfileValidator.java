@@ -34,7 +34,7 @@ class DockerfileValidator {
         Map<String, Pattern> instructionPatterns = new HashMap<>();
         instructionPatterns.put("FROM", Pattern.compile("^[${.}a-z0-9./_:-]+((:[${.}a-z0-9._-]+)?)$", Pattern.MULTILINE));
         instructionPatterns.put("MAINTAINER", Pattern.compile(".+"));
-        instructionPatterns.put("EXPOSE", Pattern.compile("^[${.}A-z0-9]+([.${.}a-zA-Z0-9\\s]+)?$"));
+        instructionPatterns.put("EXPOSE", Pattern.compile("^[${.}A-z0-9]+([.${.}/a-zA-Z0-9\\s]+)?$"));
         instructionPatterns.put("ENV", Pattern.compile("^[${.}a-zA-Z_]+[${.}a-zA-Z0-9_]* .+$"));
         instructionPatterns.put("USER", Pattern.compile("^[${.}a-z_][${.}a-z0-9_]{0,30}$"));
         instructionPatterns.put("RUN", Pattern.compile(".+"));
