@@ -515,6 +515,17 @@ public class DockerOrchestratorTest {
     }
 
     @Test
+    public void networkModeConfigurationStartsContainerInSpecifiedNetworkMode() {
+        when(confMock.getNetworkMode()).thenReturn("host");
+        mockRunningIdMock();
+
+        testObj.start();
+
+        verify(createContainerCmdMock).withNetworkMode("host");
+
+    }
+
+    @Test
     public void namelessContainersAreIgnored() {
         when(containerMock.getNames()).thenReturn(null);
         when(listContainersCmdMock.exec()).thenReturn(Collections.singletonList(containerMock));
