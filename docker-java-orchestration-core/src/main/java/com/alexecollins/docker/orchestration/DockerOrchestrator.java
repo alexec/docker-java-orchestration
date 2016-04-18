@@ -597,6 +597,7 @@ public class DockerOrchestrator {
 
         cmd.withPublishAllPorts(true);
         cmd.withPrivileged(conf.isPrivileged());
+        cmd.withNetworkMode(conf.getNetworkMode());
 
         Link[] links = links(id);
 

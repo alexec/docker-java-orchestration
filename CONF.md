@@ -54,6 +54,8 @@ tag: alex.e.c/app:${project.artifactId}-${project.version}
 enabled: true
 # run in privileged mode
 privileged: true
+# what networkMode to use: bridge, host, none or container (default bridge)
+networkMode: bridge
 ```
 
 
