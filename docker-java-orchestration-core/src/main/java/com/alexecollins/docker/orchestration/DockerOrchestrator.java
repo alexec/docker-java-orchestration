@@ -10,6 +10,7 @@ import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.api.model.Link;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
+import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
@@ -1020,6 +1021,54 @@ public class DockerOrchestrator {
 
             saved.put(id, outputFile);
         }
+        return saved;
+    }
+
+    public Map<Id, File> saveLogs(File destDir) {
+        final Map<Id, File> saved = new HashMap<>();
+
+        for (Id id : repo.ids(true)) {
+            if (!inclusive(id)) {
+                continue;
+            }
+
+            final Container container = findContainer(id);
+
+            if (container != null) {
+                final LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId())
+                        .withStdErr()
+                        .withStdOut()
+                        .withTailAll();
+
+                final CollectingLogContainerResultCallback callback = new CollectingLogContainerResultCallback();
+
+                try {
+                    logContainerCmd.exec(callback).awaitCompletion();
+                } catch (InterruptedException e) {
+                    throw new OrchestrationException("Failed to get output of container " + container.getId(), e);
+                }
+
+                final String logOutput = callback.getLogOutput();
+
+                final File outputFile = new File(destDir, id + ".log");
+
+                try {
+                    try (final FileOutputStream fos = new FileOutputStream(outputFile)) {
+                        IOUtils.write(logOutput, fos, Charsets.UTF_8);
+                        logger.info("Wrote output of " + container.getId() + " to " + outputFile.getAbsolutePath());
+                    }
+
+                    saved.put(id, outputFile);
+                } catch (IOException e) {
+                    throw new OrchestrationException("Failed to write " + outputFile.getAbsolutePath(), e);
+                }
+
+
+            } else {
+                logger.warn("Could not find container for image " + id);
+            }
+        }
+
         return saved;
     }
 

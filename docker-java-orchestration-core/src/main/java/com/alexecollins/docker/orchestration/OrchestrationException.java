@@ -9,4 +9,9 @@ class OrchestrationException extends RuntimeException {
     OrchestrationException(Throwable cause) {
         super(cause);
     }
+
+    OrchestrationException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }
