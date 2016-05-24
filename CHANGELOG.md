@@ -1,5 +1,28 @@
 Change Log
 ===
+2.11.14
+
+* [DJO Pull 80](https://github.com/alexec/docker-java-orchestration/pull/80) Enhancement: Save logging to file.
+
+2.11.13
+
+* [DJO Pull 79](https://github.com/alexec/docker-java-orchestration/pull/79) Enhancement: Support `networkMode`.
+
+2.11.10
+
+* [DJO Pull 76](https://github.com/alexec/docker-java-orchestration/pull/76) Bug: Fixed NPE.
+* [DJO Pull 75](https://github.com/alexec/docker-java-orchestration/pull/75) Enhancement: Only push tag.
+
+2.11.9
+
+* [DJO Pull 73](https://github.com/alexec/docker-java-orchestration/pull/73) Enhancement: Docker copy support.
+
+2.11.8
+
+* [DJO Pull 72](https://github.com/alexec/docker-java-orchestration/pull/72) Bug: Fixed directory adding bug.
+* [DJO Pull 69](https://github.com/alexec/docker-java-orchestration/pull/69) Bug: Log patterns.
+* [DJO Pull 70](https://github.com/alexec/docker-java-orchestration/pull/70) Enhancement: Remove volumes.
+
 2.11.5
 
 * [DJO Pull 64](https://github.com/alexec/docker-java-orchestration/pull/65) Enhancement: Volumes support read-only flag.  
