@@ -58,7 +58,7 @@ public class ConfTest {
     public void volumes() throws Exception {
     	Map<String, String> volumes = new HashMap<>(2);
     	volumes.put("foo", "bar");
-    	volumes.put("volume", "");
+    	volumes.put("volume", null);
     	
         assertEquals(volumes, conf.getVolumes());
     }
