@@ -2,16 +2,16 @@ Change Log
 ===
 2.11.5
 
-* [DJO Pull 64][https://github.com/alexec/docker-java-orchestration/pull/65] Enhancement: Volumes support read-only flag.  
-* [DJO Pull 62][https://github.com/alexec/docker-java-orchestration/pull/62] Enhancement: Updated docker-java version.  
-* [DJO Pull 61][https://github.com/alexec/docker-java-orchestration/pull/61] Enhancement: Introduce PULL flag to builds. 
+* [DJO Pull 64](https://github.com/alexec/docker-java-orchestration/pull/65) Enhancement: Volumes support read-only flag.  
+* [DJO Pull 62](https://github.com/alexec/docker-java-orchestration/pull/62) Enhancement: Updated docker-java version.  
+* [DJO Pull 61](https://github.com/alexec/docker-java-orchestration/pull/61) Enhancement: Introduce PULL flag to builds. 
 
 2.11.4
 
-* [DJO Pull 58][https://github.com/alexec/docker-java-orchestration/pull/58] Bug: Sym-link support. 
-* [DJO Pull 57][https://github.com/alexec/docker-java-orchestration/pull/57] Enhancement: Clearer dependency error report. 
-* [DJO Pull 56][https://github.com/alexec/docker-java-orchestration/pull/56] Enhancement: Support multiple tags on push. 
-* [DJO Pull 55][https://github.com/alexec/docker-java-orchestration/pull/55] Bug: Preserve file permission on copy. 
+* [DJO Pull 58](https://github.com/alexec/docker-java-orchestration/pull/58) Bug: Sym-link support. 
+* [DJO Pull 57](https://github.com/alexec/docker-java-orchestration/pull/57) Enhancement: Clearer dependency error report. 
+* [DJO Pull 56](https://github.com/alexec/docker-java-orchestration/pull/56) Enhancement: Support multiple tags on push. 
+* [DJO Pull 55](https://github.com/alexec/docker-java-orchestration/pull/55) Bug: Preserve file permission on copy. 
 
 2.11.3
 
@@ -27,15 +27,15 @@ Change Log
 
 2.11.0
 
-* [DJO Pull 53][https://github.com/alexec/docker-java-orchestration/pull/53] Enhancement: Updated to docker-java 2.1.1.
+* [DJO Pull 53](https://github.com/alexec/docker-java-orchestration/pull/53) Enhancement: Updated to docker-java 2.1.1.
  
 2.10.8
 
-* [DJO Pull 52][https://github.com/alexec/docker-java-orchestration/pull/52] Bug: Correct validation of Dockerfilee
+* [DJO Pull 52](https://github.com/alexec/docker-java-orchestration/pull/52) Bug: Correct validation of Dockerfilee
 
 2.10.5
 
-* [DJO Pull 50][https://github.com/alexec/docker-java-orchestration/pull/50] Bug: Orchestrator was not honoring quietness and not catching errors when pushing.
+* [DJO Pull 50](https://github.com/alexec/docker-java-orchestration/pull/50) Bug: Orchestrator was not honoring quietness and not catching errors when pushing.
 
 2.10.4
 
