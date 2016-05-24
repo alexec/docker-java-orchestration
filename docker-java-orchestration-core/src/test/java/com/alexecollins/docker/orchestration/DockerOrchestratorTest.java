@@ -13,21 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.async.ResultCallback;
-import com.github.dockerjava.api.command.BuildImageCmd;
-import com.github.dockerjava.api.command.CopyFileFromContainerCmd;
-import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.InspectContainerCmd;
-import com.github.dockerjava.api.command.InspectContainerResponse;
-import com.github.dockerjava.api.command.ListContainersCmd;
-import com.github.dockerjava.api.command.ListImagesCmd;
-import com.github.dockerjava.api.command.LogContainerCmd;
-import com.github.dockerjava.api.command.PushImageCmd;
-import com.github.dockerjava.api.command.RemoveContainerCmd;
-import com.github.dockerjava.api.command.SaveImageCmd;
-import com.github.dockerjava.api.command.StartContainerCmd;
-import com.github.dockerjava.api.command.StopContainerCmd;
-import com.github.dockerjava.api.command.TagImageCmd;
+import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.AuthConfig;
 import com.github.dockerjava.api.model.BuildResponseItem;
 import com.github.dockerjava.api.model.Container;
@@ -87,7 +73,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class DockerOrchestratorTest {
 
-    public static final String EXTRA_HOST = "foo:127.0.0.1";
+    private static final String EXTRA_HOST = "foo:127.0.0.1";
     private static final String IMAGE_NAME = "theImage";
     private static final String IMAGE_ID = "imageId";
     private static final String CONTAINER_NAME = "theContainer";
@@ -138,6 +124,8 @@ public class DockerOrchestratorTest {
     private ListContainersCmd listContainersCmdMockOnlyRunning;
     @Mock
     private ListContainersCmd listContainersCmdMock;
+    @Mock
+    private RemoveImageCmd removeImageCmdMock;
     @Mock
     private RemoveContainerCmd removeContainerCmdMock;
     @Mock
@@ -208,6 +196,9 @@ public class DockerOrchestratorTest {
         when(repoMock.ids(false)).thenReturn(Collections.singletonList(idMock));
         when(repoMock.ids(true)).thenReturn(Collections.singletonList(idMock));
         when(repoMock.tag(any(Id.class))).thenReturn(IMAGE_NAME + ":" + TAG_NAME);
+
+        when(dockerMock.removeImageCmd(anyString())).thenReturn(removeImageCmdMock);
+        when(removeImageCmdMock.withForce()).thenReturn(removeImageCmdMock);
 
         when(dockerMock.buildImageCmd(eq(fileMock))).thenReturn(buildImageCmdMock);
         when(buildImageCmdMock.withRemove(anyBoolean())).thenReturn(buildImageCmdMock);
@@ -318,6 +309,15 @@ public class DockerOrchestratorTest {
     @After
     public void tearDown() {
         backgroundExecutor.shutdown();
+    }
+
+    @Test
+    public void cleaningForcesImageRemoval() throws Exception {
+
+        testObj.clean();
+
+        verify(removeImageCmdMock).withForce();
+        verify(removeImageCmdMock).exec();
     }
 
     @Test
