@@ -198,7 +198,8 @@ public class DockerOrchestratorTest {
         when(repoMock.tag(any(Id.class))).thenReturn(IMAGE_NAME + ":" + TAG_NAME);
 
         when(dockerMock.removeImageCmd(anyString())).thenReturn(removeImageCmdMock);
-        when(removeImageCmdMock.withForce()).thenReturn(removeImageCmdMock);
+        when(removeImageCmdMock.withForce(true)).thenReturn(removeImageCmdMock);
+        when(removeImageCmdMock.withForce(false)).thenReturn(removeImageCmdMock);
 
         when(dockerMock.buildImageCmd(eq(fileMock))).thenReturn(buildImageCmdMock);
         when(buildImageCmdMock.withRemove(anyBoolean())).thenReturn(buildImageCmdMock);
@@ -312,11 +313,20 @@ public class DockerOrchestratorTest {
     }
 
     @Test
-    public void cleaningForcesImageRemoval() throws Exception {
+    public void cleaningWithForceForcesImageRemoval() throws Exception {
 
-        testObj.clean();
+        testObj.clean(true);
 
-        verify(removeImageCmdMock).withForce();
+        verify(removeImageCmdMock).withForce(true);
+        verify(removeImageCmdMock).exec();
+    }
+
+    @Test
+    public void cleaningWithoutForcesImageRemoval() throws Exception {
+
+        testObj.clean(false);
+
+        verify(removeImageCmdMock).withForce(false);
         verify(removeImageCmdMock).exec();
     }
 
