@@ -132,7 +132,7 @@ public class DockerOrchestratorIT {
         int numImagesBefore = getNumImages();
 
         orchestrator.build(new Id("busybox"));
-        orchestrator.clean(new Id("busybox"), CleanFlag.CONTAINER_ONLY);
+        orchestrator.clean(new Id("busybox"), EnumSet.of(CleanFlag.CONTAINER));
 
         assertEquals(numContainersBefore, getNumContainers());
 
