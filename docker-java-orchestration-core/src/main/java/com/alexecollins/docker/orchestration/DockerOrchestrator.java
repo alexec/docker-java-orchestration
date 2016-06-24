@@ -12,16 +12,16 @@ import com.alexecollins.docker.orchestration.model.Ping;
 import com.alexecollins.docker.orchestration.plugin.api.Plugin;
 import com.alexecollins.docker.orchestration.util.Pinger;
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.DockerClientException;
-import com.github.dockerjava.api.DockerException;
-import com.github.dockerjava.api.InternalServerErrorException;
-import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
+import com.github.dockerjava.api.exception.DockerClientException;
+import com.github.dockerjava.api.exception.DockerException;
+import com.github.dockerjava.api.exception.InternalServerErrorException;
+import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.AccessMode;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.BuildResponseItem;
@@ -549,7 +549,7 @@ public class DockerOrchestrator {
     private void removeContainer(Container existingContainer) {
         logger.info("Removing container " + existingContainer.getId());
         try {
-            docker.removeContainerCmd(existingContainer.getId()).withForce().withRemoveVolumes(true).exec();
+            docker.removeContainerCmd(existingContainer.getId()).withForce(true).withRemoveVolumes(true).exec();
         } catch (InternalServerErrorException e) {
             if (permissionErrorTolerant && isPermissionError(e)) {
                 logger.warn(String.format("ignoring %s when removing container as we are configured to be permission error tolerant", e));
@@ -595,10 +595,10 @@ public class DockerOrchestrator {
         logger.info("Waiting for {} to appear in output", logPatternsToString(pendingPatterns));
 
         final LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId())
-                .withStdErr()
-                .withStdOut()
+                .withStdErr(true)
+                .withStdOut(true)
                 .withTailAll()
-                .withFollowStream();
+                .withFollowStream(true);
 
         final PatternMatchingStartupResultCallback callback = new PatternMatchingStartupResultCallback(logger, pendingPatterns, id);
 
@@ -687,7 +687,7 @@ public class DockerOrchestrator {
             final int containerPort = split.length == 2 ? Integer.parseInt(split[1]) : hostPort;
 
             logger.info(" - port " + hostPort + "->" + containerPort);
-            portBindings.add(new PortBinding(new Ports.Binding(hostPort),
+            portBindings.add(new PortBinding(Ports.Binding.bindPortSpec(""+hostPort),
                     new ExposedPort(containerPort, InternetProtocol.TCP)));
         }
         cmd.withPortBindings(portBindings.toArray(new PortBinding[portBindings.size()]));
@@ -1103,8 +1103,8 @@ public class DockerOrchestrator {
 
             if (container != null) {
                 final LogContainerCmd logContainerCmd = docker.logContainerCmd(container.getId())
-                        .withStdErr()
-                        .withStdOut()
+                        .withStdErr(Boolean.TRUE)
+                        .withStdOut(Boolean.TRUE)
                         .withTailAll();
 
                 final CollectingLogContainerResultCallback callback = new CollectingLogContainerResultCallback();

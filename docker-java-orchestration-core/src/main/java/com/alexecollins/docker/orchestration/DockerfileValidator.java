@@ -1,7 +1,7 @@
 package com.alexecollins.docker.orchestration;
 
 import com.github.dockerjava.core.GoLangFileMatch;
-import com.github.dockerjava.core.GoLangFileMatchException;
+import com.github.dockerjava.core.exception.GoLangFileMatchException;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import org.apache.commons.io.FileUtils;

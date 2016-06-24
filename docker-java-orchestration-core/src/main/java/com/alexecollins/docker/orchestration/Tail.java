@@ -22,8 +22,8 @@ class Tail implements ResultCallback<Frame> {
         Preconditions.checkNotNull(container,"Container must not be null");
         this.logger = logger;
         this.logContainerCmd = docker.logContainerCmd(container.getId())
-                .withStdErr()
-                .withStdOut()
+                .withStdErr(true)
+                .withStdOut(true)
                 .withTailAll();
     }
 
