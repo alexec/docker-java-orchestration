@@ -443,7 +443,7 @@ public class DockerOrchestrator {
         List<Image> images = docker.listImagesCmd().exec();
         for (Image i : images) {
             for (String tag : i.getRepoTags()) {
-                if (tag.startsWith(imageTag)) {
+                if (tag.startsWith(imageTag + ":")) {
                     logger.debug("Using {} ({}) for {}. It matches (enough) to {}.", new Object[]{
                             i.getId(),
                             tag,
