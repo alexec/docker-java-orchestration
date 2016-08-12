@@ -5,6 +5,7 @@ import com.alexecollins.docker.orchestration.model.CleanFlag;
 import com.alexecollins.docker.orchestration.model.Conf;
 import com.alexecollins.docker.orchestration.model.Id;
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import org.junit.After;
@@ -61,7 +62,7 @@ public class DockerOrchestratorIT {
 
         System.out.println("runningOnCircleCi=" + runningOnCircleCi());
 
-        docker = DockerClientBuilder.getInstance(DockerClientConfig.createDefaultConfigBuilder().build()).build();
+        docker = DockerClientBuilder.getInstance(DefaultDockerClientConfig.createDefaultConfigBuilder().build()).build();
 
         orchestrator = DockerOrchestrator.builder()
                 .docker(docker)

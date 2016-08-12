@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
@@ -48,8 +49,8 @@ public class FiltersTest {
             }
         }, properties);
 
-        assertEquals("test 1.0.0\n", IOUtils.toString(new File(dir, fileUnix).toURI()));
-        assertEquals("test 1.0.0\r\n", IOUtils.toString(new File(dir, fileWindows).toURI()));
+        assertEquals("test 1.0.0\n", IOUtils.toString(new File(dir, fileUnix).toURI(), Charset.defaultCharset()));
+        assertEquals("test 1.0.0\r\n", IOUtils.toString(new File(dir, fileWindows).toURI(), Charset.defaultCharset()));
     }
 
     @Test
