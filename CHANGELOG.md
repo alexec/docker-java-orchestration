@@ -1,5 +1,37 @@
 # Change Log
 
+## [docker-java-orchestration-2.11.19](https://github.com/alexec/docker-java-orchestration/tree/docker-java-orchestration-2.11.19) (2016-08-13)
+[Full Changelog](https://github.com/alexec/docker-java-orchestration/compare/docker-java-orchestration-2.11.18...docker-java-orchestration-2.11.19)
+
+## [docker-java-orchestration-2.11.18](https://github.com/alexec/docker-java-orchestration/tree/docker-java-orchestration-2.11.18) (2016-07-24)
+[Full Changelog](https://github.com/alexec/docker-java-orchestration/compare/docker-java-orchestration-2.11.17...docker-java-orchestration-2.11.18)
+
+**Implemented enhancements:**
+
+- Can we make forcing when deleting an option? [\#81](https://github.com/alexec/docker-java-orchestration/issues/81)
+
+**Fixed bugs:**
+
+- Improve Image Selection [\#82](https://github.com/alexec/docker-java-orchestration/pull/82) ([ceagan](https://github.com/ceagan))
+
+**Closed issues:**
+
+- Port to docker-java 3.0.0 [\#84](https://github.com/alexec/docker-java-orchestration/issues/84)
+
+## [docker-java-orchestration-2.11.17](https://github.com/alexec/docker-java-orchestration/tree/docker-java-orchestration-2.11.17) (2016-07-03)
+[Full Changelog](https://github.com/alexec/docker-java-orchestration/compare/docker-java-orchestration-2.11.16...docker-java-orchestration-2.11.17)
+
+**Merged pull requests:**
+
+- Port to docker-java 3.0.0 [\#85](https://github.com/alexec/docker-java-orchestration/pull/85) ([marcust](https://github.com/marcust))
+
+## [docker-java-orchestration-2.11.16](https://github.com/alexec/docker-java-orchestration/tree/docker-java-orchestration-2.11.16) (2016-06-23)
+[Full Changelog](https://github.com/alexec/docker-java-orchestration/compare/docker-java-orchestration-2.11.15...docker-java-orchestration-2.11.16)
+
+**Merged pull requests:**
+
+- Make force delete optional \(\#81\) [\#83](https://github.com/alexec/docker-java-orchestration/pull/83) ([marcust](https://github.com/marcust))
+
 ## [docker-java-orchestration-2.11.15](https://github.com/alexec/docker-java-orchestration/tree/docker-java-orchestration-2.11.15) (2016-05-24)
 [Full Changelog](https://github.com/alexec/docker-java-orchestration/compare/docker-java-orchestration-2.11.14...docker-java-orchestration-2.11.15)
 
