@@ -400,10 +400,12 @@ public class DockerOrchestrator {
         logger.debug("Converting {} ({}) to image id.", id, imageTag);
         List<Image> images = docker.listImagesCmd().exec();
         for (Image image : images) {
-            for (String tag : image.getRepoTags()) {
-                if (imageTag.contains(":") && tag.equals(imageTag) || tag.startsWith(imageTag + ":")) {
-                    logger.debug("Using {} ({}) for {}. It matches (enough) to {}.", image.getId(), tag, id, imageTag);
-                    return image.getId();
+            if (image.getRepoTags() != null ) {
+                for (String tag : image.getRepoTags()) {
+                    if (imageTag.contains(":") && tag.equals(imageTag) || tag.startsWith(imageTag + ":")) {
+                        logger.debug("Using {} ({}) for {}. It matches (enough) to {}.", image.getId(), tag, id, imageTag);
+                        return image.getId();
+                    }
                 }
             }
         }
