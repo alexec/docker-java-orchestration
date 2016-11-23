@@ -40,6 +40,11 @@ public class Conf {
     private boolean privileged;
     private String networkMode = "bridge";
 
+    /*
+    * configure hostname for the docker host
+    */
+    private String hostname = null;
+
     public Conf() {
     }
 

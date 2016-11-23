@@ -26,6 +26,7 @@ import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -666,6 +667,10 @@ public class DockerOrchestrator {
         }
         cmd.withVolumes(volumes.toArray(new Volume[volumes.size()]));
         cmd.withBinds(binds.toArray(new Bind[binds.size()]));
+
+        if(StringUtils.isEmpty(conf.getHostname())){
+            cmd.withHostName(conf.getHostname());
+        }
 
         cmd.withName(repo.containerName(id));
         logger.info(" - env " + conf.getEnv());
