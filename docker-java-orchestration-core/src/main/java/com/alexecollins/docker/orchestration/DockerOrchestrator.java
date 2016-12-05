@@ -668,7 +668,7 @@ public class DockerOrchestrator {
         cmd.withVolumes(volumes.toArray(new Volume[volumes.size()]));
         cmd.withBinds(binds.toArray(new Bind[binds.size()]));
 
-        if(StringUtils.isEmpty(conf.getHostname())){
+        if(StringUtils.isNotEmpty(conf.getHostname())){
             cmd.withHostName(conf.getHostname());
         }
 
