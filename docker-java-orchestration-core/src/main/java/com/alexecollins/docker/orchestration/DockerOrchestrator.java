@@ -483,15 +483,15 @@ public class DockerOrchestrator {
         } catch (Exception e) {
             logger.error("Error starting container with id " + id + ": " + e.getMessage());
             throw new OrchestrationException(e);
+        } finally {
+            final Container container = findContainer(id);
+            if (container == null) {
+                logger.error("Could not find container with id {}. No logs can be obtained", id);
+            } else {
+                final Tail tail = tailFactory.newTail(docker, container, logger);
+                tail.start();
+            }
         }
-
-        final Container container = findContainer(id);
-        if (container == null) {
-            throw new OrchestrationException("Could not find container with id " + id);
-        }
-
-        final Tail tail = tailFactory.newTail(docker, container, logger);
-        tail.start();
     }
 
     private Container findContainer(Id id) {
