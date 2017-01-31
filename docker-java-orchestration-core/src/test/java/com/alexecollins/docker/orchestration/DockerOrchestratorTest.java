@@ -541,6 +541,17 @@ public class DockerOrchestratorTest {
     }
 
     @Test
+    public void hostnameConfigurationStartsContainerWithHostname() throws Exception {
+
+        when(confMock.getHostname()).thenReturn("foo.bar");
+        mockRunningIdMock();
+
+        testObj.start();
+
+        verify(createContainerCmdMock).withHostName("foo.bar");
+    }
+
+    @Test
     public void networkModeConfigurationStartsContainerInSpecifiedNetworkMode() {
         when(confMock.getNetworkMode()).thenReturn("host");
         mockRunningIdMock();
