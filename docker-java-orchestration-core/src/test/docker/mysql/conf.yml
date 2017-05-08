@@ -3,4 +3,4 @@ ports:
   - 3306
 healthChecks:
   logPatterns:
-    - "ready for connections"
+    - "init process done"
